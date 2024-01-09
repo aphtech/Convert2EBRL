@@ -3,7 +3,7 @@ name = "Convert2EBRF"
 version = "1.0.0"
 description = "Tool for converting files to EBRF"
 authors = [
-    {name = "Michael Whapples", email = "mwhapples@aim.com"},
+    {name = "Michael Whapples", email = "mwhapples@aph.org"},
 ]
 dependencies = [
     "pyside6>=6.5.2",
@@ -13,14 +13,131 @@ requires-python = ">=3.11,<3.12"
 readme = "README.md"
 license = {text = "GPL-3[0-or-later"}
 
-[project.gui-scripts]
-convert2ebrf = "convert2ebrf.__main__:main"
-
 [tool.pdm.dev-dependencies]
 exe = [
     "nuitka>=1.8.4",
+    "briefcase>=0.3.16",
 ]
 
 
 [tool.pdm.scripts]
 build_exe = "python -m nuitka --standalone --enable-plugins=pyside6 --disable-console {args} Convert2EBRF.pyw"
+
+[tool.briefcase]
+project_name = "Convert2EBRF"
+bundle = "org.aph"
+url = "https://aph.org/convert2ebrf"
+
+[tool.briefcase.app.convert2ebrf]
+formal_name = "Convert2EBRF"
+long_description = """More details about the app should go here.
+"""
+icon = "src/convert2ebrf/resources/convert2ebrf"
+sources = [
+    "src/convert2ebrf",
+]
+test_sources = [
+    "tests",
+]
+
+test_requires = [
+    "pytest",
+]
+
+[tool.briefcase.app.convert2ebrf.macOS]
+universal_build = true
+requires = [
+    "std-nslog~=1.0.0"
+]
+
+[tool.briefcase.app.convert2ebrf.linux]
+requires = [
+]
+
+[tool.briefcase.app.convert2ebrf.linux.system.debian]
+system_requires = [
+]
+
+system_runtime_requires = [
+    # Derived from https://doc.qt.io/qt-6/linux-requirements.html
+    "libxrender1",
+    "libxcb-render0",
+    "libxcb-render-util0",
+    "libxcb-shape0",
+    "libxcb-randr0",
+    "libxcb-xfixes0",
+    "libxcb-xkb1",
+    "libxcb-sync1",
+    "libxcb-shm0",
+    "libxcb-icccm4",
+    "libxcb-keysyms1",
+    "libxcb-image0",
+    "libxcb-util1",
+    "libxkbcommon0",
+    "libxkbcommon-x11-0",
+    "libfontconfig1",
+    "libfreetype6",
+    "libxext6",
+    "libx11-6",
+    "libxcb1",
+    "libx11-xcb1",
+    "libsm6",
+    "libice6",
+    "libglib2.0-0",
+    "libgl1",
+    "libegl1-mesa",
+    "libdbus-1-3",
+    "libgssapi-krb5-2",
+]
+
+[tool.briefcase.app.convert2ebrf.linux.system.rhel]
+system_requires = [
+]
+
+system_runtime_requires = [
+    "qt6-qtbase-gui",
+]
+
+[tool.briefcase.app.convert2ebrf.linux.system.suse]
+system_requires = [
+]
+
+system_runtime_requires = [
+    "libQt6Gui6",
+]
+
+[tool.briefcase.app.convert2ebrf.linux.system.arch]
+system_requires = [
+    "qt6-base",
+]
+
+system_runtime_requires = [
+    "qt6-base",
+]
+
+[tool.briefcase.app.convert2ebrf.linux.appimage]
+manylinux = "manylinux_2_28"
+
+system_requires = [
+# ?? FIXME
+]
+linuxdeploy_plugins = []
+
+[tool.briefcase.app.convert2ebrf.linux.flatpak]
+flatpak_runtime = "org.kde.Platform"
+flatpak_runtime_version = "6.4"
+flatpak_sdk = "org.kde.Sdk"
+
+[tool.briefcase.app.convert2ebrf.windows]
+requires = []
+
+# Mobile deployments
+[tool.briefcase.app.convert2ebrf.iOS]
+supported = false
+
+[tool.briefcase.app.convert2ebrf.android]
+supported = false
+
+# Web deployments
+[tool.briefcase.app.convert2ebrf.web]
+supported = false

@@ -1,6 +1,6 @@
 import sys
 
-from convert2ebrf.__main__ import run_app
+from convert2ebrf.app import main
 
 if __name__ == "__main__":
-    run_app(sys.argv)
+    main()
