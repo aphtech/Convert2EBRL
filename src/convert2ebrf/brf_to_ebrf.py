@@ -10,7 +10,7 @@ from pathlib import Path
 
 from PySide6.QtCore import QObject, Slot, Signal, QThreadPool, QSettings
 from PySide6.QtWidgets import QWidget, QFormLayout, QCheckBox, QDialog, QDialogButtonBox, QVBoxLayout, \
-    QProgressDialog, QMessageBox, QTabWidget, QSpinBox, QFileDialog, QComboBox
+    QProgressDialog, QMessageBox, QTabWidget, QSpinBox, QFileDialog, QComboBox, QHBoxLayout, QMenu, QPushButton, QLabel
 # noinspection PyUnresolvedReferences
 from __feature__ import snake_case, true_property
 from brf2ebrf.common import PageLayout, PageNumberPosition
@@ -265,16 +265,36 @@ class ConversionPageSettingsWidget(QWidget):
         self._even_ppn_position.current_text = _PAGE_NUMBER_POSITIONS_DICT[value]
 
 
+class SettingsProfilesWidget(QWidget):
+    def __init__(self, parent: QObject = None):
+        super().__init__(parent)
+        layout = QHBoxLayout(self)
+        tool_label = QLabel("Conversion profile")
+        layout.add_widget(tool_label)
+        profile_combo = QComboBox()
+        layout.add_widget(profile_combo)
+        tool_label.set_buddy(profile_combo)
+        profile_menu = QMenu(parent=self)
+        profile_menu.add_action("Save profile...")
+        profile_menu.add_action("Delete profile...")
+        profile_menu_button = QPushButton("...")
+        profile_menu_button.accessible_name = "Profiles menu"
+        profile_menu_button.set_menu(profile_menu)
+        layout.add_widget(profile_menu_button)
+
+
 class Brf2EbrfDialog(QDialog):
     def __init__(self, parent: QObject = None):
         super().__init__(parent)
+        layout = QVBoxLayout(self)
+        self._profiles_tool = SettingsProfilesWidget()
+        layout.add_widget(self._profiles_tool)
         self.window_title = "Convert BRF to EBRF"
         tab_widget = QTabWidget()
         self._brf2ebrf_form = ConversionGeneralSettingsWidget()
         tab_widget.add_tab(self._brf2ebrf_form, "General")
         self._page_settings_form = ConversionPageSettingsWidget()
         tab_widget.add_tab(self._page_settings_form, "Page settings")
-        layout = QVBoxLayout(self)
         layout.add_widget(tab_widget)
         self.button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         b = self.button_box.button(QDialogButtonBox.StandardButton.Close)
