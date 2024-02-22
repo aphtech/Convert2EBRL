@@ -271,8 +271,10 @@ class SettingsProfilesWidget(QWidget):
         tool_label = QLabel("Conversion profile")
         layout.add_widget(tool_label)
         profile_combo = QComboBox()
+        profile_combo.editable = False
         layout.add_widget(profile_combo)
         tool_label.set_buddy(profile_combo)
+        profile_combo.add_items(["APH double sided", "APH single sided"])
         profile_menu = QMenu(parent=self)
         profile_menu.add_action("Save profile...")
         profile_menu.add_action("Delete profile...")
