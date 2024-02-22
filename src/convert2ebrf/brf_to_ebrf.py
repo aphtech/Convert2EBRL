@@ -6,7 +6,6 @@
 # You should have received a copy of the GNU General Public License along with Convert2EBRF. If not, see <https://www.gnu.org/licenses/>.
 
 import os
-from pathlib import Path
 
 from PySide6.QtCore import QObject, Slot, Signal, QThreadPool, QSettings
 from PySide6.QtWidgets import QWidget, QFormLayout, QCheckBox, QDialog, QDialogButtonBox, QVBoxLayout, \
@@ -16,10 +15,10 @@ from __feature__ import snake_case, true_property
 from brf2ebrf.common import PageLayout, PageNumberPosition
 
 from convert2ebrf.convert_task import ConvertTask
+from convert2ebrf.settings.defaults import CONVERSION_LAST_DIR as DEFAULT_LAST_DIR
+from convert2ebrf.settings.keys import CONVERSION_LAST_DIR as LAST_DIR_SETTING_KEY
 from convert2ebrf.utils import RunnableAdapter
 from convert2ebrf.widgets import FilePickerWidget
-
-_LAST_DIR_SETTING_KEY = "Conversion/last_dir"
 
 
 class ConversionGeneralSettingsWidget(QWidget):
@@ -41,10 +40,10 @@ class ConversionGeneralSettingsWidget(QWidget):
 
         def get_images_dir_from_user(x):
             settings = QSettings()
-            default_dir = settings.value(_LAST_DIR_SETTING_KEY, str(Path.home()))
+            default_dir = settings.value(LAST_DIR_SETTING_KEY, DEFAULT_LAST_DIR)
             image_dir = QFileDialog.get_existing_directory(parent=x, dir=default_dir)
             if image_dir:
-                settings.set_value(_LAST_DIR_SETTING_KEY, image_dir)
+                settings.set_value(LAST_DIR_SETTING_KEY, image_dir)
                 return image_dir
 
         self._image_dir_edit = FilePickerWidget(
@@ -53,13 +52,13 @@ class ConversionGeneralSettingsWidget(QWidget):
 
         def get_output_ebrf_file_from_user(x):
             settings = QSettings()
-            default_dir = settings.value(_LAST_DIR_SETTING_KEY, str(Path.home()))
+            default_dir = settings.value(LAST_DIR_SETTING_KEY, DEFAULT_LAST_DIR)
             save_path = QFileDialog.get_save_file_name(
                 parent=x, dir=default_dir, filter="eBraille Files (*.zip)",
                 options=QFileDialog.Option.DontConfirmOverwrite
             )[0]
             if save_path:
-                settings.set_value(_LAST_DIR_SETTING_KEY, os.path.dirname(save_path))
+                settings.set_value(LAST_DIR_SETTING_KEY, os.path.dirname(save_path))
                 return save_path
 
         self._output_ebrf_edit = FilePickerWidget(get_output_ebrf_file_from_user)
@@ -79,20 +78,20 @@ class ConversionGeneralSettingsWidget(QWidget):
 
     def _get_input_brf_from_user(self, x):
         settings = QSettings()
-        default_dir = settings.value(_LAST_DIR_SETTING_KEY, str(Path.home()))
+        default_dir = settings.value(LAST_DIR_SETTING_KEY, DEFAULT_LAST_DIR)
         if self._input_type_combo.current_index:
             input_dir = QFileDialog.get_existing_directory(
                 parent=x, dir=default_dir
             )
             if input_dir:
-                settings.set_value(_LAST_DIR_SETTING_KEY, input_dir)
+                settings.set_value(LAST_DIR_SETTING_KEY, input_dir)
                 return input_dir
         else:
             input_files = QFileDialog.get_open_file_names(
                 parent=x, dir=default_dir, filter="Braille Ready Files (*.brf)"
             )[0]
             if input_files:
-                settings.set_value(_LAST_DIR_SETTING_KEY, os.path.dirname(input_files[0]))
+                settings.set_value(LAST_DIR_SETTING_KEY, os.path.dirname(input_files[0]))
                 return os.path.pathsep.join(input_files)
 
     @property
