@@ -237,7 +237,7 @@ class ConversionPageSettingsWidget(QWidget):
 
     @odd_braille_page_number_position.setter
     def odd_braille_page_number_position(self, value: PageNumberPosition):
-        self._odd_bpn_position.current_text = _PAGE_NUMBER_POSITIONS_DICT[value]
+        self._odd_bpn_position.current_index = self._odd_bpn_position.findData(value)
 
     @property
     def even_braille_page_number_position(self) -> PageNumberPosition:
@@ -245,7 +245,7 @@ class ConversionPageSettingsWidget(QWidget):
 
     @even_braille_page_number_position.setter
     def even_braille_page_number_position(self, value: PageNumberPosition):
-        self._even_bpn_position.current_text = _PAGE_NUMBER_POSITIONS_DICT[value]
+        self._even_bpn_position.current_index = self._even_bpn_position.findData(value)
 
     @property
     def odd_print_page_number_position(self) -> PageNumberPosition:
@@ -253,7 +253,7 @@ class ConversionPageSettingsWidget(QWidget):
 
     @odd_print_page_number_position.setter
     def odd_print_page_number_position(self, value: PageNumberPosition):
-        self._odd_ppn_position.current_text = _PAGE_NUMBER_POSITIONS_DICT[value]
+        self._odd_ppn_position.current_index = self._odd_ppn_position.findData(value)
 
     @property
     def even_print_page_number_position(self) -> PageNumberPosition:
@@ -261,7 +261,7 @@ class ConversionPageSettingsWidget(QWidget):
 
     @even_print_page_number_position.setter
     def even_print_page_number_position(self, value: PageNumberPosition):
-        self._even_ppn_position.current_text = _PAGE_NUMBER_POSITIONS_DICT[value]
+        self._even_ppn_position.current_index = self._even_ppn_position.findData(value)
 
 
 class Brf2EbrfDialog(QDialog):
