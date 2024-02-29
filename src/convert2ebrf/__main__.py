@@ -9,6 +9,7 @@ import logging
 import sys
 from collections.abc import Sequence
 
+from PySide6.QtCore import QSettings
 from PySide6.QtWidgets import QApplication
 # noinspection PyUnresolvedReferences
 from __feature__ import snake_case, true_property
@@ -24,6 +25,7 @@ def run_app(args: Sequence[str]):
     app.organization_name = "American Printing House for the Blind"
     app.organization_domain = "aph.org"
     app.application_name = "Convert2EBRF"
+    QSettings.set_default_format(QSettings.Format.IniFormat)
     w = Brf2EbrfDialog()
     w.show()
     app.exec()
