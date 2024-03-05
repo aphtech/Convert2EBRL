@@ -6,6 +6,7 @@
 # You should have received a copy of the GNU General Public License along with Convert2EBRF. If not, see <https://www.gnu.org/licenses/>.
 
 import os
+from collections.abc import Iterable
 
 from PySide6.QtCore import QObject, Slot, Signal, QThreadPool, QSettings
 from PySide6.QtWidgets import QWidget, QFormLayout, QCheckBox, QDialog, QDialogButtonBox, QVBoxLayout, \
@@ -15,9 +16,10 @@ from __feature__ import snake_case, true_property
 from brf2ebrf.common import PageLayout, PageNumberPosition
 
 from convert2ebrf.convert_task import ConvertTask
-from convert2ebrf.settings.defaults import CONVERSION_LAST_DIR as DEFAULT_LAST_DIR
+from convert2ebrf.settings import SettingsProfile
+from convert2ebrf.settings.defaults import CONVERSION_LAST_DIR as DEFAULT_LAST_DIR, DEFAULT_SETTINGS_PROFILES_LIST
 from convert2ebrf.settings.keys import CONVERSION_LAST_DIR as LAST_DIR_SETTING_KEY
-from convert2ebrf.utils import RunnableAdapter, load_settings_profiles
+from convert2ebrf.utils import RunnableAdapter, load_settings_profiles, save_settings_profiles
 from convert2ebrf.widgets import FilePickerWidget
 
 
@@ -267,7 +269,7 @@ class ConversionPageSettingsWidget(QWidget):
 class SettingsProfilesWidget(QWidget):
     def __init__(self, parent: QObject = None):
         super().__init__(parent)
-        profiles = load_settings_profiles()
+        orig_profiles = load_settings_profiles()
         layout = QHBoxLayout(self)
         tool_label = QLabel("Conversion profile")
         layout.add_widget(tool_label)
@@ -275,11 +277,17 @@ class SettingsProfilesWidget(QWidget):
         profile_combo.editable = False
         layout.add_widget(profile_combo)
         tool_label.set_buddy(profile_combo)
-        for profile in profiles:
-            profile_combo.add_item(profile.name, profile)
+        def update_profiles(profiles: Iterable[SettingsProfile], sync_settings: bool = False):
+            if sync_settings:
+                save_settings_profiles(profiles, clear_existing=True)
+            profile_combo.clear()
+            for profile in profiles:
+                profile_combo.add_item(profile.name, profile)
+        update_profiles(orig_profiles)
         profile_menu = QMenu(parent=self)
         profile_menu.add_action("Save profile...")
         profile_menu.add_action("Delete profile...")
+        profile_menu.add_action("Reset profiles", lambda: update_profiles(DEFAULT_SETTINGS_PROFILES_LIST, sync_settings=True))
         profile_menu_button = QPushButton("...")
         profile_menu_button.accessible_name = "Profiles menu"
         profile_menu_button.set_menu(profile_menu)

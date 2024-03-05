@@ -37,8 +37,10 @@ class RunnableAdapter(QRunnable):
         self.fn(*self.args, **self.kwargs)
 
 
-def save_settings_profiles(profiles: Iterable[SettingsProfile]):
+def save_settings_profiles(profiles: Iterable[SettingsProfile], clear_existing: bool = False):
     settings = QSettings(str(get_app_config_path().joinpath(PROFILES_FILE_NAME)), QSettings.Format.IniFormat)
+    if clear_existing:
+        settings.clear()
     for profile in profiles:
         settings.begin_group(str(profile.id))
         settings.set_value(PROFILE_NAME, profile.name)
