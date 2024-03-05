@@ -239,7 +239,7 @@ class ConversionPageSettingsWidget(QWidget):
 
     @odd_braille_page_number_position.setter
     def odd_braille_page_number_position(self, value: PageNumberPosition):
-        self._odd_bpn_position.current_index = self._odd_bpn_position.findData(value)
+        self._odd_bpn_position.current_index = self._odd_bpn_position.find_data(value)
 
     @property
     def even_braille_page_number_position(self) -> PageNumberPosition:
@@ -247,7 +247,7 @@ class ConversionPageSettingsWidget(QWidget):
 
     @even_braille_page_number_position.setter
     def even_braille_page_number_position(self, value: PageNumberPosition):
-        self._even_bpn_position.current_index = self._even_bpn_position.findData(value)
+        self._even_bpn_position.current_index = self._even_bpn_position.find_data(value)
 
     @property
     def odd_print_page_number_position(self) -> PageNumberPosition:
@@ -255,7 +255,7 @@ class ConversionPageSettingsWidget(QWidget):
 
     @odd_print_page_number_position.setter
     def odd_print_page_number_position(self, value: PageNumberPosition):
-        self._odd_ppn_position.current_index = self._odd_ppn_position.findData(value)
+        self._odd_ppn_position.current_index = self._odd_ppn_position.find_data(value)
 
     @property
     def even_print_page_number_position(self) -> PageNumberPosition:
@@ -263,26 +263,28 @@ class ConversionPageSettingsWidget(QWidget):
 
     @even_print_page_number_position.setter
     def even_print_page_number_position(self, value: PageNumberPosition):
-        self._even_ppn_position.current_index = self._even_ppn_position.findData(value)
+        self._even_ppn_position.current_index = self._even_ppn_position.find_data(value)
 
 
 class SettingsProfilesWidget(QWidget):
+    selectedProfileChanged = Signal(SettingsProfile)
+
     def __init__(self, parent: QObject = None):
         super().__init__(parent)
         orig_profiles = load_settings_profiles()
         layout = QHBoxLayout(self)
         tool_label = QLabel("Conversion profile")
         layout.add_widget(tool_label)
-        profile_combo = QComboBox()
-        profile_combo.editable = False
-        layout.add_widget(profile_combo)
-        tool_label.set_buddy(profile_combo)
+        self._profile_combo = QComboBox()
+        self._profile_combo.editable = False
+        layout.add_widget(self._profile_combo)
+        tool_label.set_buddy(self._profile_combo)
         def update_profiles(profiles: Iterable[SettingsProfile], sync_settings: bool = False):
             if sync_settings:
                 save_settings_profiles(profiles, clear_existing=True)
-            profile_combo.clear()
+            self._profile_combo.clear()
             for profile in profiles:
-                profile_combo.add_item(profile.name, profile)
+                self._profile_combo.add_item(profile.name, profile)
         update_profiles(orig_profiles)
         profile_menu = QMenu(parent=self)
         profile_menu.add_action("Save profile...")
@@ -292,6 +294,14 @@ class SettingsProfilesWidget(QWidget):
         profile_menu_button.accessible_name = "Profiles menu"
         profile_menu_button.set_menu(profile_menu)
         layout.add_widget(profile_menu_button)
+        self._profile_combo.currentIndexChanged.connect(lambda x: self.selectedProfileChanged.emit(self._profile_combo.item_data(x)))
+
+    @property
+    def current_settings_profile(self) -> SettingsProfile:
+        return self._profile_combo.current_data()
+    @current_settings_profile.setter
+    def current_settings_profile(self, value: SettingsProfile):
+        self._profile_combo.current_index = self._profile_combo.find_data(value)
 
 
 class Brf2EbrfDialog(QDialog):
@@ -315,12 +325,23 @@ class Brf2EbrfDialog(QDialog):
         self._convert_button.default = True
         layout.add_widget(self.button_box)
         self._update_validity()
+        self._profiles_tool.selectedProfileChanged.connect(self.update_settings_profile)
         self.button_box.rejected.connect(self.reject)
         self._convert_button.clicked.connect(self.on_apply)
         self._brf2ebrf_form.inputBrfChanged.connect(lambda x: self._update_validity())
         self._brf2ebrf_form.imagesDirectoryChanged.connect(lambda x: self._update_validity())
         self._brf2ebrf_form.outputEbrfChanged.connect(lambda x: self._update_validity())
         self._page_settings_form.isValidChanged.connect(lambda x: self._update_validity())
+
+    @Slot(SettingsProfile)
+    def update_settings_profile(self, profile: SettingsProfile):
+        self._page_settings_form.detect_running_heads = profile.detect_runningheads
+        self._page_settings_form.cells_per_line = profile.cells_per_line
+        self._page_settings_form.lines_per_page = profile.lines_per_page
+        self._page_settings_form.odd_braille_page_number_position = profile.odd_bpn_position
+        self._page_settings_form.even_braille_page_number_position = profile.even_bpn_position
+        self._page_settings_form.odd_print_page_number_position = profile.odd_ppn_position
+        self._page_settings_form.even_print_page_number_position = profile.even_ppn_position
 
     @Slot()
     def _update_validity(self):
