@@ -17,7 +17,7 @@ from brf2ebrf.common import PageLayout, PageNumberPosition
 from convert2ebrf.convert_task import ConvertTask
 from convert2ebrf.settings.defaults import CONVERSION_LAST_DIR as DEFAULT_LAST_DIR
 from convert2ebrf.settings.keys import CONVERSION_LAST_DIR as LAST_DIR_SETTING_KEY
-from convert2ebrf.utils import RunnableAdapter
+from convert2ebrf.utils import RunnableAdapter, load_settings_profiles
 from convert2ebrf.widgets import FilePickerWidget
 
 
@@ -267,6 +267,7 @@ class ConversionPageSettingsWidget(QWidget):
 class SettingsProfilesWidget(QWidget):
     def __init__(self, parent: QObject = None):
         super().__init__(parent)
+        profiles = load_settings_profiles()
         layout = QHBoxLayout(self)
         tool_label = QLabel("Conversion profile")
         layout.add_widget(tool_label)
@@ -274,7 +275,8 @@ class SettingsProfilesWidget(QWidget):
         profile_combo.editable = False
         layout.add_widget(profile_combo)
         tool_label.set_buddy(profile_combo)
-        profile_combo.add_items(["APH double sided", "APH single sided"])
+        for profile in profiles:
+            profile_combo.add_item(profile.name, profile)
         profile_menu = QMenu(parent=self)
         profile_menu.add_action("Save profile...")
         profile_menu.add_action("Delete profile...")

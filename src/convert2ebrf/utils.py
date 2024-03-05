@@ -64,8 +64,8 @@ def load_settings_profiles() -> Iterable[SettingsProfile]:
             settings.end_group()
             continue
         detect_runningheads = settings.value(PROFILE_DETECT_RUNNINGHEADS, DEFAULT_SETTINGS_PROFILE.detect_runningheads, type=bool)
-        cpl = int(settings.value(PROFILE_CELLS_PER_LINE), DEFAULT_SETTINGS_PROFILE.cells_per_line)
-        lpp = int(settings.value(PROFILE_LINES_PER_PAGE, DEFAULT_SETTINGS_PROFILE.lines_per_page))
+        cpl = settings.value(PROFILE_CELLS_PER_LINE, DEFAULT_SETTINGS_PROFILE.cells_per_line, type=int)
+        lpp = settings.value(PROFILE_LINES_PER_PAGE, DEFAULT_SETTINGS_PROFILE.lines_per_page, type=int)
         odd_bpn = PageNumberPosition[settings.value(PROFILE_ODD_BPN_POSITION, DEFAULT_SETTINGS_PROFILE.odd_bpn_position)]
         even_bpn = PageNumberPosition[settings.value(PROFILE_EVEN_BPN_POSITION, DEFAULT_SETTINGS_PROFILE.even_bpn_position)]
         odd_ppn = PageNumberPosition[settings.value(PROFILE_ODD_PPN_POSITION, DEFAULT_SETTINGS_PROFILE.even_ppn_position)]
