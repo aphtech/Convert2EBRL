@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from uuid import UUID, uuid5
 from brf2ebrf.common import PageNumberPosition
 
+PROFILES_FILE_NAME = "profiles.ini"
 SETTINGS_PROFILE_NAMESPACE = UUID("8c4d55b1-98c0-484c-8677-4a019353c3aa")
 
 

@@ -15,6 +15,8 @@ from PySide6.QtWidgets import QApplication
 from __feature__ import snake_case, true_property
 
 from convert2ebrf.brf_to_ebrf import Brf2EbrfDialog
+from convert2ebrf.settings import SettingsProfile, PROFILES_FILE_NAME
+from convert2ebrf.utils import save_settings_profiles, get_app_config_path
 
 
 def run_app(args: Sequence[str]):
@@ -26,6 +28,9 @@ def run_app(args: Sequence[str]):
     app.organization_domain = "aph.org"
     app.application_name = "Convert2EBRF"
     QSettings.set_default_format(QSettings.Format.IniFormat)
+    profiles_path = get_app_config_path().joinpath(PROFILES_FILE_NAME)
+    if not profiles_path.exists():
+        save_settings_profiles([SettingsProfile(name="My profile")])
     w = Brf2EbrfDialog()
     w.show()
     app.exec()

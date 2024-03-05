@@ -6,4 +6,7 @@
 # You should have received a copy of the GNU General Public License along with Convert2EBRF. If not, see <https://www.gnu.org/licenses/>.
 from pathlib import Path
 
+from convert2ebrf.settings import SettingsProfile
+
 CONVERSION_LAST_DIR = str(Path.home())
+DEFAULT_SETTINGS_PROFILE = SettingsProfile(name="")
