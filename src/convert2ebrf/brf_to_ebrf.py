@@ -288,13 +288,17 @@ class SettingsProfilesWidget(QWidget):
         update_profiles(orig_profiles)
         profile_menu = QMenu(parent=self)
         profile_menu.add_action("Save profile...")
-        profile_menu.add_action("Delete profile...")
+        def delete_profile(profile: SettingsProfile):
+            profiles = [self._profile_combo.item_data(i) for i in range(0,self._profile_combo.count)]
+            profiles.remove(profile)
+            update_profiles(profiles, sync_settings=True)
+        profile_menu.add_action("Delete profile...", lambda: delete_profile(self._profile_combo.current_data()))
         profile_menu.add_action("Reset profiles", lambda: update_profiles(DEFAULT_SETTINGS_PROFILES_LIST, sync_settings=True))
         profile_menu_button = QPushButton("...")
         profile_menu_button.accessible_name = "Profiles menu"
         profile_menu_button.set_menu(profile_menu)
         layout.add_widget(profile_menu_button)
-        self._profile_combo.currentIndexChanged.connect(lambda x: self.selectedProfileChanged.emit(self._profile_combo.item_data(x)))
+        self._profile_combo.currentIndexChanged.connect(lambda x: self.selectedProfileChanged.emit(self._profile_combo.item_data(x)) if x >= 0 else None)
 
     @property
     def current_settings_profile(self) -> SettingsProfile:
