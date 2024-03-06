@@ -11,7 +11,8 @@ from dataclasses import replace
 
 from PySide6.QtCore import QObject, Slot, Signal, QThreadPool, QSettings
 from PySide6.QtWidgets import QWidget, QFormLayout, QCheckBox, QDialog, QDialogButtonBox, QVBoxLayout, \
-    QProgressDialog, QMessageBox, QTabWidget, QSpinBox, QFileDialog, QComboBox, QHBoxLayout, QMenu, QPushButton, QLabel
+    QProgressDialog, QMessageBox, QTabWidget, QSpinBox, QFileDialog, QComboBox, QHBoxLayout, QMenu, QPushButton, QLabel, \
+    QInputDialog
 # noinspection PyUnresolvedReferences
 from __feature__ import snake_case, true_property
 from brf2ebrf.common import PageLayout, PageNumberPosition
@@ -288,15 +289,34 @@ class SettingsProfilesWidget(QWidget):
             self._profile_combo.clear()
             for profile in profiles:
                 self._profile_combo.add_item(profile.name, profile)
+            self._profile_combo.current_index = -1 if self._profile_combo.count < 0 else 0
         update_profiles(orig_profiles)
-        if self._profile_combo.count > 0:
-            self._profile_combo.current_index = 0
         profile_menu = QMenu(parent=self)
-        profile_menu.add_action("Save profile...")
+        def save_profile():
+            while True:
+                text, ok = QInputDialog.get_text(self, "Name the profile", "Profile name:")
+                if not ok:
+                    return
+                if not text:
+                    QMessageBox.warning(self, "Name empty", "A profile name cannot be empty, please provide a profile name.")
+                    continue
+                profiles = list(self.settings_profiles)
+                profile = replace(self.current_settings_profile, name=text)
+                if text in [p.name for p in profiles]:
+                    result = QMessageBox.question(self, "Overwrite profile", f"A profile named {text} already exists, are you sure you want to overwrite it?")
+                    if result != QMessageBox.StandardButton.Yes:
+                        continue
+                    profiles = [p for p in profiles if p.name != text]
+                profiles.insert(0, profile)
+                update_profiles(profiles, sync_settings=True)
+                return
+        profile_menu.add_action("Save profile...", save_profile)
         def delete_profile(profile: SettingsProfile):
-            profiles = [self._profile_combo.item_data(i) for i in range(0,self._profile_combo.count)]
-            profiles.remove(profile)
-            update_profiles(profiles, sync_settings=True)
+            result = QMessageBox.question(self, "Delete profile", f"Are you sure you want to delete profile {profile.name}")
+            if result == QMessageBox.StandardButton.Yes:
+                profiles = list(self.settings_profiles)
+                profiles.remove(profile)
+                update_profiles(profiles, sync_settings=True)
         profile_menu.add_action("Delete profile...", lambda: delete_profile(self._profile_combo.current_data()))
         profile_menu.add_action("Reset profiles", lambda: update_profiles(DEFAULT_SETTINGS_PROFILES_LIST, sync_settings=True))
         profile_menu_button = QPushButton("...")
@@ -304,6 +324,10 @@ class SettingsProfilesWidget(QWidget):
         profile_menu_button.set_menu(profile_menu)
         layout.add_widget(profile_menu_button)
         self._profile_combo.currentIndexChanged.connect(lambda x: self.selectedProfileChanged.emit(self._profile_combo.item_data(x)) if x >= 0 else None)
+
+    @property
+    def settings_profiles(self) -> Iterable[SettingsProfile]:
+        return [self._profile_combo.item_data(i) for i in range(0,self._profile_combo.count)]
 
     @property
     def current_settings_profile(self) -> SettingsProfile:
