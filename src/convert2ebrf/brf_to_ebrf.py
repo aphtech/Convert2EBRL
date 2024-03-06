@@ -10,6 +10,7 @@ from collections.abc import Iterable
 from dataclasses import replace
 
 from PySide6.QtCore import QObject, Slot, Signal, QThreadPool, QSettings
+from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QWidget, QFormLayout, QCheckBox, QDialog, QDialogButtonBox, QVBoxLayout, \
     QProgressDialog, QMessageBox, QTabWidget, QSpinBox, QFileDialog, QComboBox, QHBoxLayout, QMenu, QPushButton, QLabel, \
     QInputDialog
@@ -317,7 +318,10 @@ class SettingsProfilesWidget(QWidget):
                 profiles = list(self.settings_profiles)
                 profiles.remove(profile)
                 update_profiles(profiles, sync_settings=True)
-        profile_menu.add_action("Delete profile...", lambda: delete_profile(self._profile_combo.current_data()))
+        delete_action = QAction("Delete profile...", self)
+        self._profile_combo.currentIndexChanged.connect(lambda x: delete_action.set_disabled(x < 0))
+        delete_action.triggered.connect(lambda: delete_profile(self._profile_combo.current_data()))
+        profile_menu.add_action(delete_action)
         def reset_profiles():
             result = QMessageBox.question(self, "Reset profiles", "Are you sure you want to reset profiles to defaults?")
             if result == QMessageBox.StandardButton.Yes:
