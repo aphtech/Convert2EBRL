@@ -344,15 +344,15 @@ class Brf2EbrfDialog(QDialog):
         self._brf2ebrf_form.imagesDirectoryChanged.connect(lambda x: self._update_validity())
         self._brf2ebrf_form.outputEbrfChanged.connect(lambda x: self._update_validity())
         self._page_settings_form.isValidChanged.connect(lambda x: self._update_validity())
-        self._page_settings_form.detectRunningHeadsChanged.connect(lambda x: self.on_settings_changed(detect_runningheads=x))
-        self._page_settings_form.cellsPerLineChanged.connect(lambda x: self.on_settings_changed(cells_per_line=x))
-        self._page_settings_form.linesPerPageChanged.connect(lambda x: self.on_settings_changed(lines_per_page=x))
-        self._page_settings_form.oddBraillePageNumberChanged.connect(lambda x: self.on_settings_changed(odd_bpn_position=x))
-        self._page_settings_form.evenBraillePageNumberChanged.connect(lambda x: self.on_settings_changed(even_bpn_position=x))
-        self._page_settings_form.oddPrintPageNumberChanged.connect(lambda x: self.on_settings_changed(odd_ppn_position=x))
-        self._page_settings_form.evenPrintPageNumberChanged.connect(lambda x: self.on_settings_changed(even_ppn_position=x))
+        self._page_settings_form.detectRunningHeadsChanged.connect(lambda x: self._on_settings_changed(detect_runningheads=x))
+        self._page_settings_form.cellsPerLineChanged.connect(lambda x: self._on_settings_changed(cells_per_line=x))
+        self._page_settings_form.linesPerPageChanged.connect(lambda x: self._on_settings_changed(lines_per_page=x))
+        self._page_settings_form.oddBraillePageNumberChanged.connect(lambda x: self._on_settings_changed(odd_bpn_position=x))
+        self._page_settings_form.evenBraillePageNumberChanged.connect(lambda x: self._on_settings_changed(even_bpn_position=x))
+        self._page_settings_form.oddPrintPageNumberChanged.connect(lambda x: self._on_settings_changed(odd_ppn_position=x))
+        self._page_settings_form.evenPrintPageNumberChanged.connect(lambda x: self._on_settings_changed(even_ppn_position=x))
 
-    def on_settings_changed(self, **kwargs):
+    def _on_settings_changed(self, **kwargs):
         current_profile = self._profiles_tool.current_settings_profile
         new_profile = replace(current_profile, **kwargs)
         if new_profile != current_profile:
