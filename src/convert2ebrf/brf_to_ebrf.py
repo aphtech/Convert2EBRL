@@ -331,7 +331,7 @@ class SettingsProfilesWidget(QWidget):
         profile_menu_button.accessible_name = "Profiles menu"
         profile_menu_button.set_menu(profile_menu)
         layout.add_widget(profile_menu_button)
-        self._profile_combo.currentIndexChanged.connect(lambda x: self.selectedProfileChanged.emit(self._profile_combo.item_data(x)) if x >= 0 else None)
+        self._profile_combo.currentIndexChanged.connect(lambda x: self.selectedProfileChanged.emit(self._profile_combo.item_data(x) if x >= 0 else self._custom_profile))
 
     @property
     def settings_profiles(self) -> Iterable[SettingsProfile]:
@@ -369,7 +369,7 @@ class Brf2EbrfDialog(QDialog):
         self._convert_button.default = True
         layout.add_widget(self.button_box)
         self._update_validity()
-        self._profiles_tool.selectedProfileChanged.connect(self.update_settings_profile)
+        self._profiles_tool.selectedProfileChanged.connect(self._on_settings_profile_changed)
         self.button_box.rejected.connect(self.reject)
         self._convert_button.clicked.connect(self.on_apply)
         self._brf2ebrf_form.inputBrfChanged.connect(lambda x: self._update_validity())
@@ -391,7 +391,10 @@ class Brf2EbrfDialog(QDialog):
             self._profiles_tool.current_settings_profile = replace(new_profile, name="")
 
     @Slot(SettingsProfile)
-    def update_settings_profile(self, profile: SettingsProfile):
+    def _on_settings_profile_changed(self, profile: SettingsProfile):
+        if not profile.name:
+            # A custom profile so we need not update
+            return
         self._page_settings_form.detect_running_heads = profile.detect_runningheads
         self._page_settings_form.cells_per_line = profile.cells_per_line
         self._page_settings_form.lines_per_page = profile.lines_per_page
