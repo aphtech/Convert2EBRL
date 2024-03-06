@@ -277,6 +277,7 @@ class SettingsProfilesWidget(QWidget):
         layout.add_widget(tool_label)
         self._profile_combo = QComboBox()
         self._profile_combo.editable = False
+        self._profile_combo.placeholder_text = "Custom"
         layout.add_widget(self._profile_combo)
         tool_label.set_buddy(self._profile_combo)
         def update_profiles(profiles: Iterable[SettingsProfile], sync_settings: bool = False):
@@ -286,6 +287,8 @@ class SettingsProfilesWidget(QWidget):
             for profile in profiles:
                 self._profile_combo.add_item(profile.name, profile)
         update_profiles(orig_profiles)
+        if self._profile_combo.count > 0:
+            self._profile_combo.current_index = 0
         profile_menu = QMenu(parent=self)
         profile_menu.add_action("Save profile...")
         def delete_profile(profile: SettingsProfile):
