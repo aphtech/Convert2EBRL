@@ -318,7 +318,11 @@ class SettingsProfilesWidget(QWidget):
                 profiles.remove(profile)
                 update_profiles(profiles, sync_settings=True)
         profile_menu.add_action("Delete profile...", lambda: delete_profile(self._profile_combo.current_data()))
-        profile_menu.add_action("Reset profiles", lambda: update_profiles(DEFAULT_SETTINGS_PROFILES_LIST, sync_settings=True))
+        def reset_profiles():
+            result = QMessageBox.question(self, "Reset profiles", "Are you sure you want to reset profiles to defaults?")
+            if result == QMessageBox.StandardButton.Yes:
+                update_profiles(DEFAULT_SETTINGS_PROFILES_LIST, sync_settings=True)
+        profile_menu.add_action("Reset profiles...", reset_profiles)
         profile_menu_button = QPushButton("...")
         profile_menu_button.accessible_name = "Profiles menu"
         profile_menu_button.set_menu(profile_menu)
