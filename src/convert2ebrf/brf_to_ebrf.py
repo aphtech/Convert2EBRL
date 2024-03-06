@@ -7,6 +7,7 @@
 
 import os
 from collections.abc import Iterable
+from dataclasses import replace
 
 from PySide6.QtCore import QObject, Slot, Signal, QThreadPool, QSettings
 from PySide6.QtWidgets import QWidget, QFormLayout, QCheckBox, QDialog, QDialogButtonBox, QVBoxLayout, \
@@ -270,6 +271,7 @@ class SettingsProfilesWidget(QWidget):
     selectedProfileChanged = Signal(SettingsProfile)
 
     def __init__(self, parent: QObject = None):
+        self._custom_profile = SettingsProfile(name="")
         super().__init__(parent)
         orig_profiles = load_settings_profiles()
         layout = QHBoxLayout(self)
@@ -305,10 +307,13 @@ class SettingsProfilesWidget(QWidget):
 
     @property
     def current_settings_profile(self) -> SettingsProfile:
-        return self._profile_combo.current_data()
+        return self._custom_profile if self._profile_combo.current_index < 0 else self._profile_combo.current_data()
     @current_settings_profile.setter
     def current_settings_profile(self, value: SettingsProfile):
-        self._profile_combo.current_index = self._profile_combo.find_data(value)
+        new_index = self._profile_combo.find_data(value)
+        if new_index < 0:
+            self._custom_profile = value
+        self._profile_combo.current_index = new_index
 
 
 class Brf2EbrfDialog(QDialog):
@@ -339,6 +344,19 @@ class Brf2EbrfDialog(QDialog):
         self._brf2ebrf_form.imagesDirectoryChanged.connect(lambda x: self._update_validity())
         self._brf2ebrf_form.outputEbrfChanged.connect(lambda x: self._update_validity())
         self._page_settings_form.isValidChanged.connect(lambda x: self._update_validity())
+        self._page_settings_form.detectRunningHeadsChanged.connect(lambda x: self.on_settings_changed(detect_runningheads=x))
+        self._page_settings_form.cellsPerLineChanged.connect(lambda x: self.on_settings_changed(cells_per_line=x))
+        self._page_settings_form.linesPerPageChanged.connect(lambda x: self.on_settings_changed(lines_per_page=x))
+        self._page_settings_form.oddBraillePageNumberChanged.connect(lambda x: self.on_settings_changed(odd_bpn_position=x))
+        self._page_settings_form.evenBraillePageNumberChanged.connect(lambda x: self.on_settings_changed(even_bpn_position=x))
+        self._page_settings_form.oddPrintPageNumberChanged.connect(lambda x: self.on_settings_changed(odd_ppn_position=x))
+        self._page_settings_form.evenPrintPageNumberChanged.connect(lambda x: self.on_settings_changed(even_ppn_position=x))
+
+    def on_settings_changed(self, **kwargs):
+        current_profile = self._profiles_tool.current_settings_profile
+        new_profile = replace(current_profile, **kwargs)
+        if new_profile != current_profile:
+            self._profiles_tool.current_settings_profile = replace(new_profile, name="")
 
     @Slot(SettingsProfile)
     def update_settings_profile(self, profile: SettingsProfile):
