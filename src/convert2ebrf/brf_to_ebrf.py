@@ -22,7 +22,8 @@ from convert2ebrf.convert_task import ConvertTask
 from convert2ebrf.settings import SettingsProfile
 from convert2ebrf.settings.defaults import CONVERSION_LAST_DIR as DEFAULT_LAST_DIR, DEFAULT_SETTINGS_PROFILES_LIST
 from convert2ebrf.settings.keys import CONVERSION_LAST_DIR as LAST_DIR_SETTING_KEY
-from convert2ebrf.utils import RunnableAdapter, load_settings_profiles, save_settings_profiles
+from convert2ebrf.utils import RunnableAdapter, load_settings_profiles, save_settings_profiles, load_settings_profile, \
+    save_settings_profile
 from convert2ebrf.widgets import FilePickerWidget
 
 
@@ -344,7 +345,7 @@ class SettingsProfilesWidget(QWidget):
 
     @current_settings_profile.setter
     def current_settings_profile(self, value: SettingsProfile):
-        new_index = self._profile_combo.find_data(value)
+        new_index = self._profile_combo.find_text(value.name)
         if new_index < 0:
             self._custom_profile = value
         self._profile_combo.current_index = new_index
@@ -372,8 +373,15 @@ class Brf2EbrfDialog(QDialog):
         self._convert_button = self.button_box.add_button("Convert", QDialogButtonBox.ButtonRole.ApplyRole)
         self._convert_button.default = True
         layout.add_widget(self.button_box)
-        self._on_settings_profile_changed(self._profiles_tool.current_settings_profile)
-        self._update_validity()
+        def restore_from_settings():
+            settings = QSettings()
+            if "ConverterLastProfile" in settings.child_groups():
+                settings.begin_group("ConverterLastProfile")
+                self._profiles_tool.current_settings_profile = load_settings_profile(settings)
+                settings.end_group()
+            self._on_settings_profile_changed(self._profiles_tool.current_settings_profile)
+            self._update_validity()
+        restore_from_settings()
         self._profiles_tool.currentSettingsProfileChanged.connect(self._on_settings_profile_changed)
         self.button_box.rejected.connect(self.reject)
         self._convert_button.clicked.connect(self.on_apply)
@@ -397,6 +405,10 @@ class Brf2EbrfDialog(QDialog):
 
     @Slot(SettingsProfile)
     def _on_settings_profile_changed(self, profile: SettingsProfile):
+        settings = QSettings()
+        settings.begin_group("ConverterLastProfile")
+        save_settings_profile(settings, profile)
+        settings.end_group()
         self._page_settings_form.detect_running_heads = profile.detect_runningheads
         self._page_settings_form.cells_per_line = profile.cells_per_line
         self._page_settings_form.lines_per_page = profile.lines_per_page
