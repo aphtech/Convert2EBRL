@@ -331,7 +331,8 @@ class SettingsProfilesWidget(QWidget):
         profile_menu_button.accessible_name = "Profiles menu"
         profile_menu_button.set_menu(profile_menu)
         layout.add_widget(profile_menu_button)
-        self._profile_combo.currentIndexChanged.connect(lambda x: self.currentSettingsProfileChanged.emit(self._profile_combo.item_data(x) if x >= 0 else self._custom_profile))
+        # Notify of saved profile changes, custom profiles are notified in setter.
+        self._profile_combo.currentIndexChanged.connect(lambda x: self.currentSettingsProfileChanged.emit(self._profile_combo.item_data(x)) if x >= 0 else None)
 
     @property
     def settings_profiles(self) -> Iterable[SettingsProfile]:
@@ -340,12 +341,15 @@ class SettingsProfilesWidget(QWidget):
     @property
     def current_settings_profile(self) -> SettingsProfile:
         return self._custom_profile if self._profile_combo.current_index < 0 else self._profile_combo.current_data()
+
     @current_settings_profile.setter
     def current_settings_profile(self, value: SettingsProfile):
         new_index = self._profile_combo.find_data(value)
         if new_index < 0:
             self._custom_profile = value
         self._profile_combo.current_index = new_index
+        if new_index < 0:
+            self.currentSettingsProfileChanged.emit(value)
 
 
 class Brf2EbrfDialog(QDialog):
@@ -368,6 +372,7 @@ class Brf2EbrfDialog(QDialog):
         self._convert_button = self.button_box.add_button("Convert", QDialogButtonBox.ButtonRole.ApplyRole)
         self._convert_button.default = True
         layout.add_widget(self.button_box)
+        self._on_settings_profile_changed(self._profiles_tool.current_settings_profile)
         self._update_validity()
         self._profiles_tool.currentSettingsProfileChanged.connect(self._on_settings_profile_changed)
         self.button_box.rejected.connect(self.reject)
