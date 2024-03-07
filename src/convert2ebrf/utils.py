@@ -20,7 +20,7 @@ from convert2ebrf.settings.keys import PROFILE_NAME, PROFILE_CELLS_PER_LINE, PRO
 
 
 def get_app_config_path(create: bool = True) -> Path:
-    config_path = Path(QStandardPaths.writable_location(QStandardPaths.StandardLocation.AppConfigLocation))
+    config_path = Path(QStandardPaths.writable_location(QStandardPaths.StandardLocation.AppDataLocation))
     if create:
         config_path.mkdir(parents=True, exist_ok=True)
     return config_path
