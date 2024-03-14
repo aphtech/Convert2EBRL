@@ -70,6 +70,14 @@ class ConversionGeneralSettingsWidget(QWidget):
         self._output_ebrf_edit = FilePickerWidget(get_output_ebrf_file_from_user)
         layout.add_row("Output EBRF", self._output_ebrf_edit)
         self._update_include_images_state(self._include_images_checkbox.checked)
+        def restore_from_settings():
+            settings = QSettings()
+            self._input_type_combo.current_index = int(settings.value("Conversion/input_type", defaultValue=False, type=bool))
+        restore_from_settings()
+        def on_input_type_changed(index):
+            settings = QSettings()
+            settings.set_value("Conversion/input_type", bool(index))
+        self._input_type_combo.currentIndexChanged.connect(on_input_type_changed)
         self._include_images_checkbox.toggled.connect(self._update_include_images_state)
         self._input_type_combo.currentIndexChanged.connect(self._clear_input_brf)
         self._input_brf_edit.fileChanged.connect(self.inputBrfChanged.emit)
