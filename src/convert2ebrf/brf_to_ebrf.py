@@ -435,10 +435,8 @@ class Brf2EbrfDialog(QDialog):
     @Slot()
     def on_apply(self):
         number_of_steps = 1000
-        input_brf_list = self._brf2ebrf_form.input_brfs
-        brf_list = [os.path.join(input_brf_list[0], f) for f in os.listdir(
-            input_brf_list[0]
-        )] if os.path.isdir(input_brf_list[0]) else input_brf_list
+        brf_list = [brf for f in self._brf2ebrf_form.input_brfs for brf in
+                    ([os.path.join(f, b) for b in os.listdir(f)] if os.path.isdir(f) else [f])]
         num_of_inputs = len(brf_list)
         output_ebrf = self._brf2ebrf_form.output_ebrf
         if os.path.exists(output_ebrf):
