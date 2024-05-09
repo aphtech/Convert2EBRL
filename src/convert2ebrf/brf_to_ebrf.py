@@ -72,7 +72,7 @@ class ConversionGeneralSettingsWidget(QWidget):
         self._update_include_images_state(self._include_images_checkbox.checked)
         def restore_from_settings():
             settings = QSettings()
-            self._input_type_combo.current_index = int(settings.value("Conversion/input_type", defaultValue=False, type=bool))
+            self._input_type_combo.current_index = int(bool(settings.value("Conversion/input_type", defaultValue=False, type=bool)))
         restore_from_settings()
         def on_input_type_changed(index):
             settings = QSettings()
@@ -109,16 +109,16 @@ class ConversionGeneralSettingsWidget(QWidget):
             return input_files
 
     @property
-    def input_brf(self) -> str:
-        return self._input_brf_edit.file_name
+    def input_brfs(self) -> list[str]:
+        return self._input_brf_edit.files
 
-    @input_brf.setter
-    def input_brf(self, value: str):
-        self._input_type_combo.current_index = 1 if os.path.isdir(value) else 0
-        self._input_brf_edit.file_name = value
+    @input_brfs.setter
+    def input_brfs(self, value: list[str]):
+        self._input_type_combo.current_index = 1 if len(value) == 1 and os.path.isdir(value[0]) else 0
+        self._input_brf_edit.files = value
 
     def _clear_input_brf(self):
-        self._input_brf_edit.file_name = ""
+        self._input_brf_edit.files = []
 
     @property
     def image_directory(self) -> str | None:
@@ -428,19 +428,17 @@ class Brf2EbrfDialog(QDialog):
     @Slot()
     def _update_validity(self):
         general_settings = self._brf2ebrf_form
-        is_valid = self._page_settings_form.is_valid and "" not in [general_settings.input_brf, general_settings.image_directory,
-                              general_settings.output_ebrf]
+        is_valid = self._page_settings_form.is_valid and all([general_settings.input_brfs != [], general_settings.image_directory != "",
+                              general_settings.output_ebrf != ""])
         self._convert_button.enabled = is_valid
 
     @Slot()
     def on_apply(self):
         number_of_steps = 1000
-        input_brf_str = self._brf2ebrf_form.input_brf
-        brf_list = [os.path.join(input_brf_str, f) for f in os.listdir(
-            input_brf_str
-        )] if os.path.isdir(input_brf_str) else input_brf_str.split(
-            os.path.pathsep
-        )
+        input_brf_list = self._brf2ebrf_form.input_brfs
+        brf_list = [os.path.join(input_brf_list[0], f) for f in os.listdir(
+            input_brf_list[0]
+        )] if os.path.isdir(input_brf_list[0]) else input_brf_list
         num_of_inputs = len(brf_list)
         output_ebrf = self._brf2ebrf_form.output_ebrf
         if os.path.exists(output_ebrf):
