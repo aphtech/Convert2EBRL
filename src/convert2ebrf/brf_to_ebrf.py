@@ -457,7 +457,8 @@ class Brf2EbrfDialog(QDialog):
         pd = QProgressDialog("Conversion in progress", "Cancel", 0, number_of_steps)
 
         def update_progress(value: float):
-            pd.value = int(value * number_of_steps)
+            if not pd.was_canceled:
+                pd.value = int(value * number_of_steps)
 
         def finished_converting():
             update_progress(1)
