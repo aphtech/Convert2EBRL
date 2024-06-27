@@ -9,9 +9,10 @@ from typing import Iterable
 from PySide6.QtCore import QObject, Signal
 # noinspection PyUnresolvedReferences
 from __feature__ import snake_case, true_property
+from brf2ebrf.bana import create_brf2ebrf_parser
 from brf2ebrf.common import PageLayout, PageNumberPosition
 from brf2ebrf.parser import ParsingCancelledException
-from brf2ebrf.scripts.brf2ebrf import create_brf2ebrf_parser, convert_brf2ebrf
+from brf2ebrf.scripts.brf2ebrf import convert_brf2ebrf
 
 _DEFAULT_PAGE_LAYOUT = PageLayout(
     odd_braille_page_number=PageNumberPosition.BOTTOM_RIGHT,
