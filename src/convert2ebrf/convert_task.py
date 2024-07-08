@@ -9,10 +9,9 @@ from typing import Iterable
 from PySide6.QtCore import QObject, Signal
 # noinspection PyUnresolvedReferences
 from __feature__ import snake_case, true_property
-from brf2ebrf.bana import create_brf2ebrf_parser
 from brf2ebrf.common import PageLayout, PageNumberPosition
 from brf2ebrf.parser import ParsingCancelledException
-from brf2ebrf.scripts.brf2ebrf import convert_brf2ebrf
+from brf2ebrf.scripts.brf2ebrf import convert_brf2ebrf, DISCOVERED_PARSER_PLUGINS
 
 _DEFAULT_PAGE_LAYOUT = PageLayout(
     odd_braille_page_number=PageNumberPosition.BOTTOM_RIGHT,
@@ -54,7 +53,7 @@ class ConvertTask(QObject):
                 os.makedirs(os.path.join(temp_dir, "images"), exist_ok=True)
                 for index, brf in enumerate(input_brf_list):
                     temp_file = os.path.join(temp_dir, f"vol{index}.html")
-                    parser = create_brf2ebrf_parser(
+                    parser = [plugin for plugin in DISCOVERED_PARSER_PLUGINS.values()][0].create_brf2ebrf_parser(
                         page_layout=page_layout,
                         detect_running_heads=detect_running_heads,
                         brf_path=brf,
