@@ -23,4 +23,4 @@ exe = [
 
 
 [tool.pdm.scripts]
-build_exe = "python -m nuitka --standalone --enable-plugins=pyside6 --disable-console {args} Convert2EBRF.pyw"
+build_exe = "python -m nuitka --include-package=brf2ebrf_bana --standalone --enable-plugins=pyside6 --disable-console {args} Convert2EBRF.pyw"
