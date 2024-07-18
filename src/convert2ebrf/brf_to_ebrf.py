@@ -68,7 +68,7 @@ class ConversionGeneralSettingsWidget(QWidget):
             return [save_path]
 
         self._output_ebrf_edit = FilePickerWidget(get_output_ebrf_file_from_user)
-        layout.add_row("Output EBRF", self._output_ebrf_edit)
+        layout.add_row("Output eBraille", self._output_ebrf_edit)
         self._update_include_images_state(self._include_images_checkbox.checked)
         def restore_from_settings():
             settings = QSettings()
