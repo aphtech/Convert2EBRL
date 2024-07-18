@@ -367,7 +367,7 @@ class Brf2EbrfDialog(QDialog):
         layout = QVBoxLayout(self)
         self._profiles_tool = SettingsProfilesWidget()
         layout.add_widget(self._profiles_tool)
-        self.window_title = "Convert BRF to EBRF"
+        self.window_title = "Convert BRF to eBraille"
         tab_widget = QTabWidget()
         self._brf2ebrf_form = ConversionGeneralSettingsWidget()
         tab_widget.add_tab(self._brf2ebrf_form, "General")
