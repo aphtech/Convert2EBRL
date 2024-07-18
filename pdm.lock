@@ -12,7 +12,7 @@ name = "brf2ebrf"
 version = "0.1.0"
 requires_python = ">=3.10"
 git = "https://github.com/aphtech/brf2ebrf"
-revision = "621011388c10979cdf373d2d9e5eb9697c86cd76"
+revision = "68a951c4ebde562de3b375a5c757bab136872adc"
 summary = "A tool for converting BRF to eBRF."
 dependencies = [
     "pypdf2>=3.0.1",
