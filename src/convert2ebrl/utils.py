@@ -10,11 +10,11 @@ from pathlib import Path
 from PySide6.QtCore import QRunnable, Slot, QSettings, QStandardPaths
 # noinspection PyUnresolvedReferences
 from __feature__ import snake_case, true_property
-from brf2ebrf.common import PageNumberPosition
+from brf2ebrl.common import PageNumberPosition
 
-from convert2ebrf.settings import SettingsProfile, PROFILES_FILE_NAME
-from convert2ebrf.settings.defaults import DEFAULT_SETTINGS_PROFILE
-from convert2ebrf.settings.keys import PROFILE_NAME, PROFILE_CELLS_PER_LINE, PROFILE_LINES_PER_PAGE, \
+from convert2ebrl.settings import SettingsProfile, PROFILES_FILE_NAME
+from convert2ebrl.settings.defaults import DEFAULT_SETTINGS_PROFILE
+from convert2ebrl.settings.keys import PROFILE_NAME, PROFILE_CELLS_PER_LINE, PROFILE_LINES_PER_PAGE, \
     PROFILE_ODD_BPN_POSITION, PROFILE_EVEN_BPN_POSITION, PROFILE_ODD_PPN_POSITION, \
     PROFILE_EVEN_PPN_POSITION, PROFILE_DETECT_RUNNINGHEADS
 

@@ -16,15 +16,15 @@ from PySide6.QtWidgets import QWidget, QFormLayout, QCheckBox, QDialog, QDialogB
     QInputDialog
 # noinspection PyUnresolvedReferences
 from __feature__ import snake_case, true_property
-from brf2ebrf.common import PageLayout, PageNumberPosition
+from brf2ebrl.common import PageLayout, PageNumberPosition
 
-from convert2ebrf.convert_task import ConvertTask
-from convert2ebrf.settings import SettingsProfile
-from convert2ebrf.settings.defaults import CONVERSION_LAST_DIR as DEFAULT_LAST_DIR, DEFAULT_SETTINGS_PROFILES_LIST
-from convert2ebrf.settings.keys import CONVERSION_LAST_DIR as LAST_DIR_SETTING_KEY
-from convert2ebrf.utils import RunnableAdapter, load_settings_profiles, save_settings_profiles, load_settings_profile, \
+from convert2ebrl.convert_task import ConvertTask
+from convert2ebrl.settings import SettingsProfile
+from convert2ebrl.settings.defaults import CONVERSION_LAST_DIR as DEFAULT_LAST_DIR, DEFAULT_SETTINGS_PROFILES_LIST
+from convert2ebrl.settings.keys import CONVERSION_LAST_DIR as LAST_DIR_SETTING_KEY
+from convert2ebrl.utils import RunnableAdapter, load_settings_profiles, save_settings_profiles, load_settings_profile, \
     save_settings_profile
-from convert2ebrf.widgets import FilePickerWidget
+from convert2ebrl.widgets import FilePickerWidget
 
 
 class ConversionGeneralSettingsWidget(QWidget):

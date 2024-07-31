@@ -14,7 +14,7 @@ readme = "README.md"
 license = {text = "GPL-3[0-or-later"}
 
 [project.gui-scripts]
-convert2ebrf = "convert2ebrf.__main__:main"
+convert2ebrl = "convert2ebrl.__main__:main"
 
 [tool.pdm.dev-dependencies]
 exe = [
@@ -23,4 +23,4 @@ exe = [
 
 
 [tool.pdm.scripts]
-build_exe = "python -m nuitka --include-package=brf2ebrf_bana --standalone --enable-plugins=pyside6 --disable-console {args} Convert2EBRF.pyw"
+build_exe = "python -m nuitka --include-package=brf2ebrl_bana --standalone --enable-plugins=pyside6 --disable-console {args} Convert2EBRL.pyw"

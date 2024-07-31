@@ -5,8 +5,8 @@
 # Convert2EBRF is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with Convert2EBRF. If not, see <https://www.gnu.org/licenses/>.
 from pathlib import Path
-from brf2ebrf.common import PageNumberPosition
-from convert2ebrf.settings import SettingsProfile
+from brf2ebrl.common import PageNumberPosition
+from convert2ebrl.settings import SettingsProfile
 
 CONVERSION_LAST_DIR = str(Path.home())
 DEFAULT_SETTINGS_PROFILE = SettingsProfile(name="")

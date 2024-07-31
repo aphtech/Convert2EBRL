@@ -14,10 +14,10 @@ from PySide6.QtWidgets import QApplication
 # noinspection PyUnresolvedReferences
 from __feature__ import snake_case, true_property
 
-from convert2ebrf.brf_to_ebrf import Brf2EbrfDialog
-from convert2ebrf.settings import PROFILES_FILE_NAME
-from convert2ebrf.settings.defaults import DEFAULT_SETTINGS_PROFILES_LIST
-from convert2ebrf.utils import save_settings_profiles, get_app_config_path
+from convert2ebrl.brf_to_ebrf import Brf2EbrfDialog
+from convert2ebrl.settings import PROFILES_FILE_NAME
+from convert2ebrl.settings.defaults import DEFAULT_SETTINGS_PROFILES_LIST
+from convert2ebrl.utils import save_settings_profiles, get_app_config_path
 
 
 def run_app(args: Sequence[str]):
