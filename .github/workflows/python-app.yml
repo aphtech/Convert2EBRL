@@ -36,4 +36,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: convert2ebrl-dist
-        path: Convert2EBRF.dist
+        path: Convert2EBRL.dist
