@@ -1,10 +1,10 @@
 # Convert2EBRL
 
-A GUI application for converting files to EBRL.
+A GUI application for converting files to eBraille.
 
-## Status of EBRL support
+## Status of eBraille support
 
-As there is no published version of the EBRL standard, currently this tool is unable to produce files which are guaranteed to comply with the final EBRL specification. Once a EBRL specification is published this tool will then recieve updates to produce files to comply with that specification.
+As there is no published version of the eBraille standard, currently this tool is unable to produce files which are guaranteed to comply with the final eBraille specification. Once a eBraille specification is published this tool will then recieve updates to produce files to comply with that specification.
 
 ## Developer information
 
