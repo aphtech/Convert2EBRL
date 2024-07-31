@@ -33,7 +33,6 @@ def run_app(args: Sequence[str]):
     if not profiles_path.exists():
         save_settings_profiles(DEFAULT_SETTINGS_PROFILES_LIST)
     w = Brf2EbrfDialog()
-    w.window_title = app.application_name
     w.show()
     app.exec()
 
