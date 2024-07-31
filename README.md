@@ -1,10 +1,10 @@
-# Convert2EBRF
+# Convert2EBRL
 
-A GUI application for converting files to EBRF.
+A GUI application for converting files to EBRL.
 
-## Status of EBRF support
+## Status of EBRL support
 
-As there is no published version of the EBRF standard, currently this tool is unable to produce files which are guaranteed to comply with the final EBRF specification. Once a EBRF specification is published this tool will then recieve updates to produce files to comply with that specification.
+As there is no published version of the EBRL standard, currently this tool is unable to produce files which are guaranteed to comply with the final EBRL specification. Once a EBRL specification is published this tool will then recieve updates to produce files to comply with that specification.
 
 ## Developer information
 
