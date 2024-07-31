@@ -5,17 +5,17 @@
 groups = ["default", "exe"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:3aac166fb344ee369d2e2bfdc373d3827459c508fae73fa15eae0737ce83ba99"
+content_hash = "sha256:d53a5dc4812aa4cb4ae3063d41987a58a585d1cf897874eb6f1538edd3ee6eea"
 
 [[metadata.targets]]
 requires_python = ">=3.11,<3.12"
 
 [[package]]
-name = "brf2ebrf"
+name = "brf2ebrl"
 version = "0.1.0"
 requires_python = ">=3.10"
-git = "https://github.com/aphtech/brf2ebrf"
-revision = "702842609bc1a942ddf2080a93908b2d5e326f0a"
+git = "https://github.com/aphtech/brf2ebrl"
+revision = "a80599ca6ae6fe6fbfae91541709748442cde9c7"
 summary = "A tool for converting BRF to eBRL."
 dependencies = [
     "pypdf2>=3.0.1",

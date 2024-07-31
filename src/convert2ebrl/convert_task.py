@@ -53,7 +53,7 @@ class ConvertTask(QObject):
                 os.makedirs(os.path.join(temp_dir, "images"), exist_ok=True)
                 for index, brf in enumerate(input_brf_list):
                     temp_file = os.path.join(temp_dir, f"vol{index}.html")
-                    parser = [plugin for plugin in DISCOVERED_PARSER_PLUGINS.values()][0].create_brf2ebrf_parser(
+                    parser = [plugin for plugin in DISCOVERED_PARSER_PLUGINS.values()][0].create_brf2ebrl_parser(
                         page_layout=page_layout,
                         detect_running_heads=detect_running_heads,
                         brf_path=brf,

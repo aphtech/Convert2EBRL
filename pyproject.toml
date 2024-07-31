@@ -1,13 +1,13 @@
 [project]
-name = "Convert2EBRF"
+name = "Convert2EBRL"
 version = "1.0.0"
-description = "Tool for converting files to EBRF"
+description = "Tool for converting files to eBraille"
 authors = [
     {name = "Michael Whapples", email = "mwhapples@aim.com"},
 ]
 dependencies = [
     "pyside6>=6.5.2",
-    "brf2ebrf @ git+https://github.com/aphtech/brf2ebrf",
+    "brf2ebrl @ git+https://github.com/aphtech/brf2ebrl",
 ]
 requires-python = ">=3.11,<3.12"
 readme = "README.md"
