@@ -11,8 +11,10 @@ from PySide6.QtCore import QObject, Signal
 from __feature__ import snake_case, true_property
 from brf2ebrl.common import PageLayout, PageNumberPosition
 from brf2ebrl.parser import ParsingCancelledException
-from brf2ebrl.scripts.brf2ebrl import convert_brf2ebrf, DISCOVERED_PARSER_PLUGINS
+from brf2ebrl.plugin import find_plugins
+from brf2ebrl.scripts.brf2ebrl import convert_brf2ebrf
 
+DISCOVERED_PARSER_PLUGINS = find_plugins()
 _DEFAULT_PAGE_LAYOUT = PageLayout(
     odd_braille_page_number=PageNumberPosition.BOTTOM_RIGHT,
     odd_print_page_number=PageNumberPosition.TOP_RIGHT,
