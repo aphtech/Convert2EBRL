@@ -1,18 +1,15 @@
 #  Copyright (c) 2024. American Printing House for the Blind.
 
-import os
-import shutil
 from pathlib import Path
-from tempfile import TemporaryDirectory
-from typing import Iterable, Callable
+from typing import Iterable
 
 from PySide6.QtCore import QObject, Signal
 # noinspection PyUnresolvedReferences
 from __feature__ import snake_case, true_property
+from brf2ebrl import convert
 from brf2ebrl.common import PageLayout, PageNumberPosition
 from brf2ebrl.parser import ParsingCancelledException
-from brf2ebrl.plugin import find_plugins, Plugin
-from brf2ebrl.scripts.brf2ebrl import convert_brf2ebrf
+from brf2ebrl.plugin import find_plugins
 
 DISCOVERED_PARSER_PLUGINS = find_plugins()
 _DEFAULT_PAGE_LAYOUT = PageLayout(
@@ -23,33 +20,6 @@ _DEFAULT_PAGE_LAYOUT = PageLayout(
 )
 
 
-def convert(selected_plugin: Plugin, input_brf_list: Iterable[str], input_images: str, output_ebrf: str,
-            detect_running_heads: bool, page_layout: PageLayout, is_cancelled: Callable[[], bool],
-            progress_callback: Callable[[int, float], None]):
-    with open(output_ebrf, "wb") as out_file:
-        with TemporaryDirectory() as temp_dir:
-            os.makedirs(os.path.join(temp_dir, "images"), exist_ok=True)
-            for index, brf in enumerate(input_brf_list):
-                temp_file = os.path.join(temp_dir, f"vol{index}.html")
-                parser = selected_plugin.create_brf_parser(
-                    page_layout=page_layout,
-                    detect_running_heads=detect_running_heads,
-                    brf_path=brf,
-                    output_path=temp_file,
-                    images_path=input_images
-                )
-                parser_steps = len(parser)
-                convert_brf2ebrf(brf, temp_file, parser,
-                                 progress_callback=lambda x: progress_callback(index, x / parser_steps),
-                                 is_cancelled=is_cancelled)
-            bundle_as_zip(temp_dir, out_file)
-
-
-def bundle_as_zip(input_dir, out_file):
-    with TemporaryDirectory() as out_temp_dir:
-        temp_ebrf = shutil.make_archive(os.path.join(out_temp_dir, "output_ebrf"), "zip", input_dir)
-        with open(temp_ebrf, "rb") as temp_ebrf_file:
-            shutil.copyfileobj(temp_ebrf_file, out_file)
 
 
 class ConvertTask(QObject):
