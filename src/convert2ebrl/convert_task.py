@@ -11,7 +11,7 @@ from PySide6.QtCore import QObject, Signal
 from __feature__ import snake_case, true_property
 from brf2ebrl.common import PageLayout, PageNumberPosition
 from brf2ebrl.parser import ParsingCancelledException
-from brf2ebrl.plugin import Brf2EbrlPlugin, find_plugins
+from brf2ebrl.plugin import find_plugins, Plugin
 from brf2ebrl.scripts.brf2ebrl import convert_brf2ebrf
 
 DISCOVERED_PARSER_PLUGINS = find_plugins()
@@ -23,7 +23,7 @@ _DEFAULT_PAGE_LAYOUT = PageLayout(
 )
 
 
-def convert(selected_plugin: Brf2EbrlPlugin, input_brf_list: Iterable[str], input_images: str, output_ebrf: str,
+def convert(selected_plugin: Plugin, input_brf_list: Iterable[str], input_images: str, output_ebrf: str,
             detect_running_heads: bool, page_layout: PageLayout, is_cancelled: Callable[[], bool],
             progress_callback: Callable[[int, float], None]):
     with open(output_ebrf, "wb") as out_file:
@@ -31,7 +31,7 @@ def convert(selected_plugin: Brf2EbrlPlugin, input_brf_list: Iterable[str], inpu
             os.makedirs(os.path.join(temp_dir, "images"), exist_ok=True)
             for index, brf in enumerate(input_brf_list):
                 temp_file = os.path.join(temp_dir, f"vol{index}.html")
-                parser = selected_plugin.create_brf2ebrl_parser(
+                parser = selected_plugin.create_brf_parser(
                     page_layout=page_layout,
                     detect_running_heads=detect_running_heads,
                     brf_path=brf,
