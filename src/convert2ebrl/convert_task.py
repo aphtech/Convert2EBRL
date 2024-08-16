@@ -20,8 +20,6 @@ _DEFAULT_PAGE_LAYOUT = PageLayout(
 )
 
 
-
-
 class ConvertTask(QObject):
     started = Signal()
     progress = Signal(int, float)
@@ -51,7 +49,10 @@ class ConvertTask(QObject):
                  page_layout: PageLayout):
         selected_plugin = [plugin for plugin in DISCOVERED_PARSER_PLUGINS.values()][0]
         progress_callback = self.progress.emit
-        is_cancelled = lambda: self._cancel_requested
+
+        def is_cancelled() -> bool:
+            return self._cancel_requested
+
         convert(selected_plugin, input_brf_list, input_images, output_ebrf, detect_running_heads, page_layout,
                 is_cancelled, progress_callback)
 
