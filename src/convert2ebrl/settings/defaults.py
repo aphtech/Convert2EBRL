@@ -10,4 +10,10 @@ from convert2ebrl.settings import SettingsProfile
 
 CONVERSION_LAST_DIR = str(Path.home())
 DEFAULT_SETTINGS_PROFILE = SettingsProfile(name="")
-DEFAULT_SETTINGS_PROFILES_LIST = (SettingsProfile(name="APH Interpoint"), SettingsProfile(name="APH Single Sided", even_bpn_position=PageNumberPosition.BOTTOM_RIGHT, even_ppn_position=PageNumberPosition.TOP_RIGHT))
+DEFAULT_SETTINGS_PROFILES_LIST = (
+    SettingsProfile(name="APH Interpoint",
+                    odd_bpn_position=PageNumberPosition.BOTTOM_RIGHT, even_bpn_position=PageNumberPosition.NONE,
+                    odd_ppn_position=PageNumberPosition.TOP_RIGHT, even_ppn_position=PageNumberPosition.TOP_RIGHT),
+    SettingsProfile(name="APH Single Sided",
+                    odd_bpn_position=PageNumberPosition.BOTTOM_RIGHT, even_bpn_position=PageNumberPosition.BOTTOM_RIGHT,
+                    odd_ppn_position=PageNumberPosition.TOP_RIGHT, even_ppn_position=PageNumberPosition.TOP_RIGHT))

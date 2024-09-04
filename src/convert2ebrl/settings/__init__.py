@@ -19,9 +19,9 @@ class SettingsProfile:
     detect_runningheads: bool = True
     cells_per_line: int = 40
     lines_per_page: int = 25
-    odd_bpn_position: PageNumberPosition = PageNumberPosition.BOTTOM_RIGHT
+    odd_bpn_position: PageNumberPosition = PageNumberPosition.NONE
     even_bpn_position: PageNumberPosition = PageNumberPosition.NONE
-    odd_ppn_position: PageNumberPosition = PageNumberPosition.TOP_RIGHT
+    odd_ppn_position: PageNumberPosition = PageNumberPosition.NONE
     even_ppn_position: PageNumberPosition = PageNumberPosition.NONE
     def __post_init__(self):
         object.__setattr__(self, "id", uuid5(SETTINGS_PROFILE_NAMESPACE, self.name))
