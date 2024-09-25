@@ -10,7 +10,7 @@ As there is no published version of the eBraille standard, currently this tool i
 
 ### Building
 
-This package is managed with the pdm tool.
+This package is managed with the pdm tool which you will need to install. The PDM web site is https://pdm.fming.dev and contains details of the various install methods.
 
 ### IDE configuration
 
@@ -18,3 +18,11 @@ To get code completions and avoid warnings for PySide6 features of snake_case an
 ```commandline
 pyside6-genpyi all --feature snake_case true_property
 ```
+
+### Building binary executable
+
+You can build a binary distribution of Convert2EBRL with the following command:
+```commandline
+pdm build_exe
+```
+This will create a subdirectory named Convert2EBRL.dist which contains the executable distribution.
