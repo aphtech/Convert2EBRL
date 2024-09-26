@@ -15,10 +15,9 @@ name = "brf2ebrl"
 version = "0.1.0"
 requires_python = ">=3.10"
 git = "https://github.com/aphtech/brf2ebrl"
-revision = "eff39ee1bb886c0c635cb9190cc5db843ff0e160"
+revision = "2295bb763707a27c9a27fd4ee3b93b957012d5df"
 summary = "A tool for converting BRF to eBRL."
 dependencies = [
-    "pypdf2>=3.0.1",
     "pypdf>=4.3.1",
     "regex>=2023.8.8",
 ]
@@ -90,20 +89,6 @@ dependencies = [
 files = [
     {file = "pypdf-4.3.1-py3-none-any.whl", hash = "sha256:64b31da97eda0771ef22edb1bfecd5deee4b72c3d1736b7df2689805076d6418"},
     {file = "pypdf-4.3.1.tar.gz", hash = "sha256:b2f37fe9a3030aa97ca86067a56ba3f9d3565f9a791b305c7355d8392c30d91b"},
-]
-
-[[package]]
-name = "pypdf2"
-version = "3.0.1"
-requires_python = ">=3.6"
-summary = "A pure-python PDF library capable of splitting, merging, cropping, and transforming PDF files"
-dependencies = [
-    "dataclasses; python_version < \"3.7\"",
-    "typing-extensions>=3.10.0.0; python_version < \"3.10\"",
-]
-files = [
-    {file = "PyPDF2-3.0.1.tar.gz", hash = "sha256:a74408f69ba6271f71b9352ef4ed03dc53a31aa404d29b5d31f53bfecfee1440"},
-    {file = "pypdf2-3.0.1-py3-none-any.whl", hash = "sha256:d16e4205cfee272fbdc0568b68d82be796540b1537508cef59388f839c191928"},
 ]
 
 [[package]]
