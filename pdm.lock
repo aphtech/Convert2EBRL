@@ -18,12 +18,27 @@ name = "brf2ebrl"
 version = "0.1.0"
 requires_python = ">=3.10"
 git = "https://github.com/aphtech/brf2ebrl"
-revision = "6f3ca9d37965f688f1f883796df0193b4b6665a6"
+revision = "8401978d4320d6892a0a11f8eff8eb3a2d62621f"
 summary = "A tool for converting BRF to eBRL."
 dependencies = [
+    "html5lib>=1.1",
     "lxml>=5.3.0",
     "pypdf>=4.3.1",
     "regex>=2023.8.8",
+]
+
+[[package]]
+name = "html5lib"
+version = "1.1"
+requires_python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
+summary = "HTML parser based on the WHATWG HTML specification"
+dependencies = [
+    "six>=1.9",
+    "webencodings",
+]
+files = [
+    {file = "html5lib-1.1-py2.py3-none-any.whl", hash = "sha256:0d78f8fde1c230e99fe37986a60526d7049ed4bf8a9fadbad5f00e22e58e041d"},
+    {file = "html5lib-1.1.tar.gz", hash = "sha256:b2e5b40261e20f354d198eae92afc10d750afb487ed5e50f9c4eaf07c184146f"},
 ]
 
 [[package]]
@@ -153,6 +168,25 @@ files = [
     {file = "shiboken6-6.8.0.1-cp39-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:77b6e2eae8d48fe32a058e234778c42642eca1755de8b793e2d57857d7d037cf"},
     {file = "shiboken6-6.8.0.1-cp39-abi3-manylinux_2_31_aarch64.whl", hash = "sha256:eb2db6f0cac42f10dc5b4bcf4ab5a8e079acb870877d0cb3d95cac80c20e4554"},
     {file = "shiboken6-6.8.0.1-cp39-abi3-win_amd64.whl", hash = "sha256:3f2601c0db8d1e860a2a1265936e616361b073360eb15153806638fbc3b7ff26"},
+]
+
+[[package]]
+name = "six"
+version = "1.16.0"
+requires_python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*"
+summary = "Python 2 and 3 compatibility utilities"
+files = [
+    {file = "six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"},
+    {file = "six-1.16.0.tar.gz", hash = "sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926"},
+]
+
+[[package]]
+name = "webencodings"
+version = "0.5.1"
+summary = "Character encoding aliases for legacy web content"
+files = [
+    {file = "webencodings-0.5.1-py2.py3-none-any.whl", hash = "sha256:a0af1213f3c2226497a97e2b3aa01a7e4bee4f403f95be16fc9acd2947514a78"},
+    {file = "webencodings-0.5.1.tar.gz", hash = "sha256:b36a1c245f2d304965eb4e0a82848379241dc04b865afcc4aab16748587e1923"},
 ]
 
 [[package]]
