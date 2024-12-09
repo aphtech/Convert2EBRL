@@ -18,7 +18,7 @@ name = "brf2ebrl"
 version = "0.1.0"
 requires_python = ">=3.10"
 git = "https://github.com/aphtech/brf2ebrl"
-revision = "8401978d4320d6892a0a11f8eff8eb3a2d62621f"
+revision = "0aa27164c0fb2c0fb26060824f473d83545548e6"
 summary = "A tool for converting BRF to eBRL."
 dependencies = [
     "html5lib>=1.1",
