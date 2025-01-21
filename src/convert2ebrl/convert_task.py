@@ -8,7 +8,7 @@ from PySide6.QtCore import QObject, Signal
 from __feature__ import snake_case, true_property
 from brf2ebrl import convert
 from brf2ebrl.common import PageLayout, PageNumberPosition
-from brf2ebrl.parser import ParsingCancelledException
+from brf2ebrl.parser import ParsingCancelledException, ParserContext
 from brf2ebrl.plugin import find_plugins
 
 DISCOVERED_PARSER_PLUGINS = find_plugins()
@@ -54,7 +54,7 @@ class ConvertTask(QObject):
             return self._cancel_requested
 
         convert(selected_plugin, input_brf_list, input_images, output_ebrf, detect_running_heads, page_layout,
-                is_cancelled, progress_callback)
+                progress_callback, parser_context=ParserContext(is_cancelled))
 
     def cancel(self):
         self._cancel_requested = True
