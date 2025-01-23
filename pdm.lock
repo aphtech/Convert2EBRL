@@ -53,14 +53,14 @@ files = [
 
 [[package]]
 name = "nuitka"
-version = "2.5.6"
+version = "2.6"
 summary = "Python compiler with full language support and CPython compatibility"
 dependencies = [
     "ordered-set>=4.1.0",
     "zstandard>=0.15",
 ]
 files = [
-    {file = "Nuitka-2.5.6.tar.gz", hash = "sha256:14b859ae95a12021d72e016365354578bd73d3d4aa4430f1dd54d649352a1f79"},
+    {file = "Nuitka-2.6.tar.gz", hash = "sha256:7d67293d2fe6a481b5d244008af6fa7511a6f27d0664d1adec9305b6fabe9cc8"},
 ]
 
 [[package]]
@@ -89,41 +89,41 @@ files = [
 
 [[package]]
 name = "pyside6"
-version = "6.8.1"
+version = "6.8.1.1"
 requires_python = "<3.14,>=3.9"
 summary = "Python bindings for the Qt cross-platform application and UI framework"
 dependencies = [
-    "PySide6-Addons==6.8.1",
-    "PySide6-Essentials==6.8.1",
-    "shiboken6==6.8.1",
+    "PySide6-Addons==6.8.1.1",
+    "PySide6-Essentials==6.8.1.1",
+    "shiboken6==6.8.1.1",
 ]
 files = [
-    {file = "PySide6-6.8.1-cp39-abi3-win_amd64.whl", hash = "sha256:866eeaca3ffead6b9d30fa3ed395d5624da0246d7586c8b8207e77ac65d82458"},
+    {file = "PySide6-6.8.1.1-cp39-abi3-win_amd64.whl", hash = "sha256:60a2551053fa69845b893fb821507e2cc89d3a8a8b43726d568acd1250ad44fb"},
 ]
 
 [[package]]
 name = "pyside6-addons"
-version = "6.8.1"
+version = "6.8.1.1"
 requires_python = "<3.14,>=3.9"
 summary = "Python bindings for the Qt cross-platform application and UI framework (Addons)"
 dependencies = [
-    "PySide6-Essentials==6.8.1",
-    "shiboken6==6.8.1",
+    "PySide6-Essentials==6.8.1.1",
+    "shiboken6==6.8.1.1",
 ]
 files = [
-    {file = "PySide6_Addons-6.8.1-cp39-abi3-win_amd64.whl", hash = "sha256:d7c8c1e89ee0db84631d5b8fdb9129d9d2a0ffb3b4cb2f5192dc8367dd980db4"},
+    {file = "PySide6_Addons-6.8.1.1-cp39-abi3-win_amd64.whl", hash = "sha256:d8ae86944ac48cc9891666cf71565acebd403a953d0e050be4d41ac490788d0a"},
 ]
 
 [[package]]
 name = "pyside6-essentials"
-version = "6.8.1"
+version = "6.8.1.1"
 requires_python = "<3.14,>=3.9"
 summary = "Python bindings for the Qt cross-platform application and UI framework (Essentials)"
 dependencies = [
-    "shiboken6==6.8.1",
+    "shiboken6==6.8.1.1",
 ]
 files = [
-    {file = "PySide6_Essentials-6.8.1-cp39-abi3-win_amd64.whl", hash = "sha256:d5ed4ddb149f36d65bc49ae4260b2d213ee88b2d9a309012ae27f38158c2d1b6"},
+    {file = "PySide6_Essentials-6.8.1.1-cp39-abi3-win_amd64.whl", hash = "sha256:085f12e16db31eb0e802b21c64eabf582f54db6c44463a1f5e1814d897b1f2c0"},
 ]
 
 [[package]]
@@ -151,11 +151,11 @@ files = [
 
 [[package]]
 name = "shiboken6"
-version = "6.8.1"
+version = "6.8.1.1"
 requires_python = "<3.14,>=3.9"
 summary = "Python/C++ bindings helper module"
 files = [
-    {file = "shiboken6-6.8.1-cp39-abi3-win_amd64.whl", hash = "sha256:3ea127fd72be113b73cacd70e06687ad6f83c1c888047833c7dcdd5cf8e7f586"},
+    {file = "shiboken6-6.8.1.1-cp39-abi3-win_amd64.whl", hash = "sha256:26f7041c77058a8ecfb9345caa187250b199de79cfb37e33936e5fbd468a7780"},
 ]
 
 [[package]]
