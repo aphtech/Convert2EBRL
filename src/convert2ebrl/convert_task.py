@@ -1,5 +1,5 @@
 #  Copyright (c) 2024. American Printing House for the Blind.
-
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
@@ -8,7 +8,7 @@ from PySide6.QtCore import QObject, Signal
 from __feature__ import snake_case, true_property
 from brf2ebrl import convert
 from brf2ebrl.common import PageLayout, PageNumberPosition
-from brf2ebrl.parser import ParsingCancelledException, ParserContext
+from brf2ebrl.parser import NotifyLevel, ParsingCancelledException, ParserContext
 from brf2ebrl.plugin import find_plugins
 
 DISCOVERED_PARSER_PLUGINS = find_plugins()
@@ -20,11 +20,18 @@ _DEFAULT_PAGE_LAYOUT = PageLayout(
 )
 
 
+@dataclass(frozen=True)
+class Notification:
+    level: NotifyLevel
+    message: str
+
+
 class ConvertTask(QObject):
     started = Signal()
     progress = Signal(int, float)
     finished = Signal()
     cancelled = Signal()
+    notify = Signal(Notification)
     errorRaised = Signal(Exception)
 
     def __init__(self, parent: QObject = None):
@@ -48,13 +55,11 @@ class ConvertTask(QObject):
     def _convert(self, input_brf_list: Iterable[str], input_images: str, output_ebrf: str, detect_running_heads: bool,
                  page_layout: PageLayout):
         selected_plugin = [plugin for plugin in DISCOVERED_PARSER_PLUGINS.values()][0]
-        progress_callback = self.progress.emit
-
-        def is_cancelled() -> bool:
-            return self._cancel_requested
 
         convert(selected_plugin, input_brf_list, input_images, output_ebrf, detect_running_heads, page_layout,
-                progress_callback, parser_context=ParserContext(is_cancelled))
+                self.progress.emit, parser_context=ParserContext(is_cancelled=lambda: self._cancel_requested,
+                                                                 notify=lambda l, m: self.notify.emit(
+                                                                     Notification(l, m))))
 
     def cancel(self):
         self._cancel_requested = True

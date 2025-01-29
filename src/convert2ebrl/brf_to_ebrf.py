@@ -18,7 +18,7 @@ from PySide6.QtWidgets import QWidget, QFormLayout, QCheckBox, QDialog, QDialogB
 from __feature__ import snake_case, true_property
 from brf2ebrl.common import PageLayout, PageNumberPosition
 
-from convert2ebrl.convert_task import ConvertTask
+from convert2ebrl.convert_task import ConvertTask, Notification
 from convert2ebrl.settings import SettingsProfile
 from convert2ebrl.settings.defaults import CONVERSION_LAST_DIR as DEFAULT_LAST_DIR, DEFAULT_SETTINGS_PROFILES_LIST
 from convert2ebrl.settings.keys import CONVERSION_LAST_DIR as LAST_DIR_SETTING_KEY
@@ -455,6 +455,10 @@ class Brf2EbrfDialog(QDialog):
             lines_per_page=self._page_settings_form.lines_per_page
         )
         pd = QProgressDialog("Conversion in progress", "Cancel", 0, number_of_steps)
+        notifications = []
+
+        def on_notification(notification: Notification):
+            notifications.append(notification)
 
         def update_progress(value: float):
             if not pd.was_canceled:
@@ -462,8 +466,11 @@ class Brf2EbrfDialog(QDialog):
 
         def finished_converting():
             update_progress(1)
-            QMessageBox.information(None, "Conversion complete",
-                                    f"Your file has been converted and {output_ebrf} has been created.")
+            if notifications:
+                QMessageBox.warning(None, "Conversion complete but warnings issued", f"Your file has been converted and {output_ebrf} has been created.")
+            else:
+                QMessageBox.information(None, "Conversion complete",
+                                        f"Your file has been converted and {output_ebrf} has been created.")
 
         def error_raised(error: Exception):
             pd.cancel()
@@ -474,6 +481,7 @@ class Brf2EbrfDialog(QDialog):
         t.started.connect(lambda: update_progress(0))
         t.progress.connect(lambda i, p: update_progress((i + p) / num_of_inputs))
         t.finished.connect(finished_converting)
+        t.notify.connect(on_notification)
         t.errorRaised.connect(error_raised)
         QThreadPool.global_instance().start(
             RunnableAdapter(t, brf_list, output_ebrf, self._brf2ebrf_form.image_directory,
