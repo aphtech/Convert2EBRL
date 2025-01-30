@@ -8,6 +8,7 @@ import logging
 import os
 from collections.abc import Iterable
 from dataclasses import replace
+from pathlib import Path
 
 from PySide6.QtCore import QObject, Slot, Signal, QThreadPool, QSettings
 from PySide6.QtGui import QAction
@@ -467,7 +468,12 @@ class Brf2EbrfDialog(QDialog):
         def finished_converting():
             update_progress(1)
             if notifications:
-                QMessageBox.warning(None, "Conversion complete but warnings issued", f"Your file has been converted and {output_ebrf} has been created.")
+                dlg = QMessageBox(QMessageBox.Icon.Warning, "Conversion complete but warnings issued", f"Your file has been converted and {output_ebrf} has been created.", buttons=QMessageBox.StandardButton.Ok)
+                dlg.detailed_text = notifications_as_text(notifications)
+                btn = dlg.add_button("Save warnings to file", QMessageBox.ButtonRole.ActionRole)
+                btn.clicked.disconnect()
+                btn.clicked.connect(lambda x: save_notifications(dlg, notifications, os.path.dirname(output_ebrf)))
+                dlg.exec()
             else:
                 QMessageBox.information(None, "Conversion complete",
                                         f"Your file has been converted and {output_ebrf} has been created.")
@@ -487,3 +493,17 @@ class Brf2EbrfDialog(QDialog):
             RunnableAdapter(t, brf_list, output_ebrf, self._brf2ebrf_form.image_directory,
                             detect_running_heads=self._page_settings_form.detect_running_heads,
                             page_layout=page_layout))
+
+
+def save_notifications(parent: QWidget | None, notifications: Iterable[Notification], default_dir: str):
+    save_path = QFileDialog.get_save_file_name(parent, dir=default_dir, filter="Text file (*.txt)")[0]
+    if save_path:
+        try:
+            Path(save_path).write_text(notifications_as_text(notifications), encoding="UTF-8")
+        except Exception as e:
+            print(e)
+            QMessageBox.critical(parent, "Problem saving", f"Could not save to file {save_path}")
+
+
+def notifications_as_text(notifications):
+    return "\n".join(f"{logging.getLevelName(n.level)}: {n.message}" for n in notifications)

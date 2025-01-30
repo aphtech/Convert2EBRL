@@ -59,7 +59,7 @@ class ConvertTask(QObject):
         convert(selected_plugin, input_brf_list, input_images, output_ebrf, detect_running_heads, page_layout,
                 self.progress.emit, parser_context=ParserContext(is_cancelled=lambda: self._cancel_requested,
                                                                  notify=lambda l, m: self.notify.emit(
-                                                                     Notification(l, m))))
+                                                                     Notification(l, m()))))
 
     def cancel(self):
         self._cancel_requested = True
