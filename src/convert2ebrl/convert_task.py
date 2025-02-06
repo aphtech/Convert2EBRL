@@ -1,4 +1,5 @@
 #  Copyright (c) 2024. American Printing House for the Blind.
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
@@ -49,6 +50,7 @@ class ConvertTask(QObject):
             Path(output_ebrf).unlink(missing_ok=True)
             self.cancelled.emit()
         except Exception as e:
+            logging.exception("Conversion failed because of an exception.")
             Path(output_ebrf).unlink(missing_ok=True)
             self.errorRaised.emit(e)
 
