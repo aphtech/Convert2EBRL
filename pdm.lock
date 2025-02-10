@@ -18,13 +18,13 @@ name = "brf2ebrl"
 version = "0.1.0"
 requires_python = ">=3.10"
 git = "https://github.com/aphtech/brf2ebrl"
-revision = "c9942fd59a9c0879842c65001a9daea037cf167a"
+revision = "f7948ad3b95a61180076f7fb7f1159d0fd2edc1b"
 summary = "A tool for converting BRF to eBRL."
 dependencies = [
     "html5lib>=1.1",
     "lxml>=5.3.0",
-    "pypdf>=4.3.1",
-    "regex>=2023.8.8",
+    "pypdf>=5.3.0",
+    "regex>=2024.11.6",
 ]
 
 [[package]]
@@ -53,14 +53,14 @@ files = [
 
 [[package]]
 name = "nuitka"
-version = "2.6"
+version = "2.6.4"
 summary = "Python compiler with full language support and CPython compatibility"
 dependencies = [
     "ordered-set>=4.1.0",
     "zstandard>=0.15",
 ]
 files = [
-    {file = "Nuitka-2.6.tar.gz", hash = "sha256:7d67293d2fe6a481b5d244008af6fa7511a6f27d0664d1adec9305b6fabe9cc8"},
+    {file = "Nuitka-2.6.4.tar.gz", hash = "sha256:9fc8d5d16b7fd43520312128cd979eea00f5abbffbce59cc2e6f18cd615dfedb"},
 ]
 
 [[package]]
@@ -75,87 +75,73 @@ files = [
 
 [[package]]
 name = "pypdf"
-version = "4.3.1"
-requires_python = ">=3.6"
+version = "5.3.0"
+requires_python = ">=3.8"
 summary = "A pure-python PDF library capable of splitting, merging, cropping, and transforming PDF files"
 dependencies = [
-    "dataclasses; python_version < \"3.7\"",
     "typing-extensions>=4.0; python_version < \"3.11\"",
 ]
 files = [
-    {file = "pypdf-4.3.1-py3-none-any.whl", hash = "sha256:64b31da97eda0771ef22edb1bfecd5deee4b72c3d1736b7df2689805076d6418"},
-    {file = "pypdf-4.3.1.tar.gz", hash = "sha256:b2f37fe9a3030aa97ca86067a56ba3f9d3565f9a791b305c7355d8392c30d91b"},
+    {file = "pypdf-5.3.0-py3-none-any.whl", hash = "sha256:d7b6db242f5f8fdb4990ae11815c394b8e1b955feda0befcce862efd8559c181"},
+    {file = "pypdf-5.3.0.tar.gz", hash = "sha256:08393660dfea25b27ec6fe863fb2f2248e6270da5103fae49e9dea8178741951"},
 ]
 
 [[package]]
 name = "pyside6"
-version = "6.8.1.1"
+version = "6.8.2.1"
 requires_python = "<3.14,>=3.9"
 summary = "Python bindings for the Qt cross-platform application and UI framework"
 dependencies = [
-    "PySide6-Addons==6.8.1.1",
-    "PySide6-Essentials==6.8.1.1",
-    "shiboken6==6.8.1.1",
+    "PySide6-Addons==6.8.2.1",
+    "PySide6-Essentials==6.8.2.1",
+    "shiboken6==6.8.2.1",
 ]
 files = [
-    {file = "PySide6-6.8.1.1-cp39-abi3-win_amd64.whl", hash = "sha256:60a2551053fa69845b893fb821507e2cc89d3a8a8b43726d568acd1250ad44fb"},
+    {file = "PySide6-6.8.2.1-cp39-abi3-win_amd64.whl", hash = "sha256:92361e41727910e3560ea5ba494fabecc76cd20892c9fcb2ced07619081c4e65"},
 ]
 
 [[package]]
 name = "pyside6-addons"
-version = "6.8.1.1"
+version = "6.8.2.1"
 requires_python = "<3.14,>=3.9"
 summary = "Python bindings for the Qt cross-platform application and UI framework (Addons)"
 dependencies = [
-    "PySide6-Essentials==6.8.1.1",
-    "shiboken6==6.8.1.1",
+    "PySide6-Essentials==6.8.2.1",
+    "shiboken6==6.8.2.1",
 ]
 files = [
-    {file = "PySide6_Addons-6.8.1.1-cp39-abi3-win_amd64.whl", hash = "sha256:d8ae86944ac48cc9891666cf71565acebd403a953d0e050be4d41ac490788d0a"},
+    {file = "PySide6_Addons-6.8.2.1-cp39-abi3-win_amd64.whl", hash = "sha256:c761cc45022aa79d8419e671e7fb34a4a3e5b3826f1e68fcb819bd6e3a387fbb"},
 ]
 
 [[package]]
 name = "pyside6-essentials"
-version = "6.8.1.1"
+version = "6.8.2.1"
 requires_python = "<3.14,>=3.9"
 summary = "Python bindings for the Qt cross-platform application and UI framework (Essentials)"
 dependencies = [
-    "shiboken6==6.8.1.1",
+    "shiboken6==6.8.2.1",
 ]
 files = [
-    {file = "PySide6_Essentials-6.8.1.1-cp39-abi3-win_amd64.whl", hash = "sha256:085f12e16db31eb0e802b21c64eabf582f54db6c44463a1f5e1814d897b1f2c0"},
+    {file = "PySide6_Essentials-6.8.2.1-cp39-abi3-win_amd64.whl", hash = "sha256:18de224f09108998d194e60f2fb8a1e86367dd525dd8a6192598e80e6ada649e"},
 ]
 
 [[package]]
 name = "regex"
-version = "2023.8.8"
-requires_python = ">=3.6"
+version = "2024.11.6"
+requires_python = ">=3.8"
 summary = "Alternative regular expression module, to replace re."
 files = [
-    {file = "regex-2023.8.8-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:1e7d84d64c84ad97bf06f3c8cb5e48941f135ace28f450d86af6b6512f1c9a71"},
-    {file = "regex-2023.8.8-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:ce0f9fbe7d295f9922c0424a3637b88c6c472b75eafeaff6f910494a1fa719ef"},
-    {file = "regex-2023.8.8-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:06c57e14ac723b04458df5956cfb7e2d9caa6e9d353c0b4c7d5d54fcb1325c46"},
-    {file = "regex-2023.8.8-cp311-cp311-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:e7a9aaa5a1267125eef22cef3b63484c3241aaec6f48949b366d26c7250e0357"},
-    {file = "regex-2023.8.8-cp311-cp311-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:9b7408511fca48a82a119d78a77c2f5eb1b22fe88b0d2450ed0756d194fe7a9a"},
-    {file = "regex-2023.8.8-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:14dc6f2d88192a67d708341f3085df6a4f5a0c7b03dec08d763ca2cd86e9f559"},
-    {file = "regex-2023.8.8-cp311-cp311-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:48c640b99213643d141550326f34f0502fedb1798adb3c9eb79650b1ecb2f177"},
-    {file = "regex-2023.8.8-cp311-cp311-musllinux_1_1_aarch64.whl", hash = "sha256:0085da0f6c6393428bf0d9c08d8b1874d805bb55e17cb1dfa5ddb7cfb11140bf"},
-    {file = "regex-2023.8.8-cp311-cp311-musllinux_1_1_i686.whl", hash = "sha256:964b16dcc10c79a4a2be9f1273fcc2684a9eedb3906439720598029a797b46e6"},
-    {file = "regex-2023.8.8-cp311-cp311-musllinux_1_1_ppc64le.whl", hash = "sha256:7ce606c14bb195b0e5108544b540e2c5faed6843367e4ab3deb5c6aa5e681208"},
-    {file = "regex-2023.8.8-cp311-cp311-musllinux_1_1_s390x.whl", hash = "sha256:40f029d73b10fac448c73d6eb33d57b34607f40116e9f6e9f0d32e9229b147d7"},
-    {file = "regex-2023.8.8-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:3b8e6ea6be6d64104d8e9afc34c151926f8182f84e7ac290a93925c0db004bfd"},
-    {file = "regex-2023.8.8-cp311-cp311-win32.whl", hash = "sha256:942f8b1f3b223638b02df7df79140646c03938d488fbfb771824f3d05fc083a8"},
-    {file = "regex-2023.8.8-cp311-cp311-win_amd64.whl", hash = "sha256:51d8ea2a3a1a8fe4f67de21b8b93757005213e8ac3917567872f2865185fa7fb"},
-    {file = "regex-2023.8.8.tar.gz", hash = "sha256:fcbdc5f2b0f1cd0f6a56cdb46fe41d2cce1e644e3b68832f3eeebc5fb0f7712e"},
+    {file = "regex-2024.11.6-cp311-cp311-win_amd64.whl", hash = "sha256:02e28184be537f0e75c1f9b2f8847dc51e08e6e171c6bde130b2687e0c33cf60"},
+    {file = "regex-2024.11.6.tar.gz", hash = "sha256:7ab159b063c52a0333c884e4679f8d7a85112ee3078fe3d9004b2dd875585519"},
 ]
 
 [[package]]
 name = "shiboken6"
-version = "6.8.1.1"
+version = "6.8.2.1"
 requires_python = "<3.14,>=3.9"
 summary = "Python/C++ bindings helper module"
 files = [
-    {file = "shiboken6-6.8.1.1-cp39-abi3-win_amd64.whl", hash = "sha256:26f7041c77058a8ecfb9345caa187250b199de79cfb37e33936e5fbd468a7780"},
+    {file = "shiboken6-6.8.2.1-cp39-abi3-win_amd64.whl", hash = "sha256:1b751d47b759762b7ca31bad278d52eca4105d3028880d93979261ebbfba810c"},
 ]
 
 [[package]]
