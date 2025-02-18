@@ -5,11 +5,11 @@
 # Convert2EBRL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with Convert2EBRL. If not, see <https://www.gnu.org/licenses/>.
 
-from PySide6.QtCore import Signal, QObject
+from PySide6.QtCore import Signal, QObject, SignalInstance
 from PySide6.QtWidgets import QWidget, QFormLayout, QCheckBox, QSpinBox, QComboBox
 from brf2ebrl.common import PageNumberPosition
 
-# noinspect PyUnresolvedReferences
+# noinspection PyUnresolvedReferences
 from __feature__ import snake_case, true_property
 _PAGE_NUMBER_POSITIONS_DICT = {
     PageNumberPosition.NONE: "None",
@@ -68,7 +68,7 @@ class ConversionPageSettingsWidget(QWidget):
         self._detect_running_heads_checkbox.toggled.connect(self.detectRunningHeadsChanged.emit)
         self._cells_per_line_spinbox.valueChanged.connect(self.cellsPerLineChanged.emit)
         self._lines_per_page_spinbox.valueChanged.connect(self.linesPerPageChanged.emit)
-        def form_update(change_signal: Signal, value: PageNumberPosition):
+        def form_update(change_signal: SignalInstance, value: PageNumberPosition):
             change_signal.emit(value)
             self._update_validity()
         self._odd_bpn_position.currentIndexChanged.connect(

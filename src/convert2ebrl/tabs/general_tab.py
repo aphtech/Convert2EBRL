@@ -14,7 +14,7 @@ from convert2ebrl.settings.defaults import CONVERSION_LAST_DIR as DEFAULT_LAST_D
 from convert2ebrl.settings.keys import CONVERSION_LAST_DIR as LAST_DIR_SETTING_KEY
 from convert2ebrl.widgets import FilePickerWidget
 
-# noinspect PyUnresolvedReferences
+# noinspection PyUnresolvedReferences
 from __feature__ import snake_case, true_property
 
 class ConversionGeneralSettingsWidget(QWidget):
