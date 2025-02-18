@@ -22,7 +22,7 @@ class ConversionGeneralSettingsWidget(QWidget):
     imagesDirectoryChanged = Signal(str)
     outputEbrfChanged = Signal(str)
 
-    def __init__(self, parent: QObject = None):
+    def __init__(self, parent: QObject | None = None):
         super().__init__(parent)
         layout = QFormLayout(self)
         self._input_type_combo = QComboBox()

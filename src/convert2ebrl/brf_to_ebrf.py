@@ -23,6 +23,7 @@ from convert2ebrl.convert_task import ConvertTask, Notification
 from convert2ebrl.settings import SettingsProfile
 from convert2ebrl.settings.defaults import DEFAULT_SETTINGS_PROFILES_LIST
 from convert2ebrl.tabs.general_tab import ConversionGeneralSettingsWidget
+from convert2ebrl.tabs.metadata_tab import MetadataWidget
 from convert2ebrl.tabs.page_settings_tab import ConversionPageSettingsWidget
 from convert2ebrl.utils import RunnableAdapter, load_settings_profiles, save_settings_profiles, load_settings_profile, \
     save_settings_profile
@@ -123,6 +124,7 @@ class Brf2EbrfDialog(QDialog):
         tab_widget.add_tab(self._brf2ebrf_form, "General")
         self._page_settings_form = ConversionPageSettingsWidget()
         tab_widget.add_tab(self._page_settings_form, "Page settings")
+        tab_widget.add_tab(MetadataWidget(), "Metadata")
         layout.add_widget(tab_widget)
         self.button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         b = self.button_box.button(QDialogButtonBox.StandardButton.Close)
