@@ -20,7 +20,7 @@ class MetadataItem:
 class MetaDataTableModel(QAbstractTableModel):
     def __init__(self, metadata_entries: list[MetadataItem]=None, parent=None):
         super().__init__(parent)
-        self._metadata_entries = metadata_entries if metadata_entries is not None else [MetadataItem("Author", "Me"), MetadataItem("Title", "Some book"), MetadataItem("Copyright", "Some corp")]
+        self._metadata_entries = metadata_entries if metadata_entries is not None else [MetadataItem("Author", "John Smith"), MetadataItem("Title", "Some book"), MetadataItem("Date", "2025-02-02")]
 
     def row_count(self, index: QModelIndex | QPersistentModelIndex = QModelIndex()):
         return len(self._metadata_entries)
