@@ -4,23 +4,18 @@
 # Convert2EBRL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 # Convert2EBRL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with Convert2EBRL. If not, see <https://www.gnu.org/licenses/>.
-from dataclasses import dataclass
 
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, QPersistentModelIndex, QObject, Qt
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QTableView, QAbstractItemView
-
 # noinspection PyUnresolvedReferences
 from __feature__ import snake_case, true_property
+from brf2ebrl.utils.metadata import DEFAULT_METADATA, MetadataItem
 
-@dataclass
-class MetadataItem:
-    name: str
-    value: str
 
 class MetaDataTableModel(QAbstractTableModel):
     def __init__(self, metadata_entries: list[MetadataItem]=None, parent=None):
         super().__init__(parent)
-        self._metadata_entries = metadata_entries if metadata_entries is not None else [MetadataItem("Author", "John Smith"), MetadataItem("Title", "Some book"), MetadataItem("Date", "2025-02-02")]
+        self._metadata_entries = metadata_entries if metadata_entries is not None else DEFAULT_METADATA
 
     def row_count(self, index: QModelIndex | QPersistentModelIndex = QModelIndex()):
         return len(self._metadata_entries)
