@@ -4,8 +4,9 @@
 # Convert2EBRL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 # Convert2EBRL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with Convert2EBRL. If not, see <https://www.gnu.org/licenses/>.
+import datetime
 
-from PySide6.QtCore import QAbstractTableModel, QModelIndex, QPersistentModelIndex, QObject, Qt
+from PySide6.QtCore import QAbstractTableModel, QModelIndex, QPersistentModelIndex, QObject, Qt, QDate
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QTableView, QAbstractItemView
 # noinspection PyUnresolvedReferences
 from __feature__ import snake_case, true_property
@@ -24,15 +25,21 @@ class MetaDataTableModel(QAbstractTableModel):
     def data(self, index, role=Qt.ItemDataRole.DisplayRole):
         if index.is_valid() and 0 <= index.row() < len(self._metadata_entries):
             item = self._metadata_entries[index.row()]
-            if role == Qt.ItemDataRole.DisplayRole:
-                return item.value
-            elif role == Qt.ItemDataRole.EditRole:
-                return item.value
+            if role in (Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole):
+                match item.value:
+                    case datetime.date(y, m, d):
+                        return QDate(y, m, d)
+                    case value:
+                        return value
         return None
     def set_data(self, index, value, /, role = Qt.ItemDataRole.EditRole):
         if index.is_valid() and 0 <= index.row() < len(self._metadata_entries):
             item = self._metadata_entries[index.row()]
-            item.value = value
+            match value:
+                case QDate(y, m, d):
+                    item.value = datetime.date(y, m, d)
+                case _:
+                    item.value = value
             self.dataChanged.emit(index, index, 0)
             return True
         return False
@@ -54,6 +61,7 @@ class MetadataWidget(QWidget):
         self._table_model = MetaDataTableModel()
         layout = QVBoxLayout(self)
         self._table_view = QTableView()
+        self._table_view.accessible_description = "Press F2 to edit a item."
         self._table_view.horizontal_header().hide()
         self._table_view.selection_mode = QAbstractItemView.SelectionMode.SingleSelection
         self._table_view.tab_key_navigation = False
