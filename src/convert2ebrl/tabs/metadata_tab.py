@@ -27,7 +27,7 @@ class MetaDataTableModel(QAbstractTableModel):
             item = self._metadata_entries[index.row()]
             if role in (Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole):
                 match item.value:
-                    case datetime.date(y, m, d):
+                    case datetime.date(year=y, month=m, day=d):
                         return QDate(y, m, d)
                     case value:
                         return value
@@ -36,8 +36,8 @@ class MetaDataTableModel(QAbstractTableModel):
         if index.is_valid() and 0 <= index.row() < len(self._metadata_entries):
             item = self._metadata_entries[index.row()]
             match value:
-                case QDate(y, m, d):
-                    item.value = datetime.date(y, m, d)
+                case QDate(year=y, month=m, date=d):
+                    item.value = datetime.date(year=y, month=m, day=d)
                 case _:
                     item.value = value
             self.dataChanged.emit(index, index, 0)
