@@ -23,6 +23,8 @@ from convert2ebrl.settings.defaults import DEFAULT_SETTINGS_PROFILES_LIST
 from convert2ebrl.utils import save_settings_profiles, get_app_config_path
 
 def check_release(exe_file_name: str) -> bool:
+    if not os.path.exists(exe_file_name) and os.path.isfile(exe_file_name):
+        return False
     exe_hash = get_file_hash(exe_file_name).strip()
     app_dir = os.path.dirname(exe_file_name)
     hash_path = Path(os.path.join(app_dir, "release.hash"))
