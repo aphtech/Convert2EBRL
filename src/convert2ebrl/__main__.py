@@ -48,7 +48,6 @@ def run_app(args: Sequence[str]):
             QMessageBox.warning(None, "Not for production use!", "This is not a production ready build and is only for testing purposes. No other use is recommended and is at the user's own risk.")
         w = Brf2EbrfDialog()
         w.show()
-
     QTimer.single_shot(0, starting_app)
     app.exec()
 
