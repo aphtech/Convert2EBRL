@@ -1,0 +1,16 @@
+#  Copyright (c) 2024. American Printing House for the Blind.
+#
+# This file is part of Convert2EBRL.
+# Convert2EBRL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+# Convert2EBRL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License along with Convert2EBRL. If not, see <https://www.gnu.org/licenses/>.
+import hashlib
+import sys
+
+
+def get_file_hash(filename: str) -> str:
+    with open(filename, "rb") as f:
+        return hashlib.file_digest(f, hashlib.sha256).hexdigest()
+
+if __name__ == "__main__":
+    print("\n".join(get_file_hash(filename) for filename in sys.argv[1:]))
