@@ -25,8 +25,8 @@ from convert2ebrl.utils import save_settings_profiles, get_app_config_path
 def check_release(exe_file_name: str) -> bool:
     if not os.path.exists(exe_file_name) and os.path.isfile(exe_file_name):
         return False
-    exe_hash = get_file_hash(exe_file_name).strip()
     app_dir = os.path.dirname(exe_file_name)
+    exe_hash = get_file_hash([exe_file_name, os.path.join(app_dir, "build-data.txt")]).strip()
     hash_path = Path(os.path.join(app_dir, "release.hash"))
     return hash_path.exists() and Path(hash_path).read_text(encoding="UTF-8").strip() == exe_hash
 
