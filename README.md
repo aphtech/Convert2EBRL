@@ -6,6 +6,10 @@ A GUI application for converting files to eBraille.
 
 As there is no published version of the eBraille standard, currently this tool is unable to produce files which are guaranteed to comply with the final eBraille specification. Once a eBraille specification is published this tool will then recieve updates to produce files to comply with that specification.
 
+## Development status
+
+This project is currently being actively developed. Only git tags starting with `release/` are deemed to be end user ready. All other forms of the code are deemed to be development code and so is not recommended for any use other than testing.
+
 ## Developer information
 
 ### Building
