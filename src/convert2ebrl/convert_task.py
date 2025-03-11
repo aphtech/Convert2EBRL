@@ -61,7 +61,7 @@ class ConvertTask(QObject):
         parser_options = {EBrailleParserOptions.detect_running_heads: detect_running_heads, EBrailleParserOptions.page_layout: page_layout, EBrailleParserOptions.images_path: input_images}
         parser_context = ParserContext(is_cancelled=lambda: self._cancel_requested,
                                 notify=lambda l, m: self.notify.emit(Notification(l, m())), options=parser_options)
-        convert(selected_plugin, input_brf_list, input_images, output_ebrf, detect_running_heads, page_layout,
+        convert(selected_plugin, input_brf_list, output_ebrf,
                 self.progress.emit, parser_context=parser_context)
 
     def cancel(self):
