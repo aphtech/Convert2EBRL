@@ -2,14 +2,14 @@
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Any
 
 from PySide6.QtCore import QObject, Signal
 # noinspection PyUnresolvedReferences
 from __feature__ import snake_case, true_property
 from brf2ebrl import convert
 from brf2ebrl.common import PageLayout, PageNumberPosition
-from brf2ebrl.parser import NotifyLevel, ParsingCancelledException, ParserContext, EBrailleParserOptions
+from brf2ebrl.parser import NotifyLevel, ParsingCancelledException, ParserContext
 from brf2ebrl.plugin import find_plugins
 
 DISCOVERED_PARSER_PLUGINS = find_plugins()
@@ -39,12 +39,10 @@ class ConvertTask(QObject):
         super().__init__(parent=parent)
         self._cancel_requested = False
 
-    def __call__(self, input_brf_list: Iterable[str], output_ebrf: str, input_images: str | None,
-                 detect_running_heads: bool = True,
-                 page_layout: PageLayout = _DEFAULT_PAGE_LAYOUT):
+    def __call__(self, input_brf_list: Iterable[str], output_ebrf: str, parser_options: dict[str, Any]):
         self.started.emit()
         try:
-            self._convert(input_brf_list, input_images, output_ebrf, detect_running_heads, page_layout)
+            self._convert(input_brf_list, output_ebrf, parser_options)
             self.finished.emit()
         except ParsingCancelledException:
             Path(output_ebrf).unlink(missing_ok=True)
@@ -54,11 +52,9 @@ class ConvertTask(QObject):
             Path(output_ebrf).unlink(missing_ok=True)
             self.errorRaised.emit(e)
 
-    def _convert(self, input_brf_list: Iterable[str], input_images: str, output_ebrf: str, detect_running_heads: bool,
-                 page_layout: PageLayout):
+    def _convert(self, input_brf_list: Iterable[str], output_ebrf: str, parser_options: dict[str, Any]):
         selected_plugin = [plugin for plugin in DISCOVERED_PARSER_PLUGINS.values()][0]
 
-        parser_options = {EBrailleParserOptions.detect_running_heads: detect_running_heads, EBrailleParserOptions.page_layout: page_layout, EBrailleParserOptions.images_path: input_images}
         parser_context = ParserContext(is_cancelled=lambda: self._cancel_requested,
                                 notify=lambda l, m: self.notify.emit(Notification(l, m())), options=parser_options)
         convert(selected_plugin, input_brf_list, output_ebrf,

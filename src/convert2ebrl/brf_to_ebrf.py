@@ -17,6 +17,7 @@ from PySide6.QtWidgets import QWidget, QDialog, QDialogButtonBox, QVBoxLayout, \
     QInputDialog
 # noinspection PyUnresolvedReferences
 from __feature__ import snake_case, true_property
+from brf2ebrl.parser import EBrailleParserOptions
 from brf2ebrl.common import PageLayout
 
 from convert2ebrl.convert_task import ConvertTask, Notification
@@ -44,6 +45,7 @@ class SettingsProfilesWidget(QWidget):
         self._profile_combo.placeholder_text = "Custom"
         layout.add_widget(self._profile_combo)
         tool_label.set_buddy(self._profile_combo)
+
         def update_profiles(profiles: Iterable[SettingsProfile], sync_settings: bool = False):
             if sync_settings:
                 save_settings_profiles(profiles, clear_existing=True)
@@ -51,52 +53,64 @@ class SettingsProfilesWidget(QWidget):
             for profile in profiles:
                 self._profile_combo.add_item(profile.name, profile)
             self._profile_combo.current_index = -1 if self._profile_combo.count < 0 else 0
+
         update_profiles(orig_profiles)
         profile_menu = QMenu(parent=self)
+
         def save_profile():
             while True:
                 text, ok = QInputDialog.get_text(self, "Name the profile", "Profile name:")
                 if not ok:
                     return
                 if not text:
-                    QMessageBox.warning(self, "Name empty", "A profile name cannot be empty, please provide a profile name.")
+                    QMessageBox.warning(self, "Name empty",
+                                        "A profile name cannot be empty, please provide a profile name.")
                     continue
                 profiles = list(self.settings_profiles)
                 profile = replace(self.current_settings_profile, name=text)
                 if text in [p.name for p in profiles]:
-                    result = QMessageBox.question(self, "Overwrite profile", f"A profile named {text} already exists, are you sure you want to overwrite it?")
+                    result = QMessageBox.question(self, "Overwrite profile",
+                                                  f"A profile named {text} already exists, are you sure you want to overwrite it?")
                     if result != QMessageBox.StandardButton.Yes:
                         continue
                     profiles = [p for p in profiles if p.name != text]
                 profiles.insert(0, profile)
                 update_profiles(profiles, sync_settings=True)
                 return
+
         profile_menu.add_action("Save profile...", save_profile)
+
         def delete_profile(profile: SettingsProfile):
-            result = QMessageBox.question(self, "Delete profile", f"Are you sure you want to delete profile {profile.name}")
+            result = QMessageBox.question(self, "Delete profile",
+                                          f"Are you sure you want to delete profile {profile.name}")
             if result == QMessageBox.StandardButton.Yes:
                 profiles = list(self.settings_profiles)
                 profiles.remove(profile)
                 update_profiles(profiles, sync_settings=True)
+
         delete_action = QAction("Delete profile...", self)
         self._profile_combo.currentIndexChanged.connect(lambda x: delete_action.set_disabled(x < 0))
         delete_action.triggered.connect(lambda: delete_profile(self._profile_combo.current_data()))
         profile_menu.add_action(delete_action)
+
         def reset_profiles():
-            result = QMessageBox.question(self, "Reset profiles", "Are you sure you want to reset profiles to defaults?")
+            result = QMessageBox.question(self, "Reset profiles",
+                                          "Are you sure you want to reset profiles to defaults?")
             if result == QMessageBox.StandardButton.Yes:
                 update_profiles(DEFAULT_SETTINGS_PROFILES_LIST, sync_settings=True)
+
         profile_menu.add_action("Reset profiles...", reset_profiles)
         profile_menu_button = QPushButton("...")
         profile_menu_button.accessible_name = "Profiles menu"
         profile_menu_button.set_menu(profile_menu)
         layout.add_widget(profile_menu_button)
         # Notify of saved profile changes, custom profiles are notified in setter.
-        self._profile_combo.currentIndexChanged.connect(lambda x: self.currentSettingsProfileChanged.emit(self._profile_combo.item_data(x)) if x >= 0 else None)
+        self._profile_combo.currentIndexChanged.connect(
+            lambda x: self.currentSettingsProfileChanged.emit(self._profile_combo.item_data(x)) if x >= 0 else None)
 
     @property
     def settings_profiles(self) -> Iterable[SettingsProfile]:
-        return [self._profile_combo.item_data(i) for i in range(0,self._profile_combo.count)]
+        return [self._profile_combo.item_data(i) for i in range(0, self._profile_combo.count)]
 
     @property
     def current_settings_profile(self) -> SettingsProfile:
@@ -133,6 +147,7 @@ class Brf2EbrfDialog(QDialog):
         self._convert_button = self.button_box.add_button("Convert", QDialogButtonBox.ButtonRole.ApplyRole)
         self._convert_button.default = True
         layout.add_widget(self.button_box)
+
         def restore_from_settings():
             settings = QSettings()
             if "ConverterLastProfile" in settings.child_groups():
@@ -141,6 +156,7 @@ class Brf2EbrfDialog(QDialog):
                 settings.end_group()
             self._on_settings_profile_changed(self._profiles_tool.current_settings_profile)
             self._update_validity()
+
         restore_from_settings()
         self._profiles_tool.currentSettingsProfileChanged.connect(self._on_settings_profile_changed)
         self.button_box.rejected.connect(self.reject)
@@ -149,13 +165,18 @@ class Brf2EbrfDialog(QDialog):
         self._brf2ebrf_form.imagesDirectoryChanged.connect(lambda x: self._update_validity())
         self._brf2ebrf_form.outputEbrfChanged.connect(lambda x: self._update_validity())
         self._page_settings_form.isValidChanged.connect(lambda x: self._update_validity())
-        self._page_settings_form.detectRunningHeadsChanged.connect(lambda x: self._on_settings_changed(detect_runningheads=x))
+        self._page_settings_form.detectRunningHeadsChanged.connect(
+            lambda x: self._on_settings_changed(detect_runningheads=x))
         self._page_settings_form.cellsPerLineChanged.connect(lambda x: self._on_settings_changed(cells_per_line=x))
         self._page_settings_form.linesPerPageChanged.connect(lambda x: self._on_settings_changed(lines_per_page=x))
-        self._page_settings_form.oddBraillePageNumberChanged.connect(lambda x: self._on_settings_changed(odd_bpn_position=x))
-        self._page_settings_form.evenBraillePageNumberChanged.connect(lambda x: self._on_settings_changed(even_bpn_position=x))
-        self._page_settings_form.oddPrintPageNumberChanged.connect(lambda x: self._on_settings_changed(odd_ppn_position=x))
-        self._page_settings_form.evenPrintPageNumberChanged.connect(lambda x: self._on_settings_changed(even_ppn_position=x))
+        self._page_settings_form.oddBraillePageNumberChanged.connect(
+            lambda x: self._on_settings_changed(odd_bpn_position=x))
+        self._page_settings_form.evenBraillePageNumberChanged.connect(
+            lambda x: self._on_settings_changed(even_bpn_position=x))
+        self._page_settings_form.oddPrintPageNumberChanged.connect(
+            lambda x: self._on_settings_changed(odd_ppn_position=x))
+        self._page_settings_form.evenPrintPageNumberChanged.connect(
+            lambda x: self._on_settings_changed(even_ppn_position=x))
 
     def _on_settings_changed(self, **kwargs):
         current_profile = self._profiles_tool.current_settings_profile
@@ -180,15 +201,17 @@ class Brf2EbrfDialog(QDialog):
     @Slot()
     def _update_validity(self):
         general_settings = self._brf2ebrf_form
-        is_valid = self._page_settings_form.is_valid and all([general_settings.input_brfs != [], general_settings.image_directory != "",
-                              general_settings.output_ebrf != ""])
+        is_valid = self._page_settings_form.is_valid and all(
+            [general_settings.input_brfs != [], general_settings.image_directory != "",
+             general_settings.output_ebrf != ""])
         self._convert_button.enabled = is_valid
 
     @Slot()
     def on_apply(self):
         number_of_steps = 1000
         brf_list = [brf for f in self._brf2ebrf_form.input_brfs for brf in
-                    ([os.path.join(f, b) for b in os.listdir(f) if os.path.splitext(b)[1].lower() == ".brf"] if os.path.isdir(f) else [f])]
+                    ([os.path.join(f, b) for b in os.listdir(f) if
+                      os.path.splitext(b)[1].lower() == ".brf"] if os.path.isdir(f) else [f])]
         num_of_inputs = len(brf_list)
         output_ebrf = self._brf2ebrf_form.output_ebrf
         if os.path.exists(output_ebrf):
@@ -206,6 +229,9 @@ class Brf2EbrfDialog(QDialog):
             cells_per_line=self._page_settings_form.cells_per_line,
             lines_per_page=self._page_settings_form.lines_per_page
         )
+        parser_options = {EBrailleParserOptions.images_path: self._brf2ebrf_form.image_directory,
+                          EBrailleParserOptions.page_layout: page_layout,
+                          EBrailleParserOptions.detect_running_heads: self._page_settings_form.detect_running_heads}
         pd = QProgressDialog("Conversion in progress", "Cancel", 0, number_of_steps)
         notifications = []
 
@@ -219,7 +245,9 @@ class Brf2EbrfDialog(QDialog):
         def finished_converting():
             update_progress(1)
             if notifications:
-                dlg = QMessageBox(QMessageBox.Icon.Warning, "Conversion complete but warnings issued", f"Your file has been converted and {output_ebrf} has been created.", buttons=QMessageBox.StandardButton.Ok)
+                dlg = QMessageBox(QMessageBox.Icon.Warning, "Conversion complete but warnings issued",
+                                  f"Your file has been converted and {output_ebrf} has been created.",
+                                  buttons=QMessageBox.StandardButton.Ok)
                 dlg.detailed_text = notifications_as_text(notifications)
                 btn = dlg.add_button("Save warnings to file", QMessageBox.ButtonRole.ActionRole)
                 btn.clicked.disconnect()
@@ -241,9 +269,7 @@ class Brf2EbrfDialog(QDialog):
         t.notify.connect(on_notification)
         t.errorRaised.connect(error_raised)
         QThreadPool.global_instance().start(
-            RunnableAdapter(t, brf_list, output_ebrf, self._brf2ebrf_form.image_directory,
-                            detect_running_heads=self._page_settings_form.detect_running_heads,
-                            page_layout=page_layout))
+            RunnableAdapter(t, brf_list, output_ebrf, parser_options=parser_options))
 
 
 def save_notifications(parent: QWidget | None, notifications: Iterable[Notification], default_dir: str):
