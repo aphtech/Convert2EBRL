@@ -10,9 +10,8 @@ from __feature__ import snake_case, true_property
 from brf2ebrl import convert
 from brf2ebrl.common import PageLayout, PageNumberPosition
 from brf2ebrl.parser import NotifyLevel, ParsingCancelledException, ParserContext
-from brf2ebrl.plugin import find_plugins
+from brf2ebrl.plugin import find_plugins, Plugin
 
-DISCOVERED_PARSER_PLUGINS = find_plugins()
 _DEFAULT_PAGE_LAYOUT = PageLayout(
     odd_braille_page_number=PageNumberPosition.BOTTOM_RIGHT,
     odd_print_page_number=PageNumberPosition.TOP_RIGHT,
@@ -39,10 +38,10 @@ class ConvertTask(QObject):
         super().__init__(parent=parent)
         self._cancel_requested = False
 
-    def __call__(self, input_brf_list: Iterable[str], output_ebrf: str, parser_options: dict[str, Any]):
+    def __call__(self, selected_plugin: Plugin, input_brf_list: Iterable[str], output_ebrf: str, parser_options: dict[str, Any]):
         self.started.emit()
         try:
-            self._convert(input_brf_list, output_ebrf, parser_options)
+            self._convert(selected_plugin, input_brf_list, output_ebrf, parser_options)
             self.finished.emit()
         except ParsingCancelledException:
             Path(output_ebrf).unlink(missing_ok=True)
@@ -52,8 +51,7 @@ class ConvertTask(QObject):
             Path(output_ebrf).unlink(missing_ok=True)
             self.errorRaised.emit(e)
 
-    def _convert(self, input_brf_list: Iterable[str], output_ebrf: str, parser_options: dict[str, Any]):
-        selected_plugin = [plugin for plugin in DISCOVERED_PARSER_PLUGINS.values()][0]
+    def _convert(self, selected_plugin: Plugin, input_brf_list: Iterable[str], output_ebrf: str, parser_options: dict[str, Any]):
 
         parser_context = ParserContext(is_cancelled=lambda: self._cancel_requested,
                                 notify=lambda l, m: self.notify.emit(Notification(l, m())), options=parser_options)

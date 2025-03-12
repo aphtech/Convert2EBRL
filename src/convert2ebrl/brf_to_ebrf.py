@@ -17,8 +17,9 @@ from PySide6.QtWidgets import QWidget, QDialog, QDialogButtonBox, QVBoxLayout, \
     QInputDialog
 # noinspection PyUnresolvedReferences
 from __feature__ import snake_case, true_property
-from brf2ebrl.parser import EBrailleParserOptions
 from brf2ebrl.common import PageLayout
+from brf2ebrl.parser import EBrailleParserOptions
+from brf2ebrl.plugin import  find_plugins
 
 from convert2ebrl.convert_task import ConvertTask, Notification
 from convert2ebrl.settings import SettingsProfile
@@ -29,6 +30,8 @@ from convert2ebrl.tabs.page_settings_tab import ConversionPageSettingsWidget
 from convert2ebrl.utils import RunnableAdapter, load_settings_profiles, save_settings_profiles, load_settings_profile, \
     save_settings_profile
 
+
+DISCOVERED_PARSER_PLUGINS = find_plugins()
 
 class SettingsProfilesWidget(QWidget):
     currentSettingsProfileChanged = Signal(SettingsProfile)
@@ -269,7 +272,7 @@ class Brf2EbrfDialog(QDialog):
         t.notify.connect(on_notification)
         t.errorRaised.connect(error_raised)
         QThreadPool.global_instance().start(
-            RunnableAdapter(t, brf_list, output_ebrf, parser_options=parser_options))
+            RunnableAdapter(t, list(DISCOVERED_PARSER_PLUGINS.values())[0], brf_list, output_ebrf, parser_options=parser_options))
 
 
 def save_notifications(parent: QWidget | None, notifications: Iterable[Notification], default_dir: str):
