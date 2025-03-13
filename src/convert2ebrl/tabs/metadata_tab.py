@@ -9,13 +9,13 @@ from collections.abc import Iterable, Sequence
 
 from PySide6.QtCore import QModelIndex, QPersistentModelIndex, QObject, Qt, QDate, \
     QAbstractListModel
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QTableView, QAbstractItemView, QGroupBox
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QTableView, QAbstractItemView, QGroupBox, QHBoxLayout, QPushButton
 # noinspection PyUnresolvedReferences
 from __feature__ import snake_case, true_property
 from brf2ebrl.utils.metadata import DEFAULT_METADATA, MetadataItem
 
 
-class MetaDataTableModel(QAbstractListModel):
+class MetadataTableModel(QAbstractListModel):
     def __init__(self, metadata_entries: list[MetadataItem]=None, parent=None):
         super().__init__(parent)
         self._metadata_entries = metadata_entries if metadata_entries is not None else DEFAULT_METADATA
@@ -75,10 +75,10 @@ class MetaDataTableModel(QAbstractListModel):
             return Qt.ItemFlag.ItemIsEnabled
         return QAbstractListModel.flags(self, index) | Qt.ItemFlag.ItemIsEditable
 
-class MetadataWidget(QWidget):
-    def __init__(self, parent: QObject | None = None):
-        super().__init__(parent)
-        self._table_model = MetaDataTableModel()
+class MetadataTableWidget(QGroupBox):
+    def __init__(self, title: str, editable: bool=False, parent: QObject|None=None):
+        super().__init__(title, parent)
+        self._table_model = MetadataTableModel()
         layout = QVBoxLayout(self)
         self._table_view = QTableView()
         self._table_view.accessible_description = "Press F2 to edit a item."
@@ -86,10 +86,25 @@ class MetadataWidget(QWidget):
         self._table_view.selection_mode = QAbstractItemView.SelectionMode.SingleSelection
         self._table_view.tab_key_navigation = False
         self._table_view.set_model(self._table_model)
-        required_metadata_group = QGroupBox("Required metadata")
-        required_metadata_layout = QVBoxLayout(required_metadata_group)
-        required_metadata_layout.add_widget(self._table_view)
-        layout.add_widget(required_metadata_group)
+        layout.add_widget(self._table_view)
+        if editable:
+            button_layout = QHBoxLayout()
+            add_button = QPushButton("Add")
+            button_layout.add_widget(add_button)
+            remove_button = QPushButton("Remove")
+            button_layout.add_widget(remove_button)
+            layout.add_layout(button_layout)
     @property
     def metadata_entries(self) -> Iterable[MetadataItem]:
         return self._table_model.metadata_entries
+
+
+class MetadataWidget(QWidget):
+    def __init__(self, parent: QObject | None = None):
+        super().__init__(parent)
+        layout = QVBoxLayout(self)
+        self._required_metadata = MetadataTableWidget("Required metadata", editable=False)
+        layout.add_widget(self._required_metadata)
+    @property
+    def metadata_entries(self) -> Iterable[MetadataItem]:
+        return self._required_metadata.metadata_entries
