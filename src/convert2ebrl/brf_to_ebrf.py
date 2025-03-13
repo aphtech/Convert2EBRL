@@ -141,7 +141,8 @@ class Brf2EbrfDialog(QDialog):
         tab_widget.add_tab(self._brf2ebrf_form, "General")
         self._page_settings_form = ConversionPageSettingsWidget()
         tab_widget.add_tab(self._page_settings_form, "Page settings")
-        tab_widget.add_tab(MetadataWidget(), "Metadata")
+        self._metadata_form = MetadataWidget()
+        tab_widget.add_tab(self._metadata_form, "Metadata")
         layout.add_widget(tab_widget)
         self.button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         b = self.button_box.button(QDialogButtonBox.StandardButton.Close)
@@ -234,7 +235,8 @@ class Brf2EbrfDialog(QDialog):
         )
         parser_options = {EBrailleParserOptions.images_path: self._brf2ebrf_form.image_directory,
                           EBrailleParserOptions.page_layout: page_layout,
-                          EBrailleParserOptions.detect_running_heads: self._page_settings_form.detect_running_heads}
+                          EBrailleParserOptions.detect_running_heads: self._page_settings_form.detect_running_heads,
+                          EBrailleParserOptions.metadata_entries: self._metadata_form.metadata_entries}
         pd = QProgressDialog("Conversion in progress", "Cancel", 0, number_of_steps)
         notifications = []
 

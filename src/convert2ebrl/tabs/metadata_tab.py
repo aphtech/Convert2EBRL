@@ -5,6 +5,7 @@
 # Convert2EBRL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with Convert2EBRL. If not, see <https://www.gnu.org/licenses/>.
 import datetime
+from collections.abc import Iterable
 
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, QPersistentModelIndex, QObject, Qt, QDate
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QTableView, QAbstractItemView
@@ -17,6 +18,10 @@ class MetaDataTableModel(QAbstractTableModel):
     def __init__(self, metadata_entries: list[MetadataItem]=None, parent=None):
         super().__init__(parent)
         self._metadata_entries = metadata_entries if metadata_entries is not None else DEFAULT_METADATA
+
+    @property
+    def metadata_entries(self) -> Iterable[MetadataItem]:
+        return self._metadata_entries
 
     def row_count(self, index: QModelIndex | QPersistentModelIndex = QModelIndex()):
         return len(self._metadata_entries)
@@ -36,7 +41,7 @@ class MetaDataTableModel(QAbstractTableModel):
         if index.is_valid() and 0 <= index.row() < len(self._metadata_entries):
             item = self._metadata_entries[index.row()]
             match value:
-                case QDate(year=y, month=m, date=d):
+                case QDate(year=y, month=m, day=d):
                     item.value = datetime.date(year=y, month=m, day=d)
                 case _:
                     item.value = value
@@ -67,3 +72,6 @@ class MetadataWidget(QWidget):
         self._table_view.tab_key_navigation = False
         self._table_view.set_model(self._table_model)
         layout.add_widget(self._table_view)
+    @property
+    def metadata_entries(self) -> Iterable[MetadataItem]:
+        return self._table_model.metadata_entries
