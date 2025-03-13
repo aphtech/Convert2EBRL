@@ -5,16 +5,17 @@
 # Convert2EBRL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with Convert2EBRL. If not, see <https://www.gnu.org/licenses/>.
 import datetime
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 
-from PySide6.QtCore import QAbstractTableModel, QModelIndex, QPersistentModelIndex, QObject, Qt, QDate
+from PySide6.QtCore import QModelIndex, QPersistentModelIndex, QObject, Qt, QDate, \
+    QAbstractListModel
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QTableView, QAbstractItemView, QGroupBox
 # noinspection PyUnresolvedReferences
 from __feature__ import snake_case, true_property
 from brf2ebrl.utils.metadata import DEFAULT_METADATA, MetadataItem
 
 
-class MetaDataTableModel(QAbstractTableModel):
+class MetaDataTableModel(QAbstractListModel):
     def __init__(self, metadata_entries: list[MetadataItem]=None, parent=None):
         super().__init__(parent)
         self._metadata_entries = metadata_entries if metadata_entries is not None else DEFAULT_METADATA
@@ -25,8 +26,19 @@ class MetaDataTableModel(QAbstractTableModel):
 
     def row_count(self, index: QModelIndex | QPersistentModelIndex = QModelIndex()):
         return len(self._metadata_entries)
-    def column_count(self, index: QModelIndex | QPersistentModelIndex = QModelIndex()):
-        return 1
+
+    def insert_rows(self, row: int, data: Sequence[MetadataItem], parent: QModelIndex=QModelIndex()) -> bool:
+        self.begin_insert_rows(QModelIndex(), row, row + len(data) - 1)
+        for i, v in enumerate(data):
+            self._metadata_entries.insert(row + i, v)
+        self.end_insert_rows()
+        return True
+
+    def remove_rows(self, row: int, count: int=1, parent:QModelIndex=QModelIndex()) -> bool:
+        self.begin_remove_rows(QModelIndex(), row, row + count - 1)
+        del self._metadata_entries[row:row+count]
+        self.end_remove_rows()
+        return True
     def data(self, index, role=Qt.ItemDataRole.DisplayRole):
         if index.is_valid() and 0 <= index.row() < len(self._metadata_entries):
             item = self._metadata_entries[index.row()]
@@ -37,6 +49,7 @@ class MetaDataTableModel(QAbstractTableModel):
                     case value:
                         return value
         return None
+
     def set_data(self, index, value, /, role = Qt.ItemDataRole.EditRole):
         if index.is_valid() and 0 <= index.row() < len(self._metadata_entries):
             item = self._metadata_entries[index.row()]
@@ -48,6 +61,7 @@ class MetaDataTableModel(QAbstractTableModel):
             self.dataChanged.emit(index, index, 0)
             return True
         return False
+
     def header_data(self, section, orientation, role = Qt.ItemDataRole.DisplayRole):
         if role != Qt.ItemDataRole.DisplayRole:
             return None
@@ -55,10 +69,11 @@ class MetaDataTableModel(QAbstractTableModel):
             item = self._metadata_entries[section]
             return item.name
         return None
+
     def flags(self, index):
         if not index.is_valid():
             return Qt.ItemFlag.ItemIsEnabled
-        return QAbstractTableModel.flags(self, index) | Qt.ItemFlag.ItemIsEditable
+        return QAbstractListModel.flags(self, index) | Qt.ItemFlag.ItemIsEditable
 
 class MetadataWidget(QWidget):
     def __init__(self, parent: QObject | None = None):
