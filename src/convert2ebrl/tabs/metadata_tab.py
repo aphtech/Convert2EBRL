@@ -8,7 +8,7 @@ import datetime
 from collections.abc import Iterable
 
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, QPersistentModelIndex, QObject, Qt, QDate
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QTableView, QAbstractItemView
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QTableView, QAbstractItemView, QGroupBox
 # noinspection PyUnresolvedReferences
 from __feature__ import snake_case, true_property
 from brf2ebrl.utils.metadata import DEFAULT_METADATA, MetadataItem
@@ -71,7 +71,10 @@ class MetadataWidget(QWidget):
         self._table_view.selection_mode = QAbstractItemView.SelectionMode.SingleSelection
         self._table_view.tab_key_navigation = False
         self._table_view.set_model(self._table_model)
-        layout.add_widget(self._table_view)
+        required_metadata_group = QGroupBox("Required metadata")
+        required_metadata_layout = QVBoxLayout(required_metadata_group)
+        required_metadata_layout.add_widget(self._table_view)
+        layout.add_widget(required_metadata_group)
     @property
     def metadata_entries(self) -> Iterable[MetadataItem]:
         return self._table_model.metadata_entries
