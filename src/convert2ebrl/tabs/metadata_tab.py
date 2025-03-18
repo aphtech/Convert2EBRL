@@ -5,15 +5,19 @@
 # Convert2EBRL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with Convert2EBRL. If not, see <https://www.gnu.org/licenses/>.
 import datetime
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Sequence, Callable
 
 from PySide6.QtCore import QModelIndex, QPersistentModelIndex, QObject, Qt, QDate, \
     QAbstractListModel, Slot
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QTableView, QAbstractItemView, QGroupBox, QHBoxLayout, QPushButton
+from PySide6.QtGui import QAction
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QTableView, QAbstractItemView, QGroupBox, QHBoxLayout, QPushButton, \
+    QMenu
 # noinspection PyUnresolvedReferences
 from __feature__ import snake_case, true_property
-from brf2ebrl.utils.metadata import MetadataItem, DEFAULT_METADATA, Creator
+from brf2ebrl.utils.metadata import MetadataItem, Creator, Title, Identifier, Date, Format, Language
 
+REQUIRED_METADATA_TYPES = (Identifier, Title, Creator, Date, Format, Language)
+ADDITIONAL_METADATA_TYPES = {Creator().name: Creator, Title().name: Title}
 
 class MetadataTableModel(QAbstractListModel):
     def __init__(self, metadata_entries: Iterable[MetadataItem]=None, parent=None):
@@ -88,8 +92,16 @@ class MetadataTableWidget(QGroupBox):
         self._table_view.set_model(self._table_model)
         layout.add_widget(self._table_view)
         if editable:
+            def create_add_metadata_action(metadata_name: str, metadata_factory: Callable[[], MetadataItem]) -> QAction:
+                action = QAction(metadata_name, self)
+                action.triggered.connect(lambda x: self.add_metadata_item(metadata_factory()))
+                return action
+            add_menu = QMenu(parent=self)
+            for name, metadata_type in ADDITIONAL_METADATA_TYPES.items():
+                add_menu.add_action(create_add_metadata_action(name, metadata_type))
             button_layout = QHBoxLayout()
             add_button = QPushButton("Add")
+            add_button.set_menu(add_menu)
             button_layout.add_widget(add_button)
             remove_button = QPushButton("Remove")
             button_layout.add_widget(remove_button)
@@ -98,18 +110,20 @@ class MetadataTableWidget(QGroupBox):
     @property
     def metadata_entries(self) -> Iterable[MetadataItem]:
         return self._table_model.metadata_entries
+    def add_metadata_item(self, item: MetadataItem):
+        index = self._table_view.current_index()
+        self._table_model.insert_rows(row=index.row(), data=[item])
     @Slot()
     def remove_current_selection(self):
         index = self._table_view.current_index()
-        if index:
-            self._table_model.remove_rows(index.row())
+        self._table_model.remove_rows(index.row())
 
 
 class MetadataWidget(QWidget):
     def __init__(self, parent: QObject | None = None):
         super().__init__(parent)
         layout = QVBoxLayout(self)
-        self._required_metadata = MetadataTableWidget("Required metadata", metadata_entries=DEFAULT_METADATA, editable=False)
+        self._required_metadata = MetadataTableWidget("Required metadata", metadata_entries=[x() for x in REQUIRED_METADATA_TYPES], editable=False)
         layout.add_widget(self._required_metadata)
         self._additional_metadata = MetadataTableWidget("Additional metadata", metadata_entries=(Creator(""),), editable=True)
         layout.add_widget(self._additional_metadata)

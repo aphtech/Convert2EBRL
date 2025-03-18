@@ -37,8 +37,8 @@ class SettingsProfilesWidget(QWidget):
     currentSettingsProfileChanged = Signal(SettingsProfile)
 
     def __init__(self, parent: QObject = None):
-        self._custom_profile = SettingsProfile(name="")
         super().__init__(parent)
+        self._custom_profile = SettingsProfile(name="")
         orig_profiles = load_settings_profiles()
         layout = QHBoxLayout(self)
         tool_label = QLabel("Conversion profile")
