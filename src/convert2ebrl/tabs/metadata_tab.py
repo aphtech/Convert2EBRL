@@ -8,17 +8,17 @@ import datetime
 from collections.abc import Iterable, Sequence
 
 from PySide6.QtCore import QModelIndex, QPersistentModelIndex, QObject, Qt, QDate, \
-    QAbstractListModel
+    QAbstractListModel, Slot
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QTableView, QAbstractItemView, QGroupBox, QHBoxLayout, QPushButton
 # noinspection PyUnresolvedReferences
 from __feature__ import snake_case, true_property
-from brf2ebrl.utils.metadata import DEFAULT_METADATA, MetadataItem
+from brf2ebrl.utils.metadata import MetadataItem, DEFAULT_METADATA, Creator
 
 
 class MetadataTableModel(QAbstractListModel):
-    def __init__(self, metadata_entries: list[MetadataItem]=None, parent=None):
+    def __init__(self, metadata_entries: Iterable[MetadataItem]=None, parent=None):
         super().__init__(parent)
-        self._metadata_entries = metadata_entries if metadata_entries is not None else DEFAULT_METADATA
+        self._metadata_entries = list(metadata_entries) if metadata_entries is not None else []
 
     @property
     def metadata_entries(self) -> Iterable[MetadataItem]:
@@ -76,9 +76,9 @@ class MetadataTableModel(QAbstractListModel):
         return QAbstractListModel.flags(self, index) | Qt.ItemFlag.ItemIsEditable
 
 class MetadataTableWidget(QGroupBox):
-    def __init__(self, title: str, editable: bool=False, parent: QObject|None=None):
+    def __init__(self, title: str, metadata_entries: Iterable[MetadataItem]=(), editable: bool=False, parent: QObject|None=None):
         super().__init__(title, parent)
-        self._table_model = MetadataTableModel()
+        self._table_model = MetadataTableModel(metadata_entries=metadata_entries)
         layout = QVBoxLayout(self)
         self._table_view = QTableView()
         self._table_view.accessible_description = "Press F2 to edit a item."
@@ -94,17 +94,25 @@ class MetadataTableWidget(QGroupBox):
             remove_button = QPushButton("Remove")
             button_layout.add_widget(remove_button)
             layout.add_layout(button_layout)
+            remove_button.clicked.connect(self.remove_current_selection)
     @property
     def metadata_entries(self) -> Iterable[MetadataItem]:
         return self._table_model.metadata_entries
+    @Slot()
+    def remove_current_selection(self):
+        index = self._table_view.current_index()
+        if index:
+            self._table_model.remove_rows(index.row())
 
 
 class MetadataWidget(QWidget):
     def __init__(self, parent: QObject | None = None):
         super().__init__(parent)
         layout = QVBoxLayout(self)
-        self._required_metadata = MetadataTableWidget("Required metadata", editable=False)
+        self._required_metadata = MetadataTableWidget("Required metadata", metadata_entries=DEFAULT_METADATA, editable=False)
         layout.add_widget(self._required_metadata)
+        self._additional_metadata = MetadataTableWidget("Additional metadata", metadata_entries=(Creator(""),), editable=True)
+        layout.add_widget(self._additional_metadata)
     @property
     def metadata_entries(self) -> Iterable[MetadataItem]:
         return self._required_metadata.metadata_entries
