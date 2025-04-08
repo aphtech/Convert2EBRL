@@ -4,21 +4,15 @@
 [metadata]
 groups = ["default", "exe"]
 strategy = []
-lock_version = "4.5.0"
-content_hash = "sha256:d53a5dc4812aa4cb4ae3063d41987a58a585d1cf897874eb6f1538edd3ee6eea"
-
-[[metadata.targets]]
-requires_python = "==3.11.9"
-platform = "windows_amd64"
-implementation = "cpython"
-gil_disabled = false
+lock_version = "4.4.1"
+content_hash = "sha256:97f9b5e17304118893b8a1258aaebc80833a53fbc7ea7f34e3aea3fa876a2312"
 
 [[package]]
 name = "brf2ebrl"
 version = "0.1.0"
 requires_python = ">=3.10"
 git = "https://github.com/aphtech/brf2ebrl"
-revision = "fd8314d405a2afa226073c899f0b388f30b2edae"
+revision = "dc9420becba306be4b6f3728e5456908a06c8d25"
 summary = "A tool for converting BRF to eBRL."
 dependencies = [
     "html5lib>=1.1",
@@ -78,9 +72,6 @@ name = "pypdf"
 version = "5.3.0"
 requires_python = ">=3.8"
 summary = "A pure-python PDF library capable of splitting, merging, cropping, and transforming PDF files"
-dependencies = [
-    "typing-extensions>=4.0; python_version < \"3.11\"",
-]
 files = [
     {file = "pypdf-5.3.0-py3-none-any.whl", hash = "sha256:d7b6db242f5f8fdb4990ae11815c394b8e1b955feda0befcce862efd8559c181"},
     {file = "pypdf-5.3.0.tar.gz", hash = "sha256:08393660dfea25b27ec6fe863fb2f2248e6270da5103fae49e9dea8178741951"},
@@ -168,9 +159,6 @@ name = "zstandard"
 version = "0.23.0"
 requires_python = ">=3.8"
 summary = "Zstandard bindings for Python"
-dependencies = [
-    "cffi>=1.11; platform_python_implementation == \"PyPy\"",
-]
 files = [
     {file = "zstandard-0.23.0-cp311-cp311-win_amd64.whl", hash = "sha256:62136da96a973bd2557f06ddd4e8e807f9e13cbb0bfb9cc06cfe6d98ea90dfe0"},
     {file = "zstandard-0.23.0.tar.gz", hash = "sha256:b2d8c62d08e7255f68f7a740bae85b3c9b8e5466baa9cbf7f57f1cde0ac6bc09"},
