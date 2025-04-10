@@ -14,10 +14,11 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QTableView, QAbstractItemVie
     QMenu
 # noinspection PyUnresolvedReferences
 from __feature__ import snake_case, true_property
-from brf2ebrl.utils.metadata import MetadataItem, Creator, Title, Identifier, Language
+from brf2ebrl.utils.metadata import MetadataItem, Creator, Title, Identifier, Language, BrailleSystem, DateCopyrighted, \
+    DateTranscribed, Producer
 
-REQUIRED_METADATA_TYPES = (Identifier, Title, Creator, Language)
-ADDITIONAL_METADATA_TYPES = {Creator().name: Creator, Language().name: Language}
+REQUIRED_METADATA_TYPES = (Identifier, Title, Creator, Producer, Language, BrailleSystem, DateCopyrighted, DateTranscribed)
+ADDITIONAL_METADATA_TYPES = {Title().name: Title, Creator().name: Creator, Producer().name: Producer, Language().name: Language, BrailleSystem().name: BrailleSystem}
 
 class MetadataTableModel(QAbstractListModel):
     def __init__(self, metadata_entries: Iterable[MetadataItem]=None, parent=None):
