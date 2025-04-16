@@ -113,7 +113,11 @@ class MetadataTableWidget(QGroupBox):
         return self._table_model.metadata_entries
     def add_metadata_item(self, item: MetadataItem):
         index = self._table_view.current_index()
-        self._table_model.insert_rows(row=index.row(), data=[item])
+        self._table_model.insert_rows(row=(index.row() + 1), data=[item])
+        index = self._table_model.index(index.row() + 1, 0)
+        print(f"index={index.row()}:{index.column()}")
+        self._table_view.set_current_index(index)
+        self._table_view.edit(index)
     @Slot()
     def remove_current_selection(self):
         index = self._table_view.current_index()
