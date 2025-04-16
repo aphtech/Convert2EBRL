@@ -5,6 +5,7 @@
 # Convert2EBRL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with Convert2EBRL. If not, see <https://www.gnu.org/licenses/>.
 import datetime
+import itertools
 from collections.abc import Iterable, Sequence, Callable
 
 from PySide6.QtCore import QModelIndex, QPersistentModelIndex, QObject, Qt, QDate, \
@@ -126,8 +127,8 @@ class MetadataWidget(QWidget):
         layout = QVBoxLayout(self)
         self._required_metadata = MetadataTableWidget("Required metadata", metadata_entries=[x() for x in REQUIRED_METADATA_TYPES], editable=False)
         layout.add_widget(self._required_metadata)
-        self._additional_metadata = MetadataTableWidget("Additional metadata", metadata_entries=(Creator(""),), editable=True)
+        self._additional_metadata = MetadataTableWidget("Additional metadata", metadata_entries=(), editable=True)
         layout.add_widget(self._additional_metadata)
     @property
     def metadata_entries(self) -> Iterable[MetadataItem]:
-        return self._required_metadata.metadata_entries
+        return *self._required_metadata.metadata_entries, *self._additional_metadata.metadata_entries
