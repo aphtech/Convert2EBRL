@@ -15,9 +15,9 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QTableView, QAbstractItemVie
 # noinspection PyUnresolvedReferences
 from __feature__ import snake_case, true_property
 from brf2ebrl.utils.metadata import MetadataItem, Creator, Title, Identifier, Language, BrailleSystem, DateCopyrighted, \
-    DateTranscribed, Producer
+    DateTranscribed, Producer, CellType, CompleteTranscription
 
-REQUIRED_METADATA_TYPES = (Identifier, Title, Creator, Producer, Language, BrailleSystem, DateCopyrighted, DateTranscribed)
+REQUIRED_METADATA_TYPES = (Identifier, Title, Creator, Producer, Language, BrailleSystem, CellType, CompleteTranscription, DateCopyrighted, DateTranscribed)
 ADDITIONAL_METADATA_TYPES = {Title().name: Title, Creator().name: Creator, Producer().name: Producer, Language().name: Language, BrailleSystem().name: BrailleSystem}
 
 class MetadataTableModel(QAbstractListModel):
