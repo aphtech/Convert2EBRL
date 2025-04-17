@@ -9,8 +9,6 @@ from collections.abc import Callable
 
 from PySide6.QtCore import QObject, Signal, Slot
 from PySide6.QtWidgets import QWidget, QLineEdit, QPushButton, QHBoxLayout
-# noinspection PyUnresolvedReferences
-from __feature__ import snake_case, true_property
 
 
 class FilePickerWidget(QWidget):
@@ -21,14 +19,14 @@ class FilePickerWidget(QWidget):
         self._files = []
         self._browse_func = browse_func
         file_name_edit = QLineEdit()
-        file_name_edit.read_only = True
-        file_name_edit.minimum_width = 400
+        file_name_edit.setReadOnly(True)
+        file_name_edit.setMinimumWidth(400)
         browse_button = QPushButton("Browse...")
-        browse_button.auto_default = False
-        browse_button.default = False
+        browse_button.setAutoDefault(False)
+        browse_button.setDefault(False)
         layout = QHBoxLayout(self)
-        layout.add_widget(file_name_edit)
-        layout.add_widget(browse_button)
+        layout.addWidget(file_name_edit)
+        layout.addWidget(browse_button)
         browse_button.clicked.connect(self._browse_clicked)
         self._file_name_edit = file_name_edit
 
@@ -53,5 +51,5 @@ class FilePickerWidget(QWidget):
     @files.setter
     def files(self, value: list[str]):
         self._files = value
-        self._file_name_edit.text = os.path.pathsep.join(value)
-        self.fileChanged.emit(self._file_name_edit.text)
+        self._file_name_edit.setText(os.path.pathsep.join(value))
+        self.fileChanged.emit(self._file_name_edit.text())
