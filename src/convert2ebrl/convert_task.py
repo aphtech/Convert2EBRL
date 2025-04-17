@@ -5,12 +5,10 @@ from pathlib import Path
 from typing import Iterable, Any
 
 from PySide6.QtCore import QObject, Signal
-# noinspection PyUnresolvedReferences
-from __feature__ import snake_case, true_property
 from brf2ebrl import convert
 from brf2ebrl.common import PageLayout, PageNumberPosition
 from brf2ebrl.parser import NotifyLevel, ParsingCancelledException, ParserContext
-from brf2ebrl.plugin import find_plugins, Plugin
+from brf2ebrl.plugin import Plugin
 
 _DEFAULT_PAGE_LAYOUT = PageLayout(
     odd_braille_page_number=PageNumberPosition.BOTTOM_RIGHT,
@@ -52,7 +50,6 @@ class ConvertTask(QObject):
             self.errorRaised.emit(e)
 
     def _convert(self, selected_plugin: Plugin, input_brf_list: Iterable[str], output_ebrf: str, parser_options: dict[str, Any]):
-
         parser_context = ParserContext(is_cancelled=lambda: self._cancel_requested,
                                 notify=lambda l, m: self.notify.emit(Notification(l, m())), options=parser_options)
         convert(selected_plugin, input_brf_list, output_ebrf,
