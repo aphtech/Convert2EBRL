@@ -8,8 +8,6 @@ from collections.abc import Iterable
 from pathlib import Path
 
 from PySide6.QtCore import QRunnable, Slot, QSettings, QStandardPaths
-# noinspection PyUnresolvedReferences
-from __feature__ import snake_case, true_property
 from brf2ebrl.common import PageNumberPosition
 
 from convert2ebrl.settings import SettingsProfile, PROFILES_FILE_NAME
@@ -20,7 +18,7 @@ from convert2ebrl.settings.keys import PROFILE_NAME, PROFILE_CELLS_PER_LINE, PRO
 
 
 def get_app_config_path(create: bool = True) -> Path:
-    config_path = Path(QStandardPaths.writable_location(QStandardPaths.StandardLocation.AppDataLocation))
+    config_path = Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppDataLocation))
     if create:
         config_path.mkdir(parents=True, exist_ok=True)
     return config_path
@@ -42,33 +40,33 @@ def save_settings_profiles(profiles: Iterable[SettingsProfile], clear_existing: 
     if clear_existing:
         settings.clear()
     for profile in profiles:
-        settings.begin_group(str(profile.id))
+        settings.beginGroup(str(profile.id))
         save_settings_profile(settings, profile)
-        settings.end_group()
+        settings.endGroup()
     settings.sync()
 
 
 def save_settings_profile(settings, profile):
-    settings.set_value(PROFILE_NAME, profile.name)
-    settings.set_value(PROFILE_DETECT_RUNNINGHEADS, profile.detect_runningheads)
-    settings.set_value(PROFILE_CELLS_PER_LINE, profile.cells_per_line)
-    settings.set_value(PROFILE_LINES_PER_PAGE, profile.lines_per_page)
-    settings.set_value(PROFILE_ODD_BPN_POSITION, profile.odd_bpn_position.name)
-    settings.set_value(PROFILE_EVEN_BPN_POSITION, profile.even_bpn_position.name)
-    settings.set_value(PROFILE_ODD_PPN_POSITION, profile.odd_ppn_position.name)
-    settings.set_value(PROFILE_EVEN_PPN_POSITION, profile.even_ppn_position.name)
+    settings.setValue(PROFILE_NAME, profile.name)
+    settings.setValue(PROFILE_DETECT_RUNNINGHEADS, profile.detect_runningheads)
+    settings.setValue(PROFILE_CELLS_PER_LINE, profile.cells_per_line)
+    settings.setValue(PROFILE_LINES_PER_PAGE, profile.lines_per_page)
+    settings.setValue(PROFILE_ODD_BPN_POSITION, profile.odd_bpn_position.name)
+    settings.setValue(PROFILE_EVEN_BPN_POSITION, profile.even_bpn_position.name)
+    settings.setValue(PROFILE_ODD_PPN_POSITION, profile.odd_ppn_position.name)
+    settings.setValue(PROFILE_EVEN_PPN_POSITION, profile.even_ppn_position.name)
 
 
 def load_settings_profiles() -> Iterable[SettingsProfile]:
     profiles = []
     settings = QSettings(str(get_app_config_path().joinpath(PROFILES_FILE_NAME)), QSettings.Format.IniFormat)
-    profile_ids = settings.child_groups()
+    profile_ids = settings.childGroups()
     for profile_id in profile_ids:
-        settings.begin_group(profile_id)
+        settings.beginGroup(profile_id)
         profile = load_settings_profile(settings)
         if profile.name != DEFAULT_SETTINGS_PROFILE.name:
             profiles.append(profile)
-        settings.end_group()
+        settings.endGroup()
     return profiles
 
 
