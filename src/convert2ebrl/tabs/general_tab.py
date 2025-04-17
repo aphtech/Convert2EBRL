@@ -14,9 +14,6 @@ from convert2ebrl.settings.defaults import CONVERSION_LAST_DIR as DEFAULT_LAST_D
 from convert2ebrl.settings.keys import CONVERSION_LAST_DIR as LAST_DIR_SETTING_KEY
 from convert2ebrl.widgets import FilePickerWidget
 
-# noinspection PyUnresolvedReferences
-from __feature__ import snake_case, true_property
-
 class ConversionGeneralSettingsWidget(QWidget):
     inputBrfChanged = Signal(str)
     imagesDirectoryChanged = Signal(str)
@@ -26,47 +23,47 @@ class ConversionGeneralSettingsWidget(QWidget):
         super().__init__(parent)
         layout = QFormLayout(self)
         self._input_type_combo = QComboBox()
-        self._input_type_combo.editable = False
-        self._input_type_combo.add_items(["List of BRF", "Directory of BRF"])
-        layout.add_row("Input type", self._input_type_combo)
+        self._input_type_combo.setEditable(False)
+        self._input_type_combo.addItems(["List of BRF", "Directory of BRF"])
+        layout.addRow("Input type", self._input_type_combo)
         self._input_brf_edit = FilePickerWidget(self._get_input_brf_from_user)
-        layout.add_row("Input BRF", self._input_brf_edit)
+        layout.addRow("Input BRF", self._input_brf_edit)
         self._include_images_checkbox = QCheckBox()
-        layout.add_row("Include images", self._include_images_checkbox)
+        layout.addRow("Include images", self._include_images_checkbox)
 
         def get_images_dir_from_user(x) -> list[str]:
             settings = QSettings()
             default_dir = str(settings.value(LAST_DIR_SETTING_KEY, DEFAULT_LAST_DIR))
-            image_dir = QFileDialog.get_existing_directory(parent=x, dir=default_dir)
+            image_dir = QFileDialog.getExistingDirectory(parent=x, dir=default_dir)
             if image_dir:
-                settings.set_value(LAST_DIR_SETTING_KEY, image_dir)
+                settings.setValue(LAST_DIR_SETTING_KEY, image_dir)
             return [image_dir]
 
         self._image_dir_edit = FilePickerWidget(
             get_images_dir_from_user)
-        layout.add_row("Image directory", self._image_dir_edit)
+        layout.addRow("Image directory", self._image_dir_edit)
 
         def get_output_ebrf_file_from_user(x) -> list[str]:
             settings = QSettings()
             default_dir = str(settings.value(LAST_DIR_SETTING_KEY, DEFAULT_LAST_DIR))
-            save_path = QFileDialog.get_save_file_name(
+            save_path = QFileDialog.getSaveFileName(
                 parent=x, dir=default_dir, filter="eBraille Files (*.zip)",
                 options=QFileDialog.Option.DontConfirmOverwrite
             )[0]
             if save_path:
-                settings.set_value(LAST_DIR_SETTING_KEY, os.path.dirname(save_path))
+                settings.setValue(LAST_DIR_SETTING_KEY, os.path.dirname(save_path))
             return [save_path]
 
         self._output_ebrf_edit = FilePickerWidget(get_output_ebrf_file_from_user)
-        layout.add_row("Output eBraille", self._output_ebrf_edit)
-        self._update_include_images_state(self._include_images_checkbox.checked)
+        layout.addRow("Output eBraille", self._output_ebrf_edit)
+        self._update_include_images_state(self._include_images_checkbox.isChecked())
         def restore_from_settings():
             settings = QSettings()
-            self._input_type_combo.current_index = int(bool(settings.value("Conversion/input_type", defaultValue=False, type=bool)))
+            self._input_type_combo.setCurrentIndex(int(bool(settings.value("Conversion/input_type", defaultValue=False, type=bool))))
         restore_from_settings()
         def on_input_type_changed(index):
             settings = QSettings()
-            settings.set_value("Conversion/input_type", bool(index))
+            settings.setValue("Conversion/input_type", bool(index))
         self._input_type_combo.currentIndexChanged.connect(on_input_type_changed)
         self._include_images_checkbox.toggled.connect(self._update_include_images_state)
         self._input_type_combo.currentIndexChanged.connect(self._clear_input_brf)
@@ -76,26 +73,26 @@ class ConversionGeneralSettingsWidget(QWidget):
 
     @Slot(bool)
     def _update_include_images_state(self, checked: bool):
-        self._image_dir_edit.enabled = checked
+        self._image_dir_edit.setEnabled(checked)
         if not checked:
             self._image_dir_edit.file_name = ""
 
     def _get_input_brf_from_user(self, x) -> list[str]:
         settings = QSettings()
         default_dir = str(settings.value(LAST_DIR_SETTING_KEY, DEFAULT_LAST_DIR))
-        if self._input_type_combo.current_index:
-            input_dir = QFileDialog.get_existing_directory(
+        if self._input_type_combo.currentIndex():
+            input_dir = QFileDialog.getExistingDirectory(
                 parent=x, dir=default_dir
             )
             if input_dir:
-                settings.set_value(LAST_DIR_SETTING_KEY, input_dir)
+                settings.setValue(LAST_DIR_SETTING_KEY, input_dir)
             return [input_dir]
         else:
-            input_files = QFileDialog.get_open_file_names(
+            input_files = QFileDialog.getOpenFileNames(
                 parent=x, dir=default_dir, filter="Braille Ready Files (*.brf)"
             )[0]
             if input_files:
-                settings.set_value(LAST_DIR_SETTING_KEY, os.path.dirname(input_files[0]))
+                settings.setValue(LAST_DIR_SETTING_KEY, os.path.dirname(input_files[0]))
             return input_files
 
     @property
@@ -104,7 +101,7 @@ class ConversionGeneralSettingsWidget(QWidget):
 
     @input_brfs.setter
     def input_brfs(self, value: list[str]):
-        self._input_type_combo.current_index = 1 if len(value) == 1 and os.path.isdir(value[0]) else 0
+        self._input_type_combo.setCurrentIndex(1 if len(value) == 1 and os.path.isdir(value[0]) else 0)
         self._input_brf_edit.files = value
 
     def _clear_input_brf(self):
@@ -112,14 +109,14 @@ class ConversionGeneralSettingsWidget(QWidget):
 
     @property
     def image_directory(self) -> str | None:
-        return self._image_dir_edit.file_name if self._include_images_checkbox.checked else None
+        return self._image_dir_edit.file_name if self._include_images_checkbox.isChecked() else None
 
     @image_directory.setter
     def image_directory(self, value: str | None):
         if value is None:
-            self._include_images_checkbox.checked = False
+            self._include_images_checkbox.setChecked(False)
         else:
-            self._include_images_checkbox.checked = True
+            self._include_images_checkbox.setChecked(True)
             self._image_dir_edit.file_name = value
 
     @property
@@ -128,4 +125,4 @@ class ConversionGeneralSettingsWidget(QWidget):
 
     @output_ebrf.setter
     def output_ebrf(self, value: str):
-        self._output_ebrf_edit.text = value
+        self._output_ebrf_edit.file_name = value
