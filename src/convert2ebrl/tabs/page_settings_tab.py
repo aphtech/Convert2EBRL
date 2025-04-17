@@ -9,8 +9,6 @@ from PySide6.QtCore import Signal, QObject, SignalInstance
 from PySide6.QtWidgets import QWidget, QFormLayout, QCheckBox, QSpinBox, QComboBox
 from brf2ebrl.common import PageNumberPosition
 
-# noinspection PyUnresolvedReferences
-from __feature__ import snake_case, true_property
 _PAGE_NUMBER_POSITIONS_DICT = {
     PageNumberPosition.NONE: "None",
     PageNumberPosition.TOP_LEFT: "Top left",
@@ -35,35 +33,35 @@ class ConversionPageSettingsWidget(QWidget):
         self._is_valid = False
         layout = QFormLayout(self)
         self._detect_running_heads_checkbox = QCheckBox()
-        self._detect_running_heads_checkbox.checked = True
-        layout.add_row("Has running heads", self._detect_running_heads_checkbox)
+        self._detect_running_heads_checkbox.setChecked(True)
+        layout.addRow("Has running heads", self._detect_running_heads_checkbox)
         self._cells_per_line_spinbox = QSpinBox()
-        self._cells_per_line_spinbox.set_range(10, 100)
-        self._cells_per_line_spinbox.single_step = 1
-        self._cells_per_line_spinbox.value = 40
-        layout.add_row("Cells per line", self._cells_per_line_spinbox)
+        self._cells_per_line_spinbox.setRange(10, 100)
+        self._cells_per_line_spinbox.setSingleStep(1)
+        self._cells_per_line_spinbox.setValue(40)
+        layout.addRow("Cells per line", self._cells_per_line_spinbox)
         self._lines_per_page_spinbox = QSpinBox()
-        self._lines_per_page_spinbox.set_range(10, 100)
-        self._lines_per_page_spinbox.value = 25
-        self._lines_per_page_spinbox.single_step = 1
-        layout.add_row("Lines per page", self._lines_per_page_spinbox)
+        self._lines_per_page_spinbox.setRange(10, 100)
+        self._lines_per_page_spinbox.setValue(25)
+        self._lines_per_page_spinbox.setSingleStep(1)
+        layout.addRow("Lines per page", self._lines_per_page_spinbox)
 
         def create_page_number_position_combo(default_selection: PageNumberPosition = PageNumberPosition.NONE):
             combo = QComboBox()
-            combo.editable = False
+            combo.setEditable(False)
             for p, t in _PAGE_NUMBER_POSITIONS_DICT.items():
-                combo.add_item(t, p)
-            combo.current_text = _PAGE_NUMBER_POSITIONS_DICT[default_selection]
+                combo.addItem(t, p)
+            combo.setCurrentText(_PAGE_NUMBER_POSITIONS_DICT[default_selection])
             return combo
 
         self._odd_bpn_position = create_page_number_position_combo(PageNumberPosition.BOTTOM_RIGHT)
-        layout.add_row("Odd Braille page number", self._odd_bpn_position)
+        layout.addRow("Odd Braille page number", self._odd_bpn_position)
         self._even_bpn_position = create_page_number_position_combo()
-        layout.add_row("Even Braille page number", self._even_bpn_position)
+        layout.addRow("Even Braille page number", self._even_bpn_position)
         self._odd_ppn_position = create_page_number_position_combo(PageNumberPosition.TOP_RIGHT)
-        layout.add_row("Odd print page number", self._odd_ppn_position)
+        layout.addRow("Odd print page number", self._odd_ppn_position)
         self._even_ppn_position = create_page_number_position_combo()
-        layout.add_row("Even print page number", self._even_ppn_position)
+        layout.addRow("Even print page number", self._even_ppn_position)
         self._update_validity()
         self._detect_running_heads_checkbox.toggled.connect(self.detectRunningHeadsChanged.emit)
         self._cells_per_line_spinbox.valueChanged.connect(self.cellsPerLineChanged.emit)
@@ -72,13 +70,13 @@ class ConversionPageSettingsWidget(QWidget):
             change_signal.emit(value)
             self._update_validity()
         self._odd_bpn_position.currentIndexChanged.connect(
-            lambda x: form_update(self.oddBraillePageNumberChanged, self._odd_bpn_position.item_data(x)))
+            lambda x: form_update(self.oddBraillePageNumberChanged, self._odd_bpn_position.itemData(x)))
         self._even_bpn_position.currentIndexChanged.connect(
-            lambda x: form_update(self.evenBraillePageNumberChanged, self._even_bpn_position.item_data(x)))
+            lambda x: form_update(self.evenBraillePageNumberChanged, self._even_bpn_position.itemData(x)))
         self._odd_ppn_position.currentIndexChanged.connect(
-            lambda x: form_update(self.oddPrintPageNumberChanged, self._odd_ppn_position.item_data(x)))
+            lambda x: form_update(self.oddPrintPageNumberChanged, self._odd_ppn_position.itemData(x)))
         self._even_ppn_position.currentIndexChanged.connect(
-            lambda x: form_update(self.evenPrintPageNumberChanged, self._even_ppn_position.item_data(x)))
+            lambda x: form_update(self.evenPrintPageNumberChanged, self._even_ppn_position.itemData(x)))
 
     def _update_validity(self):
         old_validity = self._is_valid
@@ -93,56 +91,56 @@ class ConversionPageSettingsWidget(QWidget):
 
     @property
     def detect_running_heads(self) -> bool:
-        return self._detect_running_heads_checkbox.checked
+        return self._detect_running_heads_checkbox.isChecked()
 
     @detect_running_heads.setter
     def detect_running_heads(self, value: bool):
-        self._detect_running_heads_checkbox.checked = value
+        self._detect_running_heads_checkbox.setChecked(value)
 
     @property
     def cells_per_line(self) -> int:
-        return self._cells_per_line_spinbox.value
+        return self._cells_per_line_spinbox.value()
 
     @cells_per_line.setter
     def cells_per_line(self, value: int):
-        self._cells_per_line_spinbox.value = value
+        self._cells_per_line_spinbox.setValue(value)
 
     @property
     def lines_per_page(self) -> int:
-        return self._lines_per_page_spinbox.value
+        return self._lines_per_page_spinbox.value()
 
     @lines_per_page.setter
     def lines_per_page(self, value: int):
-        self._lines_per_page_spinbox.value = value
+        self._lines_per_page_spinbox.setValue(value)
 
     @property
     def odd_braille_page_number_position(self) -> PageNumberPosition:
-        return self._odd_bpn_position.current_data()
+        return self._odd_bpn_position.currentData()
 
     @odd_braille_page_number_position.setter
     def odd_braille_page_number_position(self, value: PageNumberPosition):
-        self._odd_bpn_position.current_index = self._odd_bpn_position.find_data(value)
+        self._odd_bpn_position.setCurrentIndex(self._odd_bpn_position.findData(value))
 
     @property
     def even_braille_page_number_position(self) -> PageNumberPosition:
-        return self._even_bpn_position.current_data()
+        return self._even_bpn_position.currentData()
 
     @even_braille_page_number_position.setter
     def even_braille_page_number_position(self, value: PageNumberPosition):
-        self._even_bpn_position.current_index = self._even_bpn_position.find_data(value)
+        self._even_bpn_position.setCurrentIndex(self._even_bpn_position.findData(value))
 
     @property
     def odd_print_page_number_position(self) -> PageNumberPosition:
-        return self._odd_ppn_position.current_data()
+        return self._odd_ppn_position.currentData()
 
     @odd_print_page_number_position.setter
     def odd_print_page_number_position(self, value: PageNumberPosition):
-        self._odd_ppn_position.current_index = self._odd_ppn_position.find_data(value)
+        self._odd_ppn_position.setCurrentIndex(self._odd_ppn_position.findData(value))
 
     @property
     def even_print_page_number_position(self) -> PageNumberPosition:
-        return self._even_ppn_position.current_data()
+        return self._even_ppn_position.currentData()
 
     @even_print_page_number_position.setter
     def even_print_page_number_position(self, value: PageNumberPosition):
-        self._even_ppn_position.current_index = self._even_ppn_position.find_data(value)
+        self._even_ppn_position.setCurrentIndex(self._even_ppn_position.findData(value))
