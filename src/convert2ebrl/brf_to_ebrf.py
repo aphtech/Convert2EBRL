@@ -15,8 +15,6 @@ from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QWidget, QDialog, QDialogButtonBox, QVBoxLayout, \
     QProgressDialog, QMessageBox, QTabWidget, QFileDialog, QComboBox, QHBoxLayout, QMenu, QPushButton, QLabel, \
     QInputDialog
-# noinspection PyUnresolvedReferences
-from __feature__ import snake_case, true_property
 from brf2ebrl.common import PageLayout
 from brf2ebrl.parser import EBrailleParserOptions
 from brf2ebrl.plugin import  find_plugins
@@ -42,27 +40,27 @@ class SettingsProfilesWidget(QWidget):
         orig_profiles = load_settings_profiles()
         layout = QHBoxLayout(self)
         tool_label = QLabel("Conversion profile")
-        layout.add_widget(tool_label)
+        layout.addWidget(tool_label)
         self._profile_combo = QComboBox()
-        self._profile_combo.editable = False
-        self._profile_combo.placeholder_text = "Custom"
-        layout.add_widget(self._profile_combo)
-        tool_label.set_buddy(self._profile_combo)
+        self._profile_combo.setEditable(False)
+        self._profile_combo.setPlaceholderText("Custom")
+        layout.addWidget(self._profile_combo)
+        tool_label.setBuddy(self._profile_combo)
 
         def update_profiles(profiles: Iterable[SettingsProfile], sync_settings: bool = False):
             if sync_settings:
                 save_settings_profiles(profiles, clear_existing=True)
             self._profile_combo.clear()
             for profile in profiles:
-                self._profile_combo.add_item(profile.name, profile)
-            self._profile_combo.current_index = -1 if self._profile_combo.count < 0 else 0
+                self._profile_combo.addItem(profile.name, profile)
+            self._profile_combo.setCurrentIndex(-1 if self._profile_combo.count() < 0 else 0)
 
         update_profiles(orig_profiles)
         profile_menu = QMenu(parent=self)
 
         def save_profile():
             while True:
-                text, ok = QInputDialog.get_text(self, "Name the profile", "Profile name:")
+                text, ok = QInputDialog.getText(self, "Name the profile", "Profile name:")
                 if not ok:
                     return
                 if not text:
@@ -81,7 +79,7 @@ class SettingsProfilesWidget(QWidget):
                 update_profiles(profiles, sync_settings=True)
                 return
 
-        profile_menu.add_action("Save profile...", save_profile)
+        profile_menu.addAction("Save profile...", save_profile)
 
         def delete_profile(profile: SettingsProfile):
             result = QMessageBox.question(self, "Delete profile",
@@ -92,9 +90,9 @@ class SettingsProfilesWidget(QWidget):
                 update_profiles(profiles, sync_settings=True)
 
         delete_action = QAction("Delete profile...", self)
-        self._profile_combo.currentIndexChanged.connect(lambda x: delete_action.set_disabled(x < 0))
-        delete_action.triggered.connect(lambda: delete_profile(self._profile_combo.current_data()))
-        profile_menu.add_action(delete_action)
+        self._profile_combo.currentIndexChanged.connect(lambda x: delete_action.setDisabled(x < 0))
+        delete_action.triggered.connect(lambda: delete_profile(self._profile_combo.currentData()))
+        profile_menu.addAction(delete_action)
 
         def reset_profiles():
             result = QMessageBox.question(self, "Reset profiles",
@@ -102,29 +100,29 @@ class SettingsProfilesWidget(QWidget):
             if result == QMessageBox.StandardButton.Yes:
                 update_profiles(DEFAULT_SETTINGS_PROFILES_LIST, sync_settings=True)
 
-        profile_menu.add_action("Reset profiles...", reset_profiles)
+        profile_menu.addAction("Reset profiles...", reset_profiles)
         profile_menu_button = QPushButton("...")
-        profile_menu_button.accessible_name = "Profiles menu"
-        profile_menu_button.set_menu(profile_menu)
-        layout.add_widget(profile_menu_button)
+        profile_menu_button.setAccessibleName("Profiles menu")
+        profile_menu_button.setMenu(profile_menu)
+        layout.addWidget(profile_menu_button)
         # Notify of saved profile changes, custom profiles are notified in setter.
         self._profile_combo.currentIndexChanged.connect(
-            lambda x: self.currentSettingsProfileChanged.emit(self._profile_combo.item_data(x)) if x >= 0 else None)
+            lambda x: self.currentSettingsProfileChanged.emit(self._profile_combo.itemData(x)) if x >= 0 else None)
 
     @property
     def settings_profiles(self) -> Iterable[SettingsProfile]:
-        return [self._profile_combo.item_data(i) for i in range(0, self._profile_combo.count)]
+        return [self._profile_combo.itemData(i) for i in range(0, self._profile_combo.count())]
 
     @property
     def current_settings_profile(self) -> SettingsProfile:
-        return self._custom_profile if self._profile_combo.current_index < 0 else self._profile_combo.current_data()
+        return self._custom_profile if self._profile_combo.currentIndex() < 0 else self._profile_combo.currentData()
 
     @current_settings_profile.setter
     def current_settings_profile(self, value: SettingsProfile):
-        new_index = self._profile_combo.find_text(value.name)
+        new_index = self._profile_combo.findText(value.name)
         if new_index < 0:
             self._custom_profile = value
-        self._profile_combo.current_index = new_index
+        self._profile_combo.setCurrentIndex(new_index)
         if new_index < 0:
             self.currentSettingsProfileChanged.emit(value)
 
@@ -134,30 +132,30 @@ class Brf2EbrfDialog(QDialog):
         super().__init__(parent)
         layout = QVBoxLayout(self)
         self._profiles_tool = SettingsProfilesWidget()
-        layout.add_widget(self._profiles_tool)
-        self.window_title = "Convert BRF to eBraille"
+        layout.addWidget(self._profiles_tool)
+        self.setWindowTitle("Convert BRF to eBraille")
         tab_widget = QTabWidget()
         self._brf2ebrf_form = ConversionGeneralSettingsWidget()
-        tab_widget.add_tab(self._brf2ebrf_form, "General")
+        tab_widget.addTab(self._brf2ebrf_form, "General")
         self._page_settings_form = ConversionPageSettingsWidget()
-        tab_widget.add_tab(self._page_settings_form, "Page settings")
+        tab_widget.addTab(self._page_settings_form, "Page settings")
         self._metadata_form = MetadataWidget()
-        tab_widget.add_tab(self._metadata_form, "Metadata")
-        layout.add_widget(tab_widget)
+        tab_widget.addTab(self._metadata_form, "Metadata")
+        layout.addWidget(tab_widget)
         self.button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         b = self.button_box.button(QDialogButtonBox.StandardButton.Close)
-        b.default = False
-        b.auto_default = False
-        self._convert_button = self.button_box.add_button("Convert", QDialogButtonBox.ButtonRole.ApplyRole)
-        self._convert_button.default = True
-        layout.add_widget(self.button_box)
+        b.setDefault(False)
+        b.setAutoDefault(False)
+        self._convert_button = self.button_box.addButton("Convert", QDialogButtonBox.ButtonRole.ApplyRole)
+        self._convert_button.setDefault(True)
+        layout.addWidget(self.button_box)
 
         def restore_from_settings():
             settings = QSettings()
-            if "ConverterLastProfile" in settings.child_groups():
-                settings.begin_group("ConverterLastProfile")
+            if "ConverterLastProfile" in settings.childGroups():
+                settings.beginGroup("ConverterLastProfile")
                 self._profiles_tool.current_settings_profile = load_settings_profile(settings)
-                settings.end_group()
+                settings.endGroup()
             self._on_settings_profile_changed(self._profiles_tool.current_settings_profile)
             self._update_validity()
 
@@ -191,9 +189,9 @@ class Brf2EbrfDialog(QDialog):
     @Slot(SettingsProfile)
     def _on_settings_profile_changed(self, profile: SettingsProfile):
         settings = QSettings()
-        settings.begin_group("ConverterLastProfile")
+        settings.beginGroup("ConverterLastProfile")
         save_settings_profile(settings, profile)
-        settings.end_group()
+        settings.endGroup()
         self._page_settings_form.detect_running_heads = profile.detect_runningheads
         self._page_settings_form.cells_per_line = profile.cells_per_line
         self._page_settings_form.lines_per_page = profile.lines_per_page
@@ -244,8 +242,8 @@ class Brf2EbrfDialog(QDialog):
             notifications.append(notification)
 
         def update_progress(value: float):
-            if not pd.was_canceled:
-                pd.value = int(value * number_of_steps)
+            if not pd.wasCanceled():
+                pd.setValue(int(value * number_of_steps))
 
         def finished_converting():
             update_progress(1)
@@ -253,8 +251,8 @@ class Brf2EbrfDialog(QDialog):
                 dlg = QMessageBox(QMessageBox.Icon.Warning, "Conversion complete but warnings issued",
                                   f"Your file has been converted and {output_ebrf} has been created.",
                                   buttons=QMessageBox.StandardButton.Ok)
-                dlg.detailed_text = notifications_as_text(notifications)
-                btn = dlg.add_button("Save warnings to file", QMessageBox.ButtonRole.ActionRole)
+                dlg.setDetailedText(notifications_as_text(notifications))
+                btn = dlg.addButton("Save warnings to file", QMessageBox.ButtonRole.ActionRole)
                 btn.clicked.disconnect()
                 btn.clicked.connect(lambda x: save_notifications(dlg, notifications, os.path.dirname(output_ebrf)))
                 dlg.exec()
@@ -273,7 +271,7 @@ class Brf2EbrfDialog(QDialog):
         t.finished.connect(finished_converting)
         t.notify.connect(on_notification)
         t.errorRaised.connect(error_raised)
-        QThreadPool.global_instance().start(
+        QThreadPool.globalInstance().start(
             RunnableAdapter(t, list(DISCOVERED_PARSER_PLUGINS.values())[0], brf_list, output_ebrf, parser_options=parser_options))
 
 

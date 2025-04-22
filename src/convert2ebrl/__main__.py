@@ -13,8 +13,6 @@ from pathlib import Path
 
 from PySide6.QtCore import QSettings, QTimer
 from PySide6.QtWidgets import QApplication, QMessageBox
-# noinspection PyUnresolvedReferences
-from __feature__ import snake_case, true_property
 
 from convert2ebrl.brf_to_ebrf import Brf2EbrfDialog
 from convert2ebrl.hash_utils import get_file_hash
@@ -38,10 +36,10 @@ def run_app(args: Sequence[str]):
     release_build = check_release(sys.argv[0])
     logging.info(f"Release build: {release_build}")
     app = QApplication(args)
-    app.organization_name = "American Printing House for the Blind"
-    app.organization_domain = "aph.org"
-    app.application_name = "Convert2EBRL"
-    QSettings.set_default_format(QSettings.Format.IniFormat)
+    app.setOrganizationName("American Printing House for the Blind")
+    app.setOrganizationDomain("aph.org")
+    app.setApplicationName("Convert2EBRL")
+    QSettings.setDefaultFormat(QSettings.Format.IniFormat)
     profiles_path = get_app_config_path().joinpath(PROFILES_FILE_NAME)
     if not profiles_path.exists():
         save_settings_profiles(DEFAULT_SETTINGS_PROFILES_LIST)
@@ -51,7 +49,7 @@ def run_app(args: Sequence[str]):
         w = Brf2EbrfDialog()
         w.show()
 
-    QTimer.single_shot(0, starting_app)
+    QTimer.singleShot(0, starting_app)
     app.exec()
 
 

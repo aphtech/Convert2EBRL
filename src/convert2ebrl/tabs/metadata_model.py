@@ -8,8 +8,6 @@ import datetime
 from typing import Iterable, Sequence
 
 from PySide6.QtCore import QAbstractListModel, QModelIndex, QPersistentModelIndex, Qt, QDate
-# noinspection PyUnresolvedReferences
-from __feature__ import snake_case, true_property
 from brf2ebrl.utils.metadata import MetadataItem
 
 
@@ -22,23 +20,23 @@ class MetadataTableModel(QAbstractListModel):
     def metadata_entries(self) -> Iterable[MetadataItem]:
         return self._metadata_entries
 
-    def row_count(self, index: QModelIndex | QPersistentModelIndex = QModelIndex()):
+    def rowCount(self, index: QModelIndex | QPersistentModelIndex = QModelIndex()):
         return len(self._metadata_entries)
 
-    def insert_rows(self, row: int, data: Sequence[MetadataItem], parent: QModelIndex=QModelIndex()) -> bool:
-        self.begin_insert_rows(QModelIndex(), row, row + len(data) - 1)
+    def insertRows(self, row: int, data: Sequence[MetadataItem], parent: QModelIndex=QModelIndex()) -> bool:
+        self.beginInsertRows(QModelIndex(), row, row + len(data) - 1)
         for i, v in enumerate(data):
             self._metadata_entries.insert(row + i, v)
-        self.end_insert_rows()
+        self.endInsertRows()
         return True
 
-    def remove_rows(self, row: int, count: int=1, parent:QModelIndex=QModelIndex()) -> bool:
-        self.begin_remove_rows(QModelIndex(), row, row + count - 1)
+    def removeRows(self, row: int, count: int=1, parent:QModelIndex=QModelIndex()) -> bool:
+        self.beginRemoveRows(QModelIndex(), row, row + count - 1)
         del self._metadata_entries[row:row+count]
-        self.end_remove_rows()
+        self.endRemoveRows()
         return True
     def data(self, index, role=Qt.ItemDataRole.DisplayRole):
-        if index.is_valid() and 0 <= index.row() < len(self._metadata_entries):
+        if index.isValid() and 0 <= index.row() < len(self._metadata_entries):
             item = self._metadata_entries[index.row()]
             if role in (Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole):
                 match item.value:
@@ -48,8 +46,8 @@ class MetadataTableModel(QAbstractListModel):
                         return value
         return None
 
-    def set_data(self, index, value, /, role = Qt.ItemDataRole.EditRole):
-        if index.is_valid() and 0 <= index.row() < len(self._metadata_entries):
+    def setData(self, index, value, /, role = Qt.ItemDataRole.EditRole):
+        if index.isValid() and 0 <= index.row() < len(self._metadata_entries):
             item = self._metadata_entries[index.row()]
             match value:
                 case QDate(year=y, month=m, day=d):
@@ -60,7 +58,7 @@ class MetadataTableModel(QAbstractListModel):
             return True
         return False
 
-    def header_data(self, section, orientation, role = Qt.ItemDataRole.DisplayRole):
+    def headerData(self, section, orientation, role = Qt.ItemDataRole.DisplayRole):
         if role != Qt.ItemDataRole.DisplayRole:
             return None
         if orientation == Qt.Orientation.Vertical:
@@ -69,6 +67,6 @@ class MetadataTableModel(QAbstractListModel):
         return None
 
     def flags(self, index):
-        if not index.is_valid():
+        if not index.isValid():
             return Qt.ItemFlag.ItemIsEnabled
         return QAbstractListModel.flags(self, index) | Qt.ItemFlag.ItemIsEditable

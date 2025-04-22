@@ -10,8 +10,6 @@ from PySide6.QtCore import QObject, Slot
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QTableView, QAbstractItemView, QGroupBox, QHBoxLayout, QPushButton, \
     QMenu
-# noinspection PyUnresolvedReferences
-from __feature__ import snake_case, true_property
 from brf2ebrl.utils.metadata import MetadataItem, Creator, Title, Identifier, Language, BrailleSystem, DateCopyrighted, \
     DateTranscribed, Producer, CellType, CompleteTranscription
 
@@ -26,12 +24,12 @@ class MetadataTableWidget(QGroupBox):
         self._table_model = MetadataTableModel(metadata_entries=metadata_entries)
         layout = QVBoxLayout(self)
         self._table_view = QTableView()
-        self._table_view.accessible_description = "Press F2 to edit a item."
-        self._table_view.horizontal_header().hide()
-        self._table_view.selection_mode = QAbstractItemView.SelectionMode.SingleSelection
-        self._table_view.tab_key_navigation = False
-        self._table_view.set_model(self._table_model)
-        layout.add_widget(self._table_view)
+        self._table_view.setAccessibleDescription("Press F2 to edit a item.")
+        self._table_view.horizontalHeader().hide()
+        self._table_view.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self._table_view.setTabKeyNavigation(False)
+        self._table_view.setModel(self._table_model)
+        layout.addWidget(self._table_view)
         if editable:
             def create_add_metadata_action(metadata_name: str, metadata_factory: Callable[[], MetadataItem]) -> QAction:
                 action = QAction(metadata_name, self)
@@ -39,29 +37,29 @@ class MetadataTableWidget(QGroupBox):
                 return action
             add_menu = QMenu(parent=self)
             for name, metadata_type in ADDITIONAL_METADATA_TYPES.items():
-                add_menu.add_action(create_add_metadata_action(name, metadata_type))
+                add_menu.addAction(create_add_metadata_action(name, metadata_type))
             button_layout = QHBoxLayout()
             add_button = QPushButton("Add")
-            add_button.set_menu(add_menu)
-            button_layout.add_widget(add_button)
+            add_button.setMenu(add_menu)
+            button_layout.addWidget(add_button)
             remove_button = QPushButton("Remove")
-            button_layout.add_widget(remove_button)
-            layout.add_layout(button_layout)
+            button_layout.addWidget(remove_button)
+            layout.addLayout(button_layout)
             remove_button.clicked.connect(self.remove_current_selection)
     @property
     def metadata_entries(self) -> Iterable[MetadataItem]:
         return self._table_model.metadata_entries
     def add_metadata_item(self, item: MetadataItem):
-        index = self._table_view.current_index()
-        self._table_model.insert_rows(row=(index.row() + 1), data=[item])
+        index = self._table_view.currentIndex()
+        self._table_model.insertRows(row=(index.row() + 1), data=[item])
         index = self._table_model.index(index.row() + 1, 0)
         print(f"index={index.row()}:{index.column()}")
-        self._table_view.set_current_index(index)
+        self._table_view.setCurrentIndex(index)
         self._table_view.edit(index)
     @Slot()
     def remove_current_selection(self):
-        index = self._table_view.current_index()
-        self._table_model.remove_rows(index.row())
+        index = self._table_view.currentIndex()
+        self._table_model.removeRows(index.row())
 
 
 class MetadataWidget(QWidget):
@@ -69,9 +67,9 @@ class MetadataWidget(QWidget):
         super().__init__(parent)
         layout = QVBoxLayout(self)
         self._required_metadata = MetadataTableWidget("Required metadata", metadata_entries=[x() for x in REQUIRED_METADATA_TYPES], editable=False)
-        layout.add_widget(self._required_metadata)
+        layout.addWidget(self._required_metadata)
         self._additional_metadata = MetadataTableWidget("Additional metadata", metadata_entries=(), editable=True)
-        layout.add_widget(self._additional_metadata)
+        layout.addWidget(self._additional_metadata)
     @property
     def metadata_entries(self) -> Iterable[MetadataItem]:
         return *self._required_metadata.metadata_entries, *self._additional_metadata.metadata_entries
