@@ -53,7 +53,6 @@ class MetadataTableWidget(QGroupBox):
         index = self._table_view.currentIndex()
         self._table_model.insertRows(row=(index.row() + 1), data=[item])
         index = self._table_model.index(index.row() + 1, 0)
-        print(f"index={index.row()}:{index.column()}")
         self._table_view.setCurrentIndex(index)
         self._table_view.edit(index)
     @Slot()
