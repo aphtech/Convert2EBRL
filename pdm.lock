@@ -88,41 +88,41 @@ files = [
 
 [[package]]
 name = "pyside6"
-version = "6.8.2.1"
+version = "6.9.0"
 requires_python = "<3.14,>=3.9"
 summary = "Python bindings for the Qt cross-platform application and UI framework"
 dependencies = [
-    "PySide6-Addons==6.8.2.1",
-    "PySide6-Essentials==6.8.2.1",
-    "shiboken6==6.8.2.1",
+    "PySide6-Addons==6.9.0",
+    "PySide6-Essentials==6.9.0",
+    "shiboken6==6.9.0",
 ]
 files = [
-    {file = "PySide6-6.8.2.1-cp39-abi3-win_amd64.whl", hash = "sha256:92361e41727910e3560ea5ba494fabecc76cd20892c9fcb2ced07619081c4e65"},
+    {file = "PySide6-6.9.0-cp39-abi3-win_amd64.whl", hash = "sha256:0103e5d161696db40d75bfbf4e4b7d4f3372903c1b400c4e3379377b62c50290"},
 ]
 
 [[package]]
 name = "pyside6-addons"
-version = "6.8.2.1"
+version = "6.9.0"
 requires_python = "<3.14,>=3.9"
 summary = "Python bindings for the Qt cross-platform application and UI framework (Addons)"
 dependencies = [
-    "PySide6-Essentials==6.8.2.1",
-    "shiboken6==6.8.2.1",
+    "PySide6-Essentials==6.9.0",
+    "shiboken6==6.9.0",
 ]
 files = [
-    {file = "PySide6_Addons-6.8.2.1-cp39-abi3-win_amd64.whl", hash = "sha256:c761cc45022aa79d8419e671e7fb34a4a3e5b3826f1e68fcb819bd6e3a387fbb"},
+    {file = "PySide6_Addons-6.9.0-cp39-abi3-win_amd64.whl", hash = "sha256:8cf54065b3d1b4698448fad825378a25c10ef52017d9dff48cead03200636d8d"},
 ]
 
 [[package]]
 name = "pyside6-essentials"
-version = "6.8.2.1"
+version = "6.9.0"
 requires_python = "<3.14,>=3.9"
 summary = "Python bindings for the Qt cross-platform application and UI framework (Essentials)"
 dependencies = [
-    "shiboken6==6.8.2.1",
+    "shiboken6==6.9.0",
 ]
 files = [
-    {file = "PySide6_Essentials-6.8.2.1-cp39-abi3-win_amd64.whl", hash = "sha256:18de224f09108998d194e60f2fb8a1e86367dd525dd8a6192598e80e6ada649e"},
+    {file = "PySide6_Essentials-6.9.0-cp39-abi3-win_amd64.whl", hash = "sha256:94a0096d6bb1d3e5cef29ca4a5366d0f229d42480fbb17aa25ad85d72b1b7947"},
 ]
 
 [[package]]
@@ -137,11 +137,11 @@ files = [
 
 [[package]]
 name = "shiboken6"
-version = "6.8.2.1"
+version = "6.9.0"
 requires_python = "<3.14,>=3.9"
 summary = "Python/C++ bindings helper module"
 files = [
-    {file = "shiboken6-6.8.2.1-cp39-abi3-win_amd64.whl", hash = "sha256:1b751d47b759762b7ca31bad278d52eca4105d3028880d93979261ebbfba810c"},
+    {file = "shiboken6-6.9.0-cp39-abi3-win_amd64.whl", hash = "sha256:121ea290ed1afa5ad6abf690b377612693436292b69c61b0f8e10b1f0850f935"},
 ]
 
 [[package]]
