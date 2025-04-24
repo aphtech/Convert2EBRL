@@ -51,7 +51,7 @@ class MetadataTableModel(QAbstractListModel):
             item = self._metadata_entries[index.row()]
             match value:
                 case QDate(year=y, month=m, day=d):
-                    item.value = datetime.date(year=y, month=m, day=d)
+                    item.value = datetime.date(year=y(), month=m(), day=d())
                 case _:
                     item.value = value
             self.dataChanged.emit(index, index, 0)
