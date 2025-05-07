@@ -1,6 +1,6 @@
 [project]
 name = "Convert2EBRL"
-version = "1.0.0"
+version = "0.1.0"
 description = "Tool for converting files to eBraille"
 authors = [
     {name = "Michael Whapples", email = "mwhapples@aim.com"},
