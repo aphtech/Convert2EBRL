@@ -276,7 +276,7 @@ class Brf2EbrfDialog(QDialog):
 
 
 def save_notifications(parent: QWidget | None, notifications: Iterable[Notification], default_dir: str):
-    save_path = QFileDialog.get_save_file_name(parent, dir=default_dir, filter="Text file (*.txt)")[0]
+    save_path = QFileDialog.getSaveFileName(parent, dir=default_dir, filter="Text file (*.txt)")[0]
     if save_path:
         try:
             Path(save_path).write_text(notifications_as_text(notifications), encoding="UTF-8")
