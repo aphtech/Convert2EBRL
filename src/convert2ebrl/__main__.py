@@ -45,12 +45,14 @@ def run_app(args: Sequence[str]):
     profiles_path = get_app_config_path().joinpath(PROFILES_FILE_NAME)
     if not profiles_path.exists():
         save_settings_profiles(DEFAULT_SETTINGS_PROFILES_LIST)
-    def starting_app():
-        if not release_build:
-            QMessageBox.warning(None, "Not for production use!", "This is not a production ready build and is only for testing purposes. No other use is recommended and is at the user's own risk.")
+
     w = Brf2EbrfWidget()
+    w.setWindowTitle("Convert BRF to eBraille")
     w.show()
 
+    def starting_app():
+        if not release_build:
+            QMessageBox.warning(w, "Not for production use!", "This is not a production ready build and is only for testing purposes. No other use is recommended and is at the user's own risk.")
     QTimer.singleShot(0, starting_app)
     app.exec()
 
