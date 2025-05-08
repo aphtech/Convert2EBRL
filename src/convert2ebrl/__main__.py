@@ -15,7 +15,7 @@ from pathlib import Path
 from PySide6.QtCore import QSettings, QTimer
 from PySide6.QtWidgets import QApplication, QMessageBox
 
-from convert2ebrl.brf_to_ebrf import Brf2EbrfDialog
+from convert2ebrl.brf_to_ebrf import Brf2EbrfWidget
 from convert2ebrl.hash_utils import get_file_hash
 from convert2ebrl.settings import PROFILES_FILE_NAME
 from convert2ebrl.settings.defaults import DEFAULT_SETTINGS_PROFILES_LIST
@@ -48,8 +48,8 @@ def run_app(args: Sequence[str]):
     def starting_app():
         if not release_build:
             QMessageBox.warning(None, "Not for production use!", "This is not a production ready build and is only for testing purposes. No other use is recommended and is at the user's own risk.")
-        w = Brf2EbrfDialog()
-        w.show()
+    w = Brf2EbrfWidget()
+    w.show()
 
     QTimer.singleShot(0, starting_app)
     app.exec()

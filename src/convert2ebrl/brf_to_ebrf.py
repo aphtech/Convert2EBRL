@@ -127,7 +127,7 @@ class SettingsProfilesWidget(QWidget):
             self.currentSettingsProfileChanged.emit(value)
 
 
-class Brf2EbrfDialog(QDialog):
+class Brf2EbrfWidget(QWidget):
     def __init__(self, parent: QObject = None):
         super().__init__(parent)
         self.setWindowTitle("Convert BRF to eBraille")
