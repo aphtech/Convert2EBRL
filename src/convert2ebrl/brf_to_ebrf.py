@@ -10,7 +10,7 @@ from collections.abc import Iterable
 from dataclasses import replace
 from pathlib import Path
 
-from PySide6.QtCore import QObject, Slot, Signal, QThreadPool, QSettings
+from PySide6.QtCore import QObject, Slot, Signal, QThreadPool, QSettings, QCoreApplication
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QWidget, QDialog, QDialogButtonBox, QVBoxLayout, \
     QProgressDialog, QMessageBox, QTabWidget, QFileDialog, QComboBox, QHBoxLayout, QMenu, QPushButton, QLabel, \
@@ -161,7 +161,7 @@ class Brf2EbrfDialog(QDialog):
 
         restore_from_settings()
         self._profiles_tool.currentSettingsProfileChanged.connect(self._on_settings_profile_changed)
-        self.button_box.rejected.connect(self.reject)
+        self.button_box.rejected.connect(QCoreApplication.quit)
         self._convert_button.clicked.connect(self.on_apply)
         self._brf2ebrf_form.inputBrfChanged.connect(lambda x: self._update_validity())
         self._brf2ebrf_form.imagesDirectoryChanged.connect(lambda x: self._update_validity())

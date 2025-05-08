@@ -40,7 +40,7 @@ def run_app(args: Sequence[str]):
     app.setOrganizationName("American Printing House for the Blind")
     app.setOrganizationDomain("aph.org")
     app.setApplicationName("Convert2EBRL")
-    app.setApplicationVersion(version("convert2ebrl"))
+    app.setApplicationVersion(version(__package__))
     QSettings.setDefaultFormat(QSettings.Format.IniFormat)
     profiles_path = get_app_config_path().joinpath(PROFILES_FILE_NAME)
     if not profiles_path.exists():
