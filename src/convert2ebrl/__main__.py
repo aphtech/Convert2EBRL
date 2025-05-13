@@ -17,6 +17,7 @@ from PySide6.QtWidgets import QApplication, QMessageBox
 
 from convert2ebrl.brf_to_ebrf import Brf2EbrfWidget
 from convert2ebrl.hash_utils import get_file_hash
+from convert2ebrl.main_window import MainWindow
 from convert2ebrl.settings import PROFILES_FILE_NAME
 from convert2ebrl.settings.defaults import DEFAULT_SETTINGS_PROFILES_LIST
 from convert2ebrl.utils import save_settings_profiles, get_app_config_path
@@ -46,8 +47,7 @@ def run_app(args: Sequence[str]):
     if not profiles_path.exists():
         save_settings_profiles(DEFAULT_SETTINGS_PROFILES_LIST)
 
-    w = Brf2EbrfWidget()
-    w.setWindowTitle("Convert BRF to eBraille")
+    w = MainWindow()
     w.show()
 
     def starting_app():
