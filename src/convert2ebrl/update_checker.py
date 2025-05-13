@@ -4,24 +4,32 @@
 # Convert2EBRL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 # Convert2EBRL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with Convert2EBRL. If not, see <https://www.gnu.org/licenses/>.
+import re
 
-from PySide6.QtCore import QObject, QUrl, Slot
+from PySide6.QtCore import QObject, QUrl, Slot, Signal
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply
 
+_APP_VERSION_RE = re.compile("^app.version[ \t]*[ \t:=][ \t]*(.*)(?:\n|$)", flags=re.MULTILINE)
 
 class UpdateChecker(QObject):
+    checkingForUpdates = Signal()
+    updateAvailable = Signal(str)
     def __init__(self, parent: QObject|None = None):
         super().__init__(parent)
         self.network_manager = QNetworkAccessManager(self)
         self.reply = None
     def check_for_update(self, update_url: QUrl):
+        self.checkingForUpdates.emit()
         self.reply = self.network_manager.get(QNetworkRequest(update_url))
+        self.reply.readyRead.connect(self.on_ready_read)
+        self.reply.finished.connect(self.on_finished)
     @Slot()
     def on_ready_read(self):
         if self.reply:
             if self.reply.error() == QNetworkReply.NetworkError.NoError:
-                response_text = self.reply.readAll()
-                print(response_text)
+                response_text = str(self.reply.readAll(), "utf-8")
+                if m := _APP_VERSION_RE.search(response_text):
+                    print(m.group(1))
     @Slot()
     def on_finished(self):
         if self.reply:

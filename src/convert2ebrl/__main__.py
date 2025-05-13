@@ -20,6 +20,7 @@ from convert2ebrl.hash_utils import get_file_hash
 from convert2ebrl.main_window import MainWindow
 from convert2ebrl.settings import PROFILES_FILE_NAME
 from convert2ebrl.settings.defaults import DEFAULT_SETTINGS_PROFILES_LIST
+from convert2ebrl.update_checker import UpdateChecker
 from convert2ebrl.utils import save_settings_profiles, get_app_config_path
 
 def check_release(exe_file_name: str) -> bool:
@@ -49,6 +50,8 @@ def run_app(args: Sequence[str]):
 
     w = MainWindow()
     w.show()
+    uc = UpdateChecker()
+    QTimer.singleShot(0, lambda: uc.check_for_update("https://assets.brailleblaster.org/brailleblaster/downloads/metadata.properties"))
 
     def starting_app():
         if not release_build:
