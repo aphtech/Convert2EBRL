@@ -8,6 +8,7 @@ authors = [
 dependencies = [
     "pyside6>=6.5.2",
     "brf2ebrl @ git+https://github.com/aphtech/brf2ebrl",
+    "packaging>=25.0",
 ]
 requires-python = ">=3.11,<3.12"
 readme = "README.md"

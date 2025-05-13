@@ -5,7 +5,7 @@
 groups = ["default", "exe"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:d53a5dc4812aa4cb4ae3063d41987a58a585d1cf897874eb6f1538edd3ee6eea"
+content_hash = "sha256:2a790c28e9c7dcddec8dd93819a63be987cb1f392865eac12a7bda5ea0dfe476"
 
 [[metadata.targets]]
 requires_python = "==3.11.9"
@@ -71,6 +71,16 @@ summary = "An OrderedSet is a custom MutableSet that remembers its order, so tha
 files = [
     {file = "ordered-set-4.1.0.tar.gz", hash = "sha256:694a8e44c87657c59292ede72891eb91d34131f6531463aab3009191c77364a8"},
     {file = "ordered_set-4.1.0-py3-none-any.whl", hash = "sha256:046e1132c71fcf3330438a539928932caf51ddbc582496833e23de611de14562"},
+]
+
+[[package]]
+name = "packaging"
+version = "25.0"
+requires_python = ">=3.8"
+summary = "Core utilities for Python packages"
+files = [
+    {file = "packaging-25.0-py3-none-any.whl", hash = "sha256:29572ef2b1f17581046b3a2227d5c611fb25ec70ca1ba8554b24b0e69331a484"},
+    {file = "packaging-25.0.tar.gz", hash = "sha256:d443872c98d677bf60f6a1f2f8c1cb748e8fe762d2bf9d3148b5599295b0fc4f"},
 ]
 
 [[package]]
