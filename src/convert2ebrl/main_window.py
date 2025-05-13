@@ -22,5 +22,5 @@ class MainWindow(QMainWindow):
         update_check_action = QAction("Check for updates", self)
         update_check_action.triggered.connect(lambda _: update_checker.check_for_update(QUrl("https://assets.brailleblaster.org/brailleblaster/downloads/metadata.properties")))
         menu = self.menuBar()
-        help_menu = menu.addMenu("Help")
+        help_menu = menu.addMenu("&Help")
         help_menu.addAction(update_check_action)
