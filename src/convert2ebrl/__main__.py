@@ -50,8 +50,6 @@ def run_app(args: Sequence[str]):
 
     w = MainWindow()
     w.show()
-    uc = UpdateChecker()
-    QTimer.singleShot(0, lambda: uc.check_for_update("https://assets.brailleblaster.org/brailleblaster/downloads/metadata.properties"))
 
     def starting_app():
         if not release_build:
