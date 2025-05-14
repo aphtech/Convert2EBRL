@@ -9,19 +9,19 @@ import logging
 import os.path
 import sys
 from collections.abc import Sequence
-from importlib.metadata import version
+from importlib.metadata import metadata, version
 from pathlib import Path
 
 from PySide6.QtCore import QSettings, QTimer
 from PySide6.QtWidgets import QApplication, QMessageBox
+from packaging.metadata import parse_email
 
-from convert2ebrl.brf_to_ebrf import Brf2EbrfWidget
 from convert2ebrl.hash_utils import get_file_hash
 from convert2ebrl.main_window import MainWindow
 from convert2ebrl.settings import PROFILES_FILE_NAME
 from convert2ebrl.settings.defaults import DEFAULT_SETTINGS_PROFILES_LIST
-from convert2ebrl.update_checker import UpdateChecker
 from convert2ebrl.utils import save_settings_profiles, get_app_config_path
+
 
 def check_release(exe_file_name: str) -> bool:
     if not os.path.exists(exe_file_name) and os.path.isfile(exe_file_name):
@@ -48,7 +48,9 @@ def run_app(args: Sequence[str]):
     if not profiles_path.exists():
         save_settings_profiles(DEFAULT_SETTINGS_PROFILES_LIST)
 
-    w = MainWindow()
+    raw_meta, unparsed = parse_email(str(metadata(__package__)))
+    download_site = raw_meta["project_urls"]["download-site"]
+    w = MainWindow(download_site)
     w.show()
 
     def starting_app():

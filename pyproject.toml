@@ -3,7 +3,7 @@ name = "Convert2EBRL"
 version = "0.1.0"
 description = "Tool for converting files to eBraille"
 authors = [
-    {name = "Michael Whapples", email = "mwhapples@aim.com"},
+    {name = "Michael Whapples", email = "mwhapples@aph.org"},
 ]
 dependencies = [
     "pyside6>=6.5.2",
@@ -13,6 +13,10 @@ dependencies = [
 requires-python = ">=3.11,<3.12"
 readme = "README.md"
 license = {text = "GPL-3[0-or-later"}
+
+[project.urls]
+# download-site = "https://github.com/aphtech/Convert2EBRL/releases/latest/"
+download-site = "https://download.brailleblaster-ng.app/"
 
 [project.gui-scripts]
 convert2ebrl = "convert2ebrl.__main__:main"

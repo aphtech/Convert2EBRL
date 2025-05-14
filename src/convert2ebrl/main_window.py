@@ -4,6 +4,7 @@
 # Convert2EBRL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 # Convert2EBRL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with Convert2EBRL. If not, see <https://www.gnu.org/licenses/>.
+import posixpath
 
 from PySide6.QtCore import QUrl
 from PySide6.QtGui import QAction
@@ -14,13 +15,15 @@ from convert2ebrl.update_checker import UpdateChecker
 
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, download_site: str):
         super().__init__()
         self.setWindowTitle("Convert BRF to eBraille")
         self.setCentralWidget(Brf2EbrfWidget())
         update_checker = UpdateChecker(self)
         update_check_action = QAction("Check for updates", self)
-        update_check_action.triggered.connect(lambda _: update_checker.check_for_update(QUrl("https://assets.brailleblaster.org/brailleblaster/downloads/metadata.properties")))
+        download_url = QUrl(download_site)
+        download_url.setPath(posixpath.join(download_url.path(), "metadata.properties"))
+        update_check_action.triggered.connect(lambda _: update_checker.check_for_update(download_url))
         menu = self.menuBar()
         help_menu = menu.addMenu("&Help")
         help_menu.addAction(update_check_action)
