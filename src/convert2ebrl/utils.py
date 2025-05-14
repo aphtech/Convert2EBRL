@@ -4,11 +4,11 @@
 # Convert2EBRL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 # Convert2EBRL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with Convert2EBRL. If not, see <https://www.gnu.org/licenses/>.
-import string
+import posixpath
 from collections.abc import Iterable
 from pathlib import Path
 
-from PySide6.QtCore import QRunnable, Slot, QSettings, QStandardPaths
+from PySide6.QtCore import QRunnable, Slot, QSettings, QStandardPaths, QUrl
 from brf2ebrl.common import PageNumberPosition
 
 from convert2ebrl.settings import SettingsProfile, PROFILES_FILE_NAME
@@ -85,7 +85,7 @@ def load_settings_profile(settings):
                            lines_per_page=lpp, odd_bpn_position=odd_bpn, even_bpn_position=even_bpn,
                            odd_ppn_position=odd_ppn, even_ppn_position=even_ppn)
 
-_NORMALIZE_LABEL_MAP = str.maketrans("", "", string.punctuation + string.whitespace)
-
-def normalize_url_label(l: str) -> str:
-    return l.translate(_NORMALIZE_LABEL_MAP).lower()
+def make_qurl(base: str, extra: str) -> QUrl:
+    url = QUrl(base)
+    url.setPath(posixpath.join(url.path(), extra))
+    return url

@@ -15,8 +15,7 @@ readme = "README.md"
 license = {text = "GPL-3[0-or-later"}
 
 [project.urls]
-# download-site = "https://github.com/aphtech/Convert2EBRL/releases/latest/"
-download-site = "https://download.brailleblaster-ng.app/"
+download-site = "https://github.com/aphtech/Convert2EBRL/releases/latest/download"
 
 [project.gui-scripts]
 convert2ebrl = "convert2ebrl.__main__:main"

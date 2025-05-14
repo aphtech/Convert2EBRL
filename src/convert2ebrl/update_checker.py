@@ -34,13 +34,23 @@ class UpdateChecker(QObject):
                 response_text = str(self.reply.readAll(), "utf-8")
                 if m := _APP_VERSION_RE.search(response_text):
                     if Version(QCoreApplication.applicationVersion()) < Version(m.group(1)):
-                        print(m.group(1))
                         self.updateAvailable.emit(m.group(1))
+                    else:
+                        self.noUpdateAvailable.emit()
+                else:
+                    self.errorOccurred.emit("Unable to find latest version")
+            else:
+                self.errorOccurred.emit(self.reply.errorString())
+        else:
+            self.errorOccurred.emit("Unknown error")
     @Slot()
     def on_finished(self):
         if self.reply:
             self.reply.deleteLater()
     @Slot(QNetworkReply.NetworkError)
     def on_error(self, _: QNetworkReply.NetworkError):
+        print("error checking update")
         if self.reply:
             self.errorOccurred.emit(self.reply.errorString())
+        else:
+            self.errorOccurred.emit("Unknown error")
