@@ -26,6 +26,7 @@ class MainWindow(QMainWindow):
                 QDesktopServices.openUrl(QUrl(make_qurl(download_site, "download.html")))
         update_checker.updateAvailable.connect(on_update_available)
         update_checker.noUpdateAvailable.connect(lambda: QMessageBox.information(self, "No updates", "You are running the latest version of the software."))
+        update_checker.errorOccurred.connect(lambda x: QMessageBox.warning(self, "Unable to check for updates.", "There was a problem whilst checking for updates, please try again later."))
         update_check_action = QAction("Check for updates", self)
         download_url = make_qurl(download_site, "metadata.properties")
         update_check_action.triggered.connect(lambda _: update_checker.check_for_update(download_url))
