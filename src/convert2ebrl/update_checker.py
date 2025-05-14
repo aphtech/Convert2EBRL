@@ -49,7 +49,6 @@ class UpdateChecker(QObject):
             self.reply.deleteLater()
     @Slot(QNetworkReply.NetworkError)
     def on_error(self, _: QNetworkReply.NetworkError):
-        print("error checking update")
         if self.reply:
             self.errorOccurred.emit(self.reply.errorString())
         else:
