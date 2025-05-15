@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Tool for converting files to eBraille"
 authors = [
     {name = "Michael Whapples", email = "mwhapples@aph.org"},
+    {name = "Ken Perry", email = "kperry@aph.org"},
 ]
 dependencies = [
     "pyside6>=6.5.2",
