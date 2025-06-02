@@ -12,7 +12,7 @@ from collections.abc import Sequence
 from importlib.metadata import metadata, version
 from pathlib import Path
 
-from PySide6.QtCore import QSettings, QTimer
+from PySide6.QtCore import QSettings, QTimer, QStandardPaths
 from PySide6.QtWidgets import QApplication, QMessageBox
 from packaging.metadata import parse_email
 
@@ -32,17 +32,19 @@ def check_release(exe_file_name: str) -> bool:
     return hash_path.exists() and Path(hash_path).read_text(encoding="UTF-8").strip() == exe_hash
 
 def run_app(args: Sequence[str]):
-    logging.basicConfig(
-        level=logging.INFO, format="%(levelname)s:%(asctime)s:%(module)s:%(message)s"
-    )
-    logging.debug(f"Executable hash: {get_file_hash(sys.argv[0])}")
-    release_build = check_release(sys.argv[0])
-    logging.info(f"Release build: {release_build}")
     app = QApplication(args)
     app.setOrganizationName("American Printing House for the Blind")
     app.setOrganizationDomain("aph.org")
     app.setApplicationName("Convert2EBRL")
     app.setApplicationVersion(version(__package__))
+    log_path = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppLocalDataLocation)
+    os.makedirs(log_path, exist_ok=True)
+    logging.basicConfig(
+        level=logging.INFO, format="%(levelname)s:%(asctime)s:%(module)s:%(message)s", filename=os.path.join(log_path, "convert2ebrl.log")
+    )
+    logging.debug(f"Executable hash: {get_file_hash(sys.argv[0])}")
+    release_build = check_release(sys.argv[0])
+    logging.info(f"Release build: {release_build}")
     QSettings.setDefaultFormat(QSettings.Format.IniFormat)
     profiles_path = get_app_config_path().joinpath(PROFILES_FILE_NAME)
     if not profiles_path.exists():
