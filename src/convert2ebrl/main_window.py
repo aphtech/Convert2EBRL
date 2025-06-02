@@ -7,7 +7,7 @@
 
 from PySide6.QtCore import QUrl
 from PySide6.QtGui import QAction, QDesktopServices
-from PySide6.QtWidgets import QMainWindow, QMessageBox
+from PySide6.QtWidgets import QMainWindow, QMessageBox, QApplication
 
 from convert2ebrl.brf_to_ebrf import Brf2EbrfWidget
 from convert2ebrl.update_checker import UpdateChecker
@@ -33,3 +33,6 @@ class MainWindow(QMainWindow):
         menu = self.menuBar()
         help_menu = menu.addMenu("&Help")
         help_menu.addAction(update_check_action)
+    def closeEvent(self, event, /):
+        super().closeEvent(event)
+        QApplication.quit()

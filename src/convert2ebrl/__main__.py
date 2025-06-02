@@ -37,11 +37,13 @@ def run_app(args: Sequence[str]):
     app.setOrganizationDomain("aph.org")
     app.setApplicationName("Convert2EBRL")
     app.setApplicationVersion(version(__package__))
+    app.setQuitOnLastWindowClosed(False)
     log_path = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppLocalDataLocation)
     os.makedirs(log_path, exist_ok=True)
     logging.basicConfig(
         level=logging.INFO, format="%(levelname)s:%(asctime)s:%(module)s:%(message)s", filename=os.path.join(log_path, "convert2ebrl.log")
     )
+    logging.info(f"sys.argv[0]={sys.argv[0]} and PySide app={app.applicationFilePath()}")
     logging.debug(f"Executable hash: {get_file_hash(sys.argv[0])}")
     release_build = check_release(sys.argv[0])
     logging.info(f"Release build: {release_build}")
