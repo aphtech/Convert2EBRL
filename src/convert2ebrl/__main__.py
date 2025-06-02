@@ -25,12 +25,15 @@ from convert2ebrl.utils import save_settings_profiles, get_app_config_path
 
 
 def check_release(exe_file_name: str) -> bool:
-    if not os.path.exists(exe_file_name) and os.path.isfile(exe_file_name):
+    logging.debug("Checking if release")
+    if os.path.exists(exe_file_name) and os.path.isfile(exe_file_name):
+        app_dir = os.path.dirname(exe_file_name)
+        exe_hash = get_file_hash([exe_file_name, os.path.join(app_dir, "build-data.txt")]).strip()
+        logging.debug(f"Executable hash: {exe_hash}")
+        hash_path = Path(os.path.join(app_dir, "release.hash"))
+        return hash_path.exists() and Path(hash_path).read_text(encoding="UTF-8").strip() == exe_hash
+    else:
         return False
-    app_dir = os.path.dirname(exe_file_name)
-    exe_hash = get_file_hash([exe_file_name, os.path.join(app_dir, "build-data.txt")]).strip()
-    hash_path = Path(os.path.join(app_dir, "release.hash"))
-    return hash_path.exists() and Path(hash_path).read_text(encoding="UTF-8").strip() == exe_hash
 
 def run_app(args: Sequence[str]):
     app = QApplication(args)
@@ -52,8 +55,6 @@ def run_app(args: Sequence[str]):
     logging.basicConfig(
         level=logging.INFO, format="%(levelname)s:%(asctime)s:%(module)s:%(message)s", handlers=[rfh]
     )
-    logging.info(f"sys.argv[0]={sys.argv[0]} and PySide app={app.applicationFilePath()}")
-    logging.debug(f"Executable hash: {get_file_hash(sys.argv[0])}")
     release_build = check_release(sys.argv[0])
     logging.info(f"Release build: {release_build}")
     QSettings.setDefaultFormat(QSettings.Format.IniFormat)
