@@ -6,6 +6,7 @@
 # You should have received a copy of the GNU General Public License along with Convert2EBRL. If not, see <https://www.gnu.org/licenses/>.
 
 import logging
+import logging.handlers
 import os.path
 import sys
 from collections.abc import Sequence
@@ -40,8 +41,16 @@ def run_app(args: Sequence[str]):
     app.setQuitOnLastWindowClosed(False)
     log_path = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppLocalDataLocation)
     os.makedirs(log_path, exist_ok=True)
+    rfh = logging.handlers.RotatingFileHandler(
+        filename=os.path.join(log_path, "convert2ebrl.log"),
+        mode='a',
+        maxBytes=10000000,
+        backupCount=2,
+        encoding="utf-8",
+        delay=False
+    )
     logging.basicConfig(
-        level=logging.INFO, format="%(levelname)s:%(asctime)s:%(module)s:%(message)s", filename=os.path.join(log_path, "convert2ebrl.log")
+        level=logging.INFO, format="%(levelname)s:%(asctime)s:%(module)s:%(message)s", handlers=[rfh]
     )
     logging.info(f"sys.argv[0]={sys.argv[0]} and PySide app={app.applicationFilePath()}")
     logging.debug(f"Executable hash: {get_file_hash(sys.argv[0])}")
