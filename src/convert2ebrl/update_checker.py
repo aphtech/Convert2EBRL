@@ -4,6 +4,7 @@
 # Convert2EBRL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 # Convert2EBRL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with Convert2EBRL. If not, see <https://www.gnu.org/licenses/>.
+import logging
 import re
 
 from PySide6.QtCore import QObject, QUrl, Slot, Signal, QCoreApplication
@@ -23,6 +24,7 @@ class UpdateChecker(QObject):
         self.reply = None
     def check_for_update(self, update_url: QUrl):
         self.checkingForUpdates.emit()
+        logging.info("Checking for update at %s", update_url.toDisplayString())
         self.reply = self.network_manager.get(QNetworkRequest(update_url))
         self.reply.readyRead.connect(self.on_ready_read)
         self.reply.finished.connect(self.on_finished)

@@ -32,8 +32,7 @@ def check_release(exe_file_name: str) -> bool:
         logging.debug(f"Executable hash: {exe_hash}")
         hash_path = Path(os.path.join(app_dir, "release.hash"))
         return hash_path.exists() and Path(hash_path).read_text(encoding="UTF-8").strip() == exe_hash
-    else:
-        return False
+    return False
 
 def run_app(args: Sequence[str]):
     app = QApplication(args)
@@ -42,6 +41,8 @@ def run_app(args: Sequence[str]):
     app.setApplicationName("Convert2EBRL")
     app.setApplicationVersion(version(__package__))
     app.setQuitOnLastWindowClosed(False)
+    app_settings = QSettings(os.path.join(os.path.dirname(sys.argv[0]), "settings.ini"), QSettings.Format.IniFormat)
+    log_level = app_settings.value("log_level", defaultValue=logging.INFO, type=int)
     log_path = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppLocalDataLocation)
     os.makedirs(log_path, exist_ok=True)
     rfh = logging.handlers.RotatingFileHandler(
@@ -53,8 +54,9 @@ def run_app(args: Sequence[str]):
         delay=False
     )
     logging.basicConfig(
-        level=logging.INFO, format="%(levelname)s:%(asctime)s:%(module)s:%(message)s", handlers=[rfh]
+        level=log_level, format="%(levelname)s:%(asctime)s:%(module)s:%(message)s", handlers=[rfh]
     )
+    logging.info("Using settings from %s", app_settings.fileName())
     release_build = check_release(sys.argv[0])
     logging.info(f"Release build: {release_build}")
     QSettings.setDefaultFormat(QSettings.Format.IniFormat)
@@ -63,7 +65,7 @@ def run_app(args: Sequence[str]):
         save_settings_profiles(DEFAULT_SETTINGS_PROFILES_LIST)
 
     raw_meta, unparsed = parse_email(str(metadata(__package__)))
-    download_site = raw_meta["project_urls"]["download-site"]
+    download_site = str(app_settings.value("download_site", defaultValue=raw_meta["project_urls"]["download-site"]))
     w = MainWindow(download_site)
     w.show()
 
