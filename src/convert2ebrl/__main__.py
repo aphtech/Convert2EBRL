@@ -64,7 +64,9 @@ def run_app(args: Sequence[str]):
     if not profiles_path.exists():
         save_settings_profiles(DEFAULT_SETTINGS_PROFILES_LIST)
 
-    raw_meta, unparsed = parse_email(str(metadata(__package__)))
+    package_metadata = metadata(__package__)
+    urls = "\n".join([f"Project-URL: {u}" for u in package_metadata.get_all("Project-URL")])
+    raw_meta, unparsed = parse_email(str(urls))
     download_site = str(app_settings.value("download_site", defaultValue=raw_meta["project_urls"]["download-site"]))
     w = MainWindow(download_site)
     w.show()

@@ -11,7 +11,7 @@ dependencies = [
     "brf2ebrl @ git+https://github.com/aphtech/brf2ebrl",
     "packaging>=25.0",
 ]
-requires-python = ">=3.11,<3.12"
+requires-python = ">=3.13,<3.14"
 readme = "README.md"
 license = {text = "GPL-3[0-or-later"}
 
