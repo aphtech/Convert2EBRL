@@ -13,9 +13,9 @@ requires_python = ">=3.13,<3.14"
 [[package]]
 name = "brf2ebrl"
 version = "0.1.0"
-requires_python = ">=3.10"
+requires_python = ">=3.12"
 git = "https://github.com/aphtech/brf2ebrl"
-revision = "8a002e45dec2e936e4efacd1a43797e3bb6f2649"
+revision = "3f1a7e33a09b1798d8b3afa98772477f874ae6b5"
 summary = "A tool for converting BRF to eBRL."
 dependencies = [
     "html5lib>=1.1",
