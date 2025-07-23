@@ -6,7 +6,7 @@ name: Python application
 on:
   push:
     branches: [ "main" ]
-    tags: [ "release/*" ]
+    tags: [ "release-*" ]
   pull_request:
     branches: [ "main" ]
 
@@ -37,7 +37,7 @@ jobs:
       run: git show --no-patch > Convert2EBRL.dist/build-data.txt
     - name: add-release-hash
       if: github.ref_type == 'tag'
-      run: python "src\convert2ebrl\hash_utils.py" "Convert2EBRL.dist\Convert2EBRL.exe" "Convert2EBRL.dist\build-data.txt" > "Convert2EBRL.dist\release.hash"
+      run: pdm run python -m "convert2ebrl.hash_utils" "Convert2EBRL.dist\Convert2EBRL.exe" "Convert2EBRL.dist\build-data.txt" > "Convert2EBRL.dist\release.hash"
     - name: Create release zip
       run: Compress-Archive -Path Convert2EBRL.dist -Destination convert2ebrl-continuous.zip
     - name: Update continuous tag

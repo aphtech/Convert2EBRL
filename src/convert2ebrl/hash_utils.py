@@ -20,4 +20,8 @@ def get_file_hash(filenames: Iterable[str]) -> str:
     return hasher.hexdigest()
 
 if __name__ == "__main__":
-    print(get_file_hash(sys.argv[1:]))
+    files = sys.argv[1:]
+    if len(files) > 0:
+        print(get_file_hash(sys.argv[1:]))
+    else:
+        print("You must give at least 1 file")
