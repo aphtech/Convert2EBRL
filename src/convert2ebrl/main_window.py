@@ -10,6 +10,7 @@ from PySide6.QtGui import QAction, QDesktopServices
 from PySide6.QtWidgets import QMainWindow, QMessageBox, QApplication
 
 from convert2ebrl.brf_to_ebrf import Brf2EbrfWidget
+from convert2ebrl.log_viewer import LogViewerDialog
 from convert2ebrl.update_checker import UpdateChecker
 from convert2ebrl.utils import make_qurl
 
@@ -19,6 +20,11 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("Convert BRF to eBraille")
         self.setCentralWidget(Brf2EbrfWidget())
+
+        self._log_viewer = None
+        log_view_action = QAction("View log", self)
+        log_view_action.triggered.connect(lambda _: self._open_log_viewer())
+
         update_checker = UpdateChecker(self)
         def on_update_available(v):
             if QMessageBox.question(self, "Update available",
@@ -30,9 +36,17 @@ class MainWindow(QMainWindow):
         update_check_action = QAction("Check for updates", self)
         download_url = make_qurl(download_site, "metadata.properties")
         update_check_action.triggered.connect(lambda _: update_checker.check_for_update(download_url))
+
         menu = self.menuBar()
         help_menu = menu.addMenu("&Help")
+        help_menu.addAction(log_view_action)
         help_menu.addAction(update_check_action)
+    def _open_log_viewer(self):
+        if not self._log_viewer:
+            self._log_viewer = LogViewerDialog(self)
+        self._log_viewer.show()
+        self._log_viewer.raise_()
+        self._log_viewer.activateWindow()
     def closeEvent(self, event, /):
         super().closeEvent(event)
         QApplication.quit()

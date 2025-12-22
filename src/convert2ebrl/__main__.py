@@ -45,8 +45,10 @@ def run_app(args: Sequence[str]):
     log_level = app_settings.value("log_level", defaultValue=logging.INFO, type=int)
     log_path = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppLocalDataLocation)
     os.makedirs(log_path, exist_ok=True)
+    log_filename = os.path.join(log_path, "convert2ebrl.log")
+    app.setProperty("log_filename", log_filename)
     rfh = logging.handlers.RotatingFileHandler(
-        filename=os.path.join(log_path, "convert2ebrl.log"),
+        filename=log_filename,
         mode='a',
         maxBytes=10000000,
         backupCount=2,
