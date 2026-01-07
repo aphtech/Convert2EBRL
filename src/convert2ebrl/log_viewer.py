@@ -7,6 +7,7 @@
 import logging
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QTextCursor
 from PySide6.QtWidgets import QDialog, QWidget, QDialogButtonBox, QVBoxLayout, QPlainTextEdit, QApplication, QMessageBox
 
 
@@ -36,6 +37,8 @@ class LogViewerDialog(QDialog):
         try:
             with open(log_filename, mode='r', encoding="UTF-8") as f:
                 self._log_text.setPlainText(f.read())
+                self._log_text.moveCursor(QTextCursor.MoveOperation.End)
+                self._log_text.ensureCursorVisible()
         except:
             logging.exception("Problem loading log")
             QMessageBox.critical(self, "Problem loading log", f"Could not load the log file. The log should be available to view in {log_filename}", QMessageBox.StandardButton.Ok)
