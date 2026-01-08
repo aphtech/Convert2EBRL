@@ -7,7 +7,7 @@
 import logging
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QTextCursor
+from PySide6.QtGui import QTextCursor, QGuiApplication
 from PySide6.QtWidgets import QDialog, QWidget, QDialogButtonBox, QVBoxLayout, QPlainTextEdit, QApplication, QMessageBox
 
 
@@ -24,6 +24,8 @@ class LogViewerDialog(QDialog):
         self.button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         refresh_button = self.button_box.addButton("Refresh", QDialogButtonBox.ButtonRole.ActionRole)
         refresh_button.clicked.connect(lambda _: self._refresh())
+        copy_button = self.button_box.addButton("Copy log", QDialogButtonBox.ButtonRole.ActionRole)
+        copy_button.clicked.connect(lambda _: self._copy_log())
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
 
@@ -42,3 +44,7 @@ class LogViewerDialog(QDialog):
         except:
             logging.exception("Problem loading log")
             QMessageBox.critical(self, "Problem loading log", f"Could not load the log file. The log should be available to view in {log_filename}", QMessageBox.StandardButton.Ok)
+
+    def _copy_log(self):
+        clipboard = QGuiApplication.clipboard()
+        clipboard.setText(self._log_text.toPlainText())
