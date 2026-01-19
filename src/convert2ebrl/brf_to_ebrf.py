@@ -12,22 +12,21 @@ from pathlib import Path
 
 from PySide6.QtCore import QObject, Slot, Signal, QThreadPool, QSettings, QCoreApplication
 from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QWidget, QDialog, QDialogButtonBox, QVBoxLayout, \
+from PySide6.QtWidgets import QWidget, QDialogButtonBox, QVBoxLayout, \
     QProgressDialog, QMessageBox, QTabWidget, QFileDialog, QComboBox, QHBoxLayout, QMenu, QPushButton, QLabel, \
     QInputDialog
 from brf2ebrl.common import PageLayout
 from brf2ebrl.parser import EBrailleParserOptions
-from brf2ebrl.plugin import  find_plugins
+from brf2ebrl.plugin import find_plugins
 
 from convert2ebrl.convert_task import ConvertTask, Notification
 from convert2ebrl.settings import SettingsProfile
 from convert2ebrl.settings.defaults import DEFAULT_SETTINGS_PROFILES_LIST
-from convert2ebrl.tabs.general_tab import ConversionGeneralSettingsWidget
+from convert2ebrl.tabs.general_tab import ConversionGeneralSettingsWidget, expand_input_brfs
 from convert2ebrl.tabs.metadata_tab import MetadataWidget
 from convert2ebrl.tabs.page_settings_tab import ConversionPageSettingsWidget
 from convert2ebrl.utils import RunnableAdapter, load_settings_profiles, save_settings_profiles, load_settings_profile, \
     save_settings_profile
-
 
 DISCOVERED_PARSER_PLUGINS = find_plugins()
 
@@ -210,9 +209,7 @@ class Brf2EbrfWidget(QWidget):
     @Slot()
     def on_apply(self):
         number_of_steps = 1000
-        brf_list = [brf for f in self._brf2ebrf_form.input_brfs for brf in
-                    ([os.path.join(f, b) for b in os.listdir(f) if
-                      os.path.splitext(b)[1].lower() == ".brf"] if os.path.isdir(f) else [f])]
+        brf_list = expand_input_brfs(self._brf2ebrf_form.input_brfs)
         num_of_inputs = len(brf_list)
         output_ebrf = self._brf2ebrf_form.output_ebrf
         if os.path.exists(output_ebrf):

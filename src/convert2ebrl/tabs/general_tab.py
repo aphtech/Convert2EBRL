@@ -7,7 +7,7 @@
 
 import os
 
-from PySide6.QtCore import Signal, QObject, QSettings, Slot
+from PySide6.QtCore import Signal, QObject, QSettings, Slot, QStandardPaths
 from PySide6.QtWidgets import QWidget, QFormLayout, QComboBox, QCheckBox, QFileDialog
 
 from convert2ebrl.settings.defaults import CONVERSION_LAST_DIR as DEFAULT_LAST_DIR
@@ -68,8 +68,20 @@ class ConversionGeneralSettingsWidget(QWidget):
         self._include_images_checkbox.toggled.connect(self._update_include_images_state)
         self._input_type_combo.currentIndexChanged.connect(self._clear_input_brf)
         self._input_brf_edit.fileChanged.connect(self.inputBrfChanged.emit)
+        self._input_brf_edit.fileChanged.connect(self._update_output_based_on_input)
         self._image_dir_edit.fileChanged.connect(self.imagesDirectoryChanged.emit)
         self._output_ebrf_edit.fileChanged.connect(self.outputEbrfChanged.emit)
+
+    def _update_output_based_on_input(self):
+        brf_list = [os.path.splitext(os.path.basename(x))[0] for x in expand_input_brfs(self.input_brfs)]
+        if brf_list:
+            output_prefix = os.path.commonprefix(brf_list)
+            output_file = (output_prefix if output_prefix else brf_list[0]) + ".ebrl"
+            output_dir = os.path.join(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DocumentsLocation) if QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DocumentsLocation) else os.path.expanduser("~"), "ebraille")
+            os.makedirs(output_dir, exist_ok=True)
+            self.output_ebrf = os.path.join(output_dir, output_file)
+        else:
+            self.output_ebrf = ""
 
     @Slot(bool)
     def _update_include_images_state(self, checked: bool):
@@ -126,3 +138,9 @@ class ConversionGeneralSettingsWidget(QWidget):
     @output_ebrf.setter
     def output_ebrf(self, value: str):
         self._output_ebrf_edit.file_name = value
+
+
+def expand_input_brfs(input_brfs: list[str]) -> list[str]:
+    return [brf for f in input_brfs for brf in
+            ([os.path.join(f, b) for b in os.listdir(f) if
+              os.path.splitext(b)[1].lower() == ".brf"] if os.path.isdir(f) else [f])]
