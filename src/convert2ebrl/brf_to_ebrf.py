@@ -204,7 +204,7 @@ class Brf2EbrfWidget(QWidget):
         is_valid = self._page_settings_form.is_valid and all(
             [general_settings.input_brfs != [], general_settings.image_directory != "",
              general_settings.output_ebrf != ""])
-        self._convert_button.enabled = is_valid
+        self._convert_button.setEnabled(is_valid)
 
     @Slot()
     def on_apply(self):
