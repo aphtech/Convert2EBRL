@@ -24,6 +24,18 @@ from convert2ebrl.settings.defaults import DEFAULT_SETTINGS_PROFILES_LIST
 from convert2ebrl.utils import save_settings_profiles, get_app_config_path
 
 
+def get_build_date() -> str:
+    exe_file = sys.argv[0]
+    if os.path.exists(exe_file) and os.path.isfile(exe_file):
+        app_path = os.path.dirname(exe_file)
+        build_data_path = Path(os.path.join(app_path, "build-data.txt"))
+        if os.path.exists(build_data_path) and os.path.isfile(build_data_path):
+            with open(build_data_path) as f:
+                while line := f.readline():
+                    if line.startswith("Date:"):
+                        return line.split(":", maxsplit=1)[1].strip()
+    return "Unknown"
+
 def check_release(exe_file_name: str) -> bool:
     logging.debug("Checking if release")
     if os.path.exists(exe_file_name) and os.path.isfile(exe_file_name):
@@ -58,6 +70,9 @@ def run_app(args: Sequence[str]):
     logging.basicConfig(
         level=log_level, format="%(levelname)s:%(asctime)s:%(module)s:%(message)s", handlers=[rfh]
     )
+    build_date = get_build_date()
+    app.setProperty("build_date", build_date)
+    logging.info("Starting convert2ebrl version %s built on date %s", app.applicationVersion(), app.property("build_date"))
     logging.info("Using settings from %s", app_settings.fileName())
     release_build = check_release(sys.argv[0])
     logging.info(f"Release build: {release_build}")
