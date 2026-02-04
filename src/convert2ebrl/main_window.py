@@ -37,10 +37,16 @@ class MainWindow(QMainWindow):
         download_url = make_qurl(download_site, "metadata.properties")
         update_check_action.triggered.connect(lambda _: update_checker.check_for_update(download_url))
 
+        def show_about():
+            QMessageBox.about(self, QApplication.applicationName(), f"{QApplication.applicationVersion()} built on {str(QApplication.instance().property('build_date'))}\nCopyright (C) 2026 {QApplication.organizationName()}")
+        about_action = QAction("About", self)
+        about_action.triggered.connect(lambda _: show_about())
+
         menu = self.menuBar()
         help_menu = menu.addMenu("&Help")
         help_menu.addAction(log_view_action)
         help_menu.addAction(update_check_action)
+        help_menu.addAction(about_action)
     def _open_log_viewer(self):
         if not self._log_viewer:
             self._log_viewer = LogViewerDialog(self)
