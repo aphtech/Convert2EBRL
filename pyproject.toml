@@ -16,6 +16,7 @@ readme = "README.md"
 license = {text = "GPL-3[0-or-later"}
 
 [project.urls]
+homepage = "https://github.com//aphtech/convert2ebrl"
 download-site = "https://github.com/aphtech/Convert2EBRL/releases/latest/download"
 
 [project.gui-scripts]

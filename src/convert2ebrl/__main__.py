@@ -84,7 +84,10 @@ def run_app(args: Sequence[str]):
     package_metadata = metadata(__package__)
     urls = "\n".join([f"Project-URL: {u}" for u in package_metadata.get_all("Project-URL")])
     raw_meta, unparsed = parse_email(str(urls))
-    download_site = str(app_settings.value("download_site", defaultValue=raw_meta["project_urls"]["download-site"]))
+    download_site = str(app_settings.value("download_site", defaultValue=raw_meta["project_urls"]["download-site"], type=str))
+    app.setProperty("download_site", download_site)
+    home_page = str(app_settings.value("home_page", defaultValue=raw_meta["project_urls"]["homepage"], type=str))
+    app.setProperty("home_page", home_page)
     w = MainWindow(download_site)
     w.show()
 

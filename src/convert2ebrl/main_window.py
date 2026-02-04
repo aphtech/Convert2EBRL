@@ -29,7 +29,7 @@ class MainWindow(QMainWindow):
         def on_update_available(v):
             if QMessageBox.question(self, "Update available",
                                  f"A new version {v} of the software is available. Would you like to go to the download site?") == QMessageBox.StandardButton.Yes:
-                QDesktopServices.openUrl(QUrl(make_qurl(download_site, "download.html")))
+                QDesktopServices.openUrl(QUrl(QApplication.instance().property("home_page")))
         update_checker.updateAvailable.connect(on_update_available)
         update_checker.noUpdateAvailable.connect(lambda: QMessageBox.information(self, "No updates", "You are running the latest version of the software."))
         update_checker.errorOccurred.connect(lambda x: QMessageBox.warning(self, "Unable to check for updates.", "There was a problem whilst checking for updates, please try again later."))
