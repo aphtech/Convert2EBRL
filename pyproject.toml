@@ -22,7 +22,7 @@ download-site = "https://github.com/aphtech/Convert2EBRL/releases/latest/downloa
 [project.gui-scripts]
 convert2ebrl = "convert2ebrl.__main__:main"
 
-[tool.pdm.dev-dependencies]
+[dependency-groups]
 exe = [
     "nuitka>=4.0",
 ]
