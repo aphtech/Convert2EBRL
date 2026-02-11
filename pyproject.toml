@@ -24,7 +24,7 @@ convert2ebrl = "convert2ebrl.__main__:main"
 
 [tool.pdm.dev-dependencies]
 exe = [
-    "nuitka>=1.8.4",
+    "nuitka>=4.0",
 ]
 
 
