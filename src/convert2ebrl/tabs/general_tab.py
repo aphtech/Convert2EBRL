@@ -14,6 +14,7 @@ from convert2ebrl.settings.defaults import CONVERSION_LAST_DIR as DEFAULT_LAST_D
 from convert2ebrl.settings.keys import CONVERSION_LAST_DIR as LAST_DIR_SETTING_KEY
 from convert2ebrl.widgets import FilePickerWidget
 
+
 class ConversionGeneralSettingsWidget(QWidget):
     inputBrfChanged = Signal(str)
     imagesDirectoryChanged = Signal(str)
@@ -65,11 +66,14 @@ class ConversionGeneralSettingsWidget(QWidget):
             settings = QSettings()
             settings.setValue("Conversion/input_type", bool(index))
         self._input_type_combo.currentIndexChanged.connect(on_input_type_changed)
-        self._include_images_checkbox.toggled.connect(self._update_include_images_state)
         self._input_type_combo.currentIndexChanged.connect(self._clear_input_brf)
         self._input_brf_edit.fileChanged.connect(self.inputBrfChanged.emit)
         self._input_brf_edit.fileChanged.connect(self._update_output_based_on_input)
-        self._image_dir_edit.fileChanged.connect(self.imagesDirectoryChanged.emit)
+        self._include_images_checkbox.toggled.connect(self._update_include_images_state)
+        def on_image_directory_changed(value: str):
+            if self._include_images_checkbox.isChecked():
+                self.imagesDirectoryChanged.emit(value)
+        self._image_dir_edit.fileChanged.connect(on_image_directory_changed)
         self._output_ebrf_edit.fileChanged.connect(self.outputEbrfChanged.emit)
 
     def _update_output_based_on_input(self):
@@ -88,6 +92,7 @@ class ConversionGeneralSettingsWidget(QWidget):
         self._image_dir_edit.setEnabled(checked)
         if not checked:
             self._image_dir_edit.file_name = ""
+        self.imagesDirectoryChanged.emit(self.image_directory)
 
     def _get_input_brf_from_user(self, x) -> list[str]:
         settings = QSettings()
