@@ -15,7 +15,7 @@ name = "brf2ebrl"
 version = "0.1.0"
 requires_python = ">=3.12"
 git = "https://github.com/aphtech/brf2ebrl"
-revision = "c6290b0a68fc77fbf447256e5b5cb7c541048fa7"
+revision = "30dc8ee7897038df06ac4c5705b9883b945610b6"
 summary = "A tool for converting BRF to eBRL."
 dependencies = [
     "html5lib>=1.1",
@@ -158,10 +158,10 @@ files = [
 
 [[package]]
 name = "nuitka"
-version = "4.0"
+version = "4.0.1"
 summary = "Python compiler with full language support and CPython compatibility"
 files = [
-    {file = "nuitka-4.0.tar.gz", hash = "sha256:0f404f292c3c2cc808d186d05a6d06a4b0aeca93f299cdfd5e33ddbcd19ab560"},
+    {file = "nuitka-4.0.1.tar.gz", hash = "sha256:8a8dedd549049a145e1545206a082bfbe0bc610457a71d837e560e7cf015635c"},
 ]
 
 [[package]]
