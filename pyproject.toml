@@ -10,6 +10,7 @@ dependencies = [
     "pyside6>=6.5.2",
     "brf2ebrl @ git+https://github.com/aphtech/brf2ebrl",
     "packaging>=25.0",
+    "brf2ebrl-nfb @ git+https://github.com/aphtech/brf2ebrl.git@main#subdirectory=plugins/brf2ebrl_nfb",
 ]
 requires-python = ">=3.13,<3.14"
 readme = "README.md"
