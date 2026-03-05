@@ -23,10 +23,13 @@ download-site = "https://github.com/aphtech/Convert2EBRL/releases/latest/downloa
 convert2ebrl = "convert2ebrl.__main__:main"
 
 [dependency-groups]
-exe = [
+dev = [
     "nuitka>=4.0",
 ]
 
-
 [tool.pdm.scripts]
 build_exe = "python -m nuitka --include-package-data=brf2ebrl --include-package=brf2ebrl_bana --include-package=brf2ebrl_nfb --standalone --enable-plugins=pyside6 --windows-console-mode=disable {args} Convert2EBRL.pyw"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"

@@ -2,10 +2,10 @@
 # It is not intended for manual editing.
 
 [metadata]
-groups = ["default", "exe"]
+groups = ["default"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:705fd891d89b054ee090cf5085a3ee4396e9af56d09f89b7ea5af8317a9aa105"
+content_hash = "sha256:168bfa7b3ab8d3abab36c66376b7423fcdd9aad878f8507d12af6d804cbeceef"
 
 [[metadata.targets]]
 requires_python = ">=3.13,<3.14"
@@ -154,14 +154,6 @@ files = [
     {file = "lxml-6.0.0-cp313-cp313-win_amd64.whl", hash = "sha256:2f34687222b78fff795feeb799a7d44eca2477c3d9d3a46ce17d51a4f383e32e"},
     {file = "lxml-6.0.0-cp313-cp313-win_arm64.whl", hash = "sha256:21db1ec5525780fd07251636eb5f7acb84003e9382c72c18c542a87c416ade03"},
     {file = "lxml-6.0.0.tar.gz", hash = "sha256:032e65120339d44cdc3efc326c9f660f5f7205f3a535c1fdbf898b29ea01fb72"},
-]
-
-[[package]]
-name = "nuitka"
-version = "4.0.2"
-summary = "Python compiler with full language support and CPython compatibility"
-files = [
-    {file = "nuitka-4.0.2.tar.gz", hash = "sha256:86f6e8c4caeb2fd727620a971c0628b2cfee908a9ba78f4d733a4192b54eb9ba"},
 ]
 
 [[package]]
