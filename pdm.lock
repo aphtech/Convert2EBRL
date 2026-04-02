@@ -32,7 +32,7 @@ requires_python = ">=3.12"
 subdirectory = "plugins/brf2ebrl_bana"
 git = "https://github.com/aphtech/brf2ebrl.git"
 ref = "main"
-revision = "0992ad0738a6e5773640ee34c7849bf99b0b35f0"
+revision = "4f351222b24455650a5357aa29626499e764cbfb"
 summary = "Plugin to convert BANA BRF to eBraille"
 dependencies = [
     "brf2ebrl",
@@ -45,7 +45,7 @@ requires_python = ">=3.12"
 subdirectory = "plugins/brf2ebrl_nfb"
 git = "https://github.com/aphtech/brf2ebrl.git"
 ref = "main"
-revision = "0992ad0738a6e5773640ee34c7849bf99b0b35f0"
+revision = "4f351222b24455650a5357aa29626499e764cbfb"
 summary = "Plugin to convert NFB BRF to eBraille."
 dependencies = [
     "brf2ebrl",
