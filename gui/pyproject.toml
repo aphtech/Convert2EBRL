@@ -1,0 +1,34 @@
+[project]
+name = "convert2ebrl"
+version = "1.0.0"
+description = "Tool for converting files to eBraille"
+authors = [
+    {name = "Michael Whapples", email = "mwhapples@aph.org"},
+    {name = "Ken Perry", email = "kperry@aph.org"},
+]
+dependencies = [
+    "pyside6>=6.5.2",
+    "brf2ebrl @ git+https://github.com/aphtech/brf2ebrl.git@main",
+    "brf2ebrl-bana @ git+https://github.com/aphtech/brf2ebrl.git@main#subdirectory=plugins/brf2ebrl_bana",
+    "brf2ebrl-nfb @ git+https://github.com/aphtech/brf2ebrl.git@main#subdirectory=plugins/brf2ebrl_nfb",
+    "packaging>=25.0",
+]
+requires-python = ">=3.13,<3.14"
+readme = "README.md"
+license = {text = "GPL-3[0-or-later"}
+
+[project.urls]
+homepage = "https://github.com//aphtech/convert2ebrl"
+download-site = "https://github.com/aphtech/Convert2EBRL/releases/latest/download"
+
+[project.gui-scripts]
+convert2ebrl = "convert2ebrl.__main__:main"
+
+[dependency-groups]
+dev = [
+    "nuitka>=4.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.11.3,<0.12.0"]
+build-backend = "uv_build"
