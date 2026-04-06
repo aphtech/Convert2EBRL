@@ -8,9 +8,9 @@ authors = [
 ]
 dependencies = [
     "pyside6>=6.5.2",
-    "brf2ebrl @ git+https://github.com/aphtech/brf2ebrl.git@main",
-    "brf2ebrl-bana @ git+https://github.com/aphtech/brf2ebrl.git@main#subdirectory=plugins/brf2ebrl_bana",
-    "brf2ebrl-nfb @ git+https://github.com/aphtech/brf2ebrl.git@main#subdirectory=plugins/brf2ebrl_nfb",
+    "brf2ebrl",
+    "brf2ebrl-bana",
+    "brf2ebrl-nfb",
     "packaging>=25.0",
 ]
 requires-python = ">=3.13,<3.14"
@@ -32,3 +32,8 @@ dev = [
 [build-system]
 requires = ["uv_build>=0.11.3,<0.12.0"]
 build-backend = "uv_build"
+
+[tool.uv.sources]
+brf2ebrl = { workspace = true }
+brf2ebrl_bana = { workspace = true }
+brf2ebrl_nfb = { workspace = true }
