@@ -23,21 +23,22 @@ jobs:
     - name: Set up Python 3.13
       uses: actions/setup-python@v5
       with:
-        python-version: "3.13"
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pdm
-        pdm install
+        python-version-file: "gui\.python-version"
+    - name: Install UV
+      uses: astral-sh/setup-uv@v7
+      with:
+        version: "0.11.3"
+    - name: Install the project
+      run: uv sync --locked --all-extras --dev
     - name: Build exe
       run: |
         $env:PATH = "C:\msys64\usr\bin;$env:PATH"
-        pdm build_exe --assume-yes-for-downloads
+        uv run --package=convert2ebrl python -m nuitka --assume-yes-for-downloads "gui\Convert2EBRL.pyw"
     - name: Add build data
       run: git show --no-patch > Convert2EBRL.dist/build-data.txt
     - name: add-release-hash
       if: github.ref_type == 'tag'
-      run: pdm run python -m "convert2ebrl.hash_utils" "Convert2EBRL.dist\Convert2EBRL.exe" "Convert2EBRL.dist\build-data.txt" > "Convert2EBRL.dist\release.hash"
+      run: uv run python -m "convert2ebrl.hash_utils" "Convert2EBRL.dist\Convert2EBRL.exe" "Convert2EBRL.dist\build-data.txt" > "Convert2EBRL.dist\release.hash"
     - name: Create release zip
       run: Compress-Archive -Path Convert2EBRL.dist -Destination convert2ebrl-continuous.zip
     - name: Update continuous tag
