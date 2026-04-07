@@ -16,7 +16,7 @@
 
 import sys
 
-from convert2ebrl.__main__ import run_app
+from convert2ebrl.__main__ import main
 
 if __name__ == "__main__":
-    run_app(sys.argv)
+    main()
