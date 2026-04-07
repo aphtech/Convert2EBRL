@@ -1,10 +1,10 @@
 # Convert2EBRL
 
-A GUI application for converting files to eBraille.
+A set of tools for converting documents to eBraille. This repository contains a number of subpprojects:
 
-## Status of eBraille support
-
-As there is no published version of the eBraille standard, currently this tool is unable to produce files which are guaranteed to comply with the final eBraille specification. Once a eBraille specification is published this tool will then recieve updates to produce files to comply with that specification.
+* gui: A graphical tool for converting BRF documents into eBraille.
+* brf2ebrl: The parser library for converting documents.
+* plugins: Subprojects within this directory are parser plugins for specific Braille codes.
 
 ## Development status
 
@@ -14,7 +14,7 @@ This project is currently being actively developed. Only git tags starting with 
 
 ### Building
 
-This package is managed with the pdm tool which you will need to install. The PDM web site is https://pdm.fming.dev and contains details of the various install methods.
+To build and run this project you will need to install UV. The UV web site is https://docs.astral.sh/uv/ and contains details of the various install methods. See the README files within the subprojects for build/useage details for that specific subproject.
 
 ### IDE configuration
 
@@ -22,14 +22,6 @@ To get code completions and avoid warnings for PySide6 features of snake_case an
 ```commandline
 pyside6-genpyi all --feature snake_case true_property
 ```
-
-### Building binary executable
-
-You can build a binary distribution of Convert2EBRL with the following command:
-```commandline
-pdm build_exe
-```
-This will create a subdirectory named Convert2EBRL.dist which contains the executable distribution.
 
 ## Contributing
 
