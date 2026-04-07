@@ -1,4 +1,4 @@
-#  Copyright (c) 2024. American Printing House for the Blind.
+#  Copyright (c) 2024-2026. American Printing House for the Blind.
 #
 # This file is part of Convert2EBRL.
 # Convert2EBRL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -10,13 +10,14 @@ import logging.handlers
 import os.path
 import sys
 from collections.abc import Sequence
-from importlib.metadata import metadata, version
+from importlib.metadata import metadata
 from pathlib import Path
 
 from PySide6.QtCore import QSettings, QTimer, QStandardPaths
 from PySide6.QtWidgets import QApplication, QMessageBox
 from packaging.metadata import parse_email
 
+import convert2ebrl
 from convert2ebrl.hash_utils import get_file_hash
 from convert2ebrl.main_window import MainWindow
 from convert2ebrl.settings import PROFILES_FILE_NAME
@@ -51,7 +52,7 @@ def run_app(args: Sequence[str]):
     app.setOrganizationName("American Printing House for the Blind")
     app.setOrganizationDomain("aph.org")
     app.setApplicationName("Convert2EBRL")
-    app.setApplicationVersion(version(__package__))
+    app.setApplicationVersion(convert2ebrl.__version__)
     app.setQuitOnLastWindowClosed(False)
     app_settings = QSettings(os.path.join(os.path.dirname(sys.argv[0]), "settings.ini"), QSettings.Format.IniFormat)
     log_level = app_settings.value("log_level", defaultValue=logging.INFO, type=int)
