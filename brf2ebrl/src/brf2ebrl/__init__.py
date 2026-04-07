@@ -10,7 +10,7 @@ from tempfile import TemporaryDirectory
 from typing import Iterable, Callable
 
 from brf2ebrl.common import PageLayout
-from brf2ebrl.parser import detector_parser, parse, ParserContext, ParserException
+from brf2ebrl.parser import detector_parser, parse, ParserContext, ParserException, Parser
 from brf2ebrl.plugin import Plugin, EBrlZippedBundler
 
 def convert(selected_plugin: Plugin, input_brf_list: Iterable[str], output_ebrf: str,
@@ -43,7 +43,7 @@ def convert(selected_plugin: Plugin, input_brf_list: Iterable[str], output_ebrf:
                     out_bundle.write_image(arch_name, os.path.join(root, f))
 
 
-def convert_brf2ebrl(input_brf: str, output_ebrf: str, brf_parser: Iterable[detector_parser],
+def convert_brf2ebrl(input_brf: str, output_ebrf: str, brf_parser: Iterable[Parser],
                      progress_callback: Callable[[int], None] = lambda x: None,
                      parser_context: ParserContext = ParserContext()):
     output_text = convert_brf2ebrl_str(input_brf, brf_parser, progress_callback, parser_context)
@@ -51,7 +51,7 @@ def convert_brf2ebrl(input_brf: str, output_ebrf: str, brf_parser: Iterable[dete
         out_file.write(output_text)
 
 
-def convert_brf2ebrl_str(input_brf: str, brf_parser: Iterable[detector_parser],
+def convert_brf2ebrl_str(input_brf: str, brf_parser: Iterable[Parser],
                          progress_callback: Callable[[int], None] = lambda x: None,
                          parser_context: ParserContext = ParserContext()) -> str:
     with open(input_brf, "r", encoding="utf-8") as in_file:
