@@ -1,4 +1,4 @@
-﻿#  Copyright (c) 2024. American Printing House for the Blind.
+#  Copyright (c) 2024. American Printing House for the Blind.
 """
 #
 git log
@@ -17,14 +17,17 @@ from collections.abc import Iterable, Callable
 from brf2ebrl.parser import DetectionState, DetectionResult, Detector
 from brf2ebrl.common import PageLayout, PageNumberPosition
 
+
 @dataclass
 class ParsedLine:
+    """holds parsed lines information"""
     depth: int
     pi: str
     line_text: str
     end: int = 0
 
     def copy(self) -> "ParsedLine":
+        """copy helper function"""
         return ParsedLine(self.depth, self.pi, self.line_text, self.end)
 
 
@@ -229,10 +232,14 @@ class RightPageNumberLengths:
     top: int
     bottom: int
 
+
 running_head_re = re.compile("^<\\?running-head([ \u2800-\u28ff]*)\\?>$")
 print_page_re = re.compile("^<\\?print-page([ \u2800-\u28ff]*)\\?>$")
-braille_page_ppn_re = re.compile("^<\\?(braille-page|braille-ppn)([ \u2800-\u28ff]*)\\?>$")
-    
+braille_page_ppn_re = re.compile(
+    "^<\\?(braille-page|braille-ppn)([ \u2800-\u28ff]*)\\?>$"
+)
+
+
 def build_lines_pi(text: str, cursor: int) -> dict[str, str]:
     """Scan backward from cursor through all content to find the current page's
     braille-page and braille-ppn processing instructions."""
@@ -265,30 +272,39 @@ def build_lines_pi(text: str, cursor: int) -> dict[str, str]:
     return page_dict
 
 
-
-
 def get_top_and_bottom_page_length(
-        page_dict: dict[str, str],
-        layout: PageLayout) -> RightPageNumberLengths:
+    page_dict: dict[str, str], layout: PageLayout
+) -> RightPageNumberLengths:
     """Return a Data class containing the lengths of the top and bottom right page numbers."""
     top = 0
     bottom = 0
-    page_dict["braille-page"]=page_dict.get("braille-page","")
-    page_dict["braille-ppn"]=page_dict.get("braille-ppn","")
-    
-    if layout.odd_braille_page_number == PageNumberPosition.TOP_RIGHT or layout.even_braille_page_number == PageNumberPosition.TOP_RIGHT:
+    page_dict["braille-page"] = page_dict.get("braille-page", "")
+    page_dict["braille-ppn"] = page_dict.get("braille-ppn", "")
+
+    if PageNumberPosition.TOP_RIGHT in [
+        layout.odd_braille_page_number,
+        layout.even_braille_page_number,
+    ]:
         top = len(page_dict["braille-page"].strip())
-    elif (layout.odd_print_page_number== PageNumberPosition.TOP_RIGHT or layout.even_print_page_number== PageNumberPosition.TOP_RIGHT):
+    elif PageNumberPosition.TOP_RIGHT in [
+        layout.odd_print_page_number,
+        layout.even_print_page_number == PageNumberPosition.TOP_RIGHT,
+    ]:
         top = len(page_dict["braille-ppn"].strip())
-    
-    if layout.odd_braille_page_number == PageNumberPosition.BOTTOM_RIGHT or layout.even_braille_page_number == PageNumberPosition.BOTTOM_RIGHT:
+
+    if PageNumberPosition.BOTTOM_RIGHT in [
+        layout.even_braille_page_number,
+        layout.odd_braille_page_number,
+    ]:
         bottom = len(page_dict["braille-page"].strip())
-    elif     (layout.odd_print_page_number== PageNumberPosition.BOTTOM_RIGHT or layout.even_print_page_number== PageNumberPosition.BOTTOM_RIGHT):
-        bottom = len(page_dict["braille-ppn"].strip())  
+    elif PageNumberPosition.BOTTOM_RIGHT in [
+        layout.odd_print_page_number,
+        layout.even_print_page_number,
+    ]:
+        bottom = len(page_dict["braille-ppn"].strip())
 
     return RightPageNumberLengths(top=top, bottom=bottom)
 
-        
 
 def _create_indented_block_finder(
     first_line_indent: int, run_over: int, layout: PageLayout
@@ -309,7 +325,6 @@ def _create_indented_block_finder(
         f"|(?:{_RUNNING_HEAD_RE}\n))"
     )
 
-    
     def get_paragraph_lines(
         text: str,
         cursor_offset: int,
@@ -323,10 +338,11 @@ def _create_indented_block_finder(
         _block: list[ParsedLine] = []
         new_cursor = cursor_offset
 
-
         # Compute top padding context by scanning backward from start of first line
         initial_page_dict = build_lines_pi(text, cursor_offset)
-        initial_right_page_lengths = get_top_and_bottom_page_length(initial_page_dict, layout)
+        initial_right_page_lengths = get_top_and_bottom_page_length(
+            initial_page_dict, layout
+        )
 
         current_match: re.Match[str] | None = line
         current_is_pi = False  # first line is a content line
@@ -349,7 +365,12 @@ def _create_indented_block_finder(
                 and new_lines
                 and not prev_is_pi
                 and current_pi_str.startswith(
-                    ("<?braille-page", "<?braille-ppn", "<?running-head", "<?print-page")
+                    (
+                        "<?braille-page",
+                        "<?braille-ppn",
+                        "<?running-head",
+                        "<?print-page",
+                    )
                 )
             ):
                 page_dict = build_lines_pi(text, new_cursor)
@@ -363,22 +384,26 @@ def _create_indented_block_finder(
             else:
                 indent_len = len(current_match.group(1))
                 if is_first:
-                    line_text =  " " * indent_len +current_match.group(2)
-                    indent_len=0
+                    line_text = " " * indent_len + current_match.group(2)
+                    indent_len = 0
                     if initial_right_page_lengths.top > 0:
                         line_text += " " * (initial_right_page_lengths.top + 3)
                 else:
                     line_text = current_match.group(2)
                     # if current is not PI and previous is PI: add top padding
-                    if prev_is_pi and not prev_pi_str.startswith(("<?running-head", "<?print-page")):
+                    if prev_is_pi and not prev_pi_str.startswith(
+                        ("<?running-head", "<?print-page")
+                    ):
                         page_dict = build_lines_pi(text, new_cursor)
-                        right_page_lengths = get_top_and_bottom_page_length(page_dict, layout)
+                        right_page_lengths = get_top_and_bottom_page_length(
+                            page_dict, layout
+                        )
                         if right_page_lengths.top:
                             line_text += " " * (right_page_lengths.top + 3)
                 parsed = ParsedLine(indent_len, "", line_text, current_match.end())
                 is_first = False
-            if parsed.depth !=-1:
-                _block.append(parsed) 
+            if parsed.depth != -1:
+                _block.append(parsed)
                 if not detect_paragraph_wrapping(_block, cells_per_line, parsed.depth):
                     break
             new_lines.append(parsed)
@@ -407,18 +432,17 @@ def _create_indented_block_finder(
                 return ([], cursor_offset)
 
         return (new_lines, new_cursor)
-    def find_paragraph_braille(
-        text: str, cursor: int
-    ) -> tuple[list[ParsedLine], int]:
+
+    def find_paragraph_braille(text: str, cursor: int) -> tuple[list[ParsedLine], int]:
         new_cursor = cursor
 
         if line := _first_line_re.match(text[cursor:]):
-            lines, new_cursor = get_paragraph_lines(text, cursor, line)        
-            
+            lines, new_cursor = get_paragraph_lines(text, cursor, line)
+
             if lines and is_block_paragraph(lines, cells_per_line=cells_per_line):
                 return (lines, new_cursor)
         return ([], new_cursor)
-    
+
     return find_paragraph_braille
 
 
@@ -459,7 +483,9 @@ def create_paragraph_detector(
         """Make a paragraph or block paragraph"""
         brl_lines = []
         for line in lines:
-            brl_lines.append(f"{line.pi.strip()}{line.line_text}".strip(" ").lstrip("\u2800"))
+            brl_lines.append(
+                f"{line.pi.strip()}{line.line_text}".strip(" ").lstrip("\u2800")
+            )
         return "\n".join(brl_lines)
 
     def detect_paragraph(
@@ -655,7 +681,9 @@ def create_toc_detector(cells_per_line: int) -> Detector:
         """
         for index, line in enumerate(lines):
             if line.line_text:
-                lines[index].line_text = parse_and_create_toc_entry(lines[index].line_text)
+                lines[index].line_text = parse_and_create_toc_entry(
+                    lines[index].line_text
+                )
 
         list_head = '<ol class="toc" style="list-style-type: none">'
         list_tail = "</ol>"
