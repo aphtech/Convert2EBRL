@@ -1126,9 +1126,6 @@ def create_list_detector(
         if _block[0].depth == paragraph_indent:
             _block[0].depth=run_over
             
-            """if len(_block) > 1  and is_block_paragraph(_block, line.depth, layout.cells_per_line): 
-                return ([], cursor_offset)  
-        """
         # if last line length is less than cells per line and page number then add remaining spaces
         line = list_processing_instruction_re.match(text[new_cursor:])
         if line and right_page_lengths.bottom and line.group(1) not in ["<?blank-line?>\n", "<?print-page?>\n"]:
@@ -1215,4 +1212,3 @@ def create_list_detector(
         )
 
     return detect_list
-
