@@ -1060,7 +1060,7 @@ def create_list_detector(
         while line := list_processing_instruction_re.match(text[new_cursor:]):
             if line.group(1) == "<?blank-line?>\n":
                 _blank_lines += 1
-            if line.group(1).startswith("<<?braille-page")  or line.group(1).startswith("<?braille-ppn"):
+            if line.group(1).startswith("<?braille-page")  or line.group(1).startswith("<?braille-ppn"):
                 is_first = True
             elif line.group(1).startswith("<?running-head"):    
                 has_running_head = True
