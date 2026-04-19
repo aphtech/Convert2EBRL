@@ -240,11 +240,10 @@ def is_toc_or_table_line(lines: list[ParsedLine]) -> bool:
     """
 
     # fail if any has 1 set of guide dots rows or a table divider. and return
-    dots_re = re.compile("\u2810{2,}")
     for line in lines:
         if re.findall("\u2810\u2812{2,}", line.line_text):
             return  True
-        if dots_re.findall(line.line_text):
+        if _DOTS_RE.findall(line.line_text):
             return True
         
     return False
@@ -551,6 +550,7 @@ _lower_alpha_with_paran_re = re.compile(
     "\u2825\u2827\u282d\u2835\u283a\u283d]+\u2802\u28c1\u2800[\u2800-\u28ff]+"
 )
 _end_punctuation_equal_re = re.compile(".*[\u2832\u2826\u2816][\u2804\u2834]*$")
+_DOTS_RE = re.compile("\u2810{2,}")
 
 
 def is_block_paragraph(
@@ -828,14 +828,13 @@ def create_toc_detector(cells_per_line: int) -> Detector:
         # test if it has at least one with a single set of guide dots or two spaces has
         # fail if any has two rows or a table divider. and return [[],0]
         guide_dots = False
-        dots_re = re.compile("\u2810{2,}")
         for line in new_lines:
             # fail if a line has two sets of "\u2800\u2800"  non consecutive
             if len(re.findall("\u2800\u2800", line.line_text)) > 1:
                 return ([], cursor_offset)
             if re.findall("\u2810\u2812{2,}", line.line_text):
                 return ([], cursor_offset)
-            if dots := dots_re.findall(line.line_text):
+            if dots := _DOTS_RE.findall(line.line_text):
                 if len(dots) > 1:
                     return ([], cursor_offset)
                 guide_dots = True
