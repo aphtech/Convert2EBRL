@@ -44,17 +44,11 @@ def detect_pre(
     text: str, cursor: int, state: DetectionState, output_text: str
 ) -> DetectionResult | None:
     """Detects preformatted Braille"""
-    brl = ""
-    for c in text[cursor:]:
-        if ord(c) in range(0x2800, 0x2900):
-            brl += c
-        else:
-            break
-    return (
-        DetectionResult(cursor + len(brl), state, 0.4, f"{output_text}<pre>{brl}</pre>")
-        if brl
-        else None
-    )
+    m = _PRE_RE.match(text, cursor)
+    if not m:
+        return None
+    brl = m.group()
+    return DetectionResult(cursor + len(brl), state, 0.4, f"{output_text}<pre>{brl}</pre>")
 
 
 def create_cell_heading(indent: int, tag_name: str) -> Detector:
@@ -551,6 +545,7 @@ _lower_alpha_with_paran_re = re.compile(
 )
 _end_punctuation_equal_re = re.compile(".*[\u2832\u2826\u2816][\u2804\u2834]*$")
 _DOTS_RE = re.compile("\u2810{2,}")
+_PRE_RE = re.compile(r"[\u2800-\u28ff]+")
 
 
 def is_block_paragraph(
