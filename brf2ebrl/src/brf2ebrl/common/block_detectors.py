@@ -498,7 +498,7 @@ def create_paragraph_detector(
 def has_toc(lines: list[ParsedLine]) -> bool:
     """return if one of the tiems is a toc entry"""
     for line in lines:
-        if re.search(r".*?\u2810{2,}.*", line.line_text):
+        if re.search(r"\u2810{2,}", line.line_text):
             return True
     return False
 
