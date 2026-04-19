@@ -301,7 +301,7 @@ def get_top_and_bottom_page_length(
         top = len(page_dict["braille-page"].strip())
     elif PageNumberPosition.TOP_RIGHT in [
         layout.odd_print_page_number,
-        layout.even_print_page_number == PageNumberPosition.TOP_RIGHT,
+        layout.even_print_page_number,
     ]:
         top = len(page_dict["braille-ppn"].strip())
 
