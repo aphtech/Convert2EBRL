@@ -13,6 +13,19 @@ from collections.abc import Iterable, Callable
 from brf2ebrl.parser import DetectionState, DetectionResult, Detector
 from brf2ebrl.common import PageLayout, PageNumberPosition
 
+# constants for list and paragraph.
+_PRINT_PAGE_RE = "(?:<\\?print-page[ \u2800-\u28ff]*?\\?>)"
+_RUNNING_HEAD_RE = "(?:<\\?running-head[ \u2800-\u28ff]*\\?>)"
+_BRAILLE_PAGE_RE = "(?:<\\?braille-page[ \u2800-\u28ff]*\\?>)"
+_BRAILLE_PPN_RE = "(?:<\\?braille-ppn [ \u2800-\u28ff]*\\?>)"
+_BLANK_LINE_RE = "(?:<\\?blank-line\\?>)"
+_PROCESSING_INSTRUCTION_RE = (
+    f"(?:(?:{_BRAILLE_PAGE_RE}\n)?"
+    f"(?:{_BRAILLE_PPN_RE}\n)?"
+    f"(?:{_PRINT_PAGE_RE}\n)?"
+    f"(?:{_RUNNING_HEAD_RE}\n)?)"
+)
+
 
 @dataclass
 class ParsedLine:
@@ -206,20 +219,6 @@ def create_table_detector() -> Detector:
         return DetectionResult(cursor, state, 0.9, f"{output_text}{complete_table}\n")
 
     return detect_table
-
-
-# constants for list and paragraph.
-_PRINT_PAGE_RE = "(?:<\\?print-page[ \u2800-\u28ff]*?\\?>)"
-_RUNNING_HEAD_RE = "(?:<\\?running-head[ \u2800-\u28ff]*\\?>)"
-_BRAILLE_PAGE_RE = "(?:<\\?braille-page[ \u2800-\u28ff]*\\?>)"
-_BRAILLE_PPN_RE = "(?:<\\?braille-ppn [ \u2800-\u28ff]*\\?>)"
-_BLANK_LINE_RE = "(?:<\\?blank-line\\?>)"
-_PROCESSING_INSTRUCTION_RE = (
-    f"(?:(?:{_BRAILLE_PAGE_RE}\n)?"
-    f"(?:{_BRAILLE_PPN_RE}\n)?"
-    f"(?:{_PRINT_PAGE_RE}\n)?"
-    f"(?:{_RUNNING_HEAD_RE}\n)?)"
-)
 
 
 # used a data class for best type checking and protection
