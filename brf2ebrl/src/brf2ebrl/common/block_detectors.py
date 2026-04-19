@@ -1,14 +1,10 @@
 #  Copyright (c) 2024. American Printing House for the Blind.
-"""
 #
-git log
 # This Source Code Form is subject to the terms of the Mozilla Public
-415
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-Detectors for blocks
-"""
+"""Detectors for blocks."""
 
 import re
 from dataclasses import dataclass
