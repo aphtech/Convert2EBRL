@@ -533,32 +533,30 @@ def detect_paragraph_wrapping(
 
 
 _BRAILLE_PAGE_LENGTH_RE = re.compile("(?:<\\?braille-page([ \u2800-\u28ff]*)\\?>)")
+_roman_re = re.compile(
+    "^\u280d{0,3}"
+    "(\u2809\u280d|\u2809\u2819|\u2819?\u2809{0,3})"
+    "(\u282d\u2809|\u282d\u2807|\u2807?\u282d{0,3})"
+    "(\u280a\u282d|\u280a\u2827|\u2827?\u280a{0,3})"
+    "\u2800[2800-28ff]+$"
+)
+_lower_alpha_with_period_re = re.compile(
+    "[\u2801\u2803\u2805\u2807\u2809\u280a\u280b\u280d\u280e\u280f"
+    "\u2811\u2813\u2815\u2817\u2819\u281a\u281b\u281d\u281e\u281f"
+    "\u2825\u2827\u282d\u2835\u283a\u283d]+\u2832\u2800[2800-28ff]+"
+)
+_lower_alpha_with_paran_re = re.compile(
+    "[\u2801\u2803\u2805\u2807\u2809\u280a\u280b\u280d\u280e\u280f"
+    "\u2811\u2813\u2815\u2817\u2819\u281a\u281b\u281d\u281e\u281f"
+    "\u2825\u2827\u282d\u2835\u283a\u283d]+\u2802\u28c1\u2800[\u2800-\u28ff]+"
+)
+_end_punctuation_equal_re = re.compile(".*[\u2832\u2826\u2816][\u2804\u2834]*$")
 
 
 def is_block_paragraph(
     lines: list[ParsedLine], depth: int = 0, cells_per_line: int = 0
 ) -> bool:
     """Check if this is a list or block paragraph."""
-
-    _roman_re = re.compile(
-        "^\u280d{0,3}"
-        "(\u2809\u280d|\u2809\u2819|\u2819?\u2809{0,3})"
-        "(\u282d\u2809|\u282d\u2807|\u2807?\u282d{0,3})"
-        "(\u280a\u282d|\u280a\u2827|\u2827?\u280a{0,3})"
-        "\u2800[2800-28ff]+$"
-    )
-    _lower_alpha_with_period_re = re.compile(
-        "[\u2801\u2803\u2805\u2807\u2809\u280a\u280b\u280d\u280e\u280f"
-        "\u2811\u2813\u2815\u2817\u2819\u281a\u281b\u281d\u281e\u281f"
-        "\u2825\u2827\u282d\u2835\u283a\u283d]+\u2832\u2800[2800-28ff]+"
-    )
-    _lower_alpha_with_paran_re = re.compile(
-        "[\u2801\u2803\u2805\u2807\u2809\u280a\u280b\u280d\u280e\u280f"
-        "\u2811\u2813\u2815\u2817\u2819\u281a\u281b\u281d\u281e\u281f"
-        "\u2825\u2827\u282d\u2835\u283a\u283d]+\u2802\u28c1\u2800[\u2800-\u28ff]+"
-    )
-    _cells_per_line = cells_per_line
-    _end_punctuation_equal_re = re.compile(".*[\u2832\u2826\u2816][\u2804\u2834]*$")
 
     # copy and remove just PI
     _lines = [line for line in lines if line.depth != -1]
@@ -570,7 +568,7 @@ def is_block_paragraph(
         return False
 
         # return False
-    if not detect_paragraph_wrapping(_lines, _cells_per_line, depth):
+    if not detect_paragraph_wrapping(_lines, cells_per_line, depth):
         return False
 
     # if it is length one it is a block because who makes a 1 line list in braille
