@@ -448,7 +448,7 @@ def _create_indented_block_finder(
 def _no_indicators_block_matcher(
     brl: str, state: DetectionState, tags: tuple[str, str] = ("<p>", "</p>")
 ) -> tuple[str | None, DetectionState]:
-    """if not a TN then return no indecators"""
+    """if not a TN then return no indicators"""
     return f"{tags[0]}{brl}{tags[1]}", state
 
 
