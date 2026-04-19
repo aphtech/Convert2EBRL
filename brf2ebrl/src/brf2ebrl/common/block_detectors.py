@@ -159,7 +159,7 @@ def create_table_detector() -> Detector:
 
         # create header
         header_lines = match.group(1).split("\n")
-        table = ["<tr>"]
+        table: list[str | list[str]] = ["<tr>"]
         if len(header_lines) > 1:
             pos = 0
             for index, width in enumerate(col_widths):
