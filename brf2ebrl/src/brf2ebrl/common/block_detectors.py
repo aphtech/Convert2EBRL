@@ -145,7 +145,7 @@ def create_table_detector() -> Detector:
 
     def wrap_and_join(fmt: str, items: Iterable[str]) -> str:
         """Wraps each element and joins into a single string."""
-        return "".join([fmt.format(s) for s in items])
+        return "".join(fmt.format(s) for s in items)
 
     def detect_table(
         text: str, cursor: int, state: DetectionState, output_text: str
