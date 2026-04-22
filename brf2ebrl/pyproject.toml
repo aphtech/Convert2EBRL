@@ -23,7 +23,7 @@ brf2ebrl = "brf2ebrl.scripts.brf2ebrl:main"
 
 [dependency-groups]
 dev = [
-    "pytest>=7.3.1",
+    "pytest>=9.0.3",
 ]
 
 [tool.pytest.ini_options]
