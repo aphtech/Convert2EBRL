@@ -1122,17 +1122,29 @@ def create_list_detector(
         temp_list = get_list_pages(text, new_cursor, debug + 1)
         if not temp_list[0]:
             return (new_lines,new_cursor)
-        elif first_check:# and not is_block_paragraph(temp_list[0], depth=run_over, cells_per_line=layout.cells_per_line):
-            _block_list  =check_block_paragraph_before_indent(temp_list[0], paragraph_indent, layout.cells_per_line)
-            if _block_list[0]:
-                new_lines.extend(_block_list[0])
-                new_cursor += _block_list[1]
+        
+        _block_list  =check_block_paragraph_before_indent(temp_list[0], paragraph_indent, layout.cells_per_line)
+        if first_check and _block_list[0]:
+            new_lines.extend(_block_list[0])
+            new_cursor += _block_list[1]
             return (new_lines, new_cursor)  
-        elif first_check==is_block_paragraph(temp_list[0], depth=run_over, cells_per_line=layout.cells_per_line): 
-            new_lines.extend(temp_list[0])
-            return (new_lines, temp_list[1])
+        elif first_check :
+            return (new_lines, new_cursor)
+        
+        #if paragraph or block paragraph follows list stop
+        _block = [line for line in temp_list[0]if line.depth != -1]
+        if _block:
+            # if first line depth is paragraph_indent or block_paragraph_indent and
+            _block[0] = _block[0].copy()
+            if _block[0].depth == paragraph_indent:
+                _block[0].depth=run_over
 
+            if is_block_paragraph (_block, depth=run_over, cells_per_line=layout.cells_per_line):
+                return (new_lines, new_cursor)
+        
+        new_lines.extend(temp_list[0])
         return (new_lines, temp_list[1])
+
 
     def detect_list(
         text: str, cursor: int, state: DetectionState, output_text: str
