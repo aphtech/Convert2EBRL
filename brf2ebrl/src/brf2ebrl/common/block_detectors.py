@@ -1139,7 +1139,7 @@ def create_list_detector(
             if _block[0].depth == paragraph_indent:
                 _block[0].depth=run_over
 
-            if is_block_paragraph (_block, depth=run_over, cells_per_line=layout.cells_per_line):
+            if len(_block) >1 and is_block_paragraph (_block, depth=run_over, cells_per_line=layout.cells_per_line):
                 return (new_lines, new_cursor)
         
         new_lines.extend(temp_list[0])
