@@ -30,6 +30,7 @@ _PROCESSING_INSTRUCTION_RE = (
 @dataclass
 class ParsedLine:
     """holds parsed lines information"""
+
     depth: int
     pi: str
     line_text: str
@@ -48,7 +49,9 @@ def detect_pre(
     if not m:
         return None
     brl = m.group()
-    return DetectionResult(cursor + len(brl), state, 0.4, f"{output_text}<pre>{brl}</pre>")
+    return DetectionResult(
+        cursor + len(brl), state, 0.4, f"{output_text}<pre>{brl}</pre>"
+    )
 
 
 def create_cell_heading(indent: int, tag_name: str) -> Detector:
@@ -230,19 +233,16 @@ braille_page_ppn_re = re.compile(
 
 
 def is_toc_or_table_line(lines: list[ParsedLine]) -> bool:
-    """return if the line is a toc or table line by looking for dividers or long runs of dots
-    """
+    """return if the line is a toc or table line by looking for dividers or long runs of dots"""
 
     # fail if any has 1 set of guide dots rows or a table divider. and return
     for line in lines:
         if re.findall("\u2810\u2812{2,}", line.line_text):
-            return  True
+            return True
         if _DOTS_RE.findall(line.line_text):
             return True
-        
-    return False
 
-            
+    return False
 
 
 def build_lines_pi(text: str, cursor: int) -> dict[str, str]:
@@ -429,7 +429,7 @@ def _create_indented_block_finder(
             return ([], cursor_offset)
 
         if is_toc_or_table_line(new_lines):
-            return ([], cursor_offset)  
+            return ([], cursor_offset)
         return (new_lines, new_cursor)
 
     def find_paragraph_braille(text: str, cursor: int) -> tuple[list[ParsedLine], int]:
@@ -450,7 +450,6 @@ def _no_indicators_block_matcher(
 ) -> tuple[str | None, DetectionState]:
     """if not a TN then return no indicators"""
     return f"{tags[0]}{brl}{tags[1]}", state
-
 
 
 def create_paragraph_detector(
@@ -475,7 +474,7 @@ def create_paragraph_detector(
         brl_lines = []
         for line in lines:
             brl_lines.append(
-                f"{line.pi.strip()}{line.line_text}".strip(" ").lstrip("\u2800")
+                f"{line.pi.strip()}{line.line_text.strip()}".strip(" ").lstrip("\u2800")
             )
         return "\n".join(brl_lines)
 
@@ -868,14 +867,13 @@ def create_toc_detector(cells_per_line: int) -> Detector:
     return detect_toc
 
 
-
 # detect lists
 def create_list_detector(
-    layout:PageLayout,
-    paragraph_indent:int=2,
+    layout: PageLayout,
+    paragraph_indent: int = 2,
     block_paragraph_indent=0,
-    run_over:int=0,
-    ) -> Detector:
+    run_over: int = 0,
+) -> Detector:
     """Creates a detector for finding lists"""
     first_line_re = re.compile("([\u2801-\u28ff][\u2800-\u28ff]*)\n")
     run_over_re = re.compile(
@@ -982,7 +980,7 @@ def create_list_detector(
             return ParsedLine(len(line.group(1)), "", line.group(2), line.end())
 
         return None
-    
+
     def check_block_paragraph_before_indent(
         lines: list[ParsedLine],
         paragraph_indent: int,
@@ -1005,18 +1003,36 @@ def create_list_detector(
         if _lines[0].depth >= paragraph_indent:
             return ([], 0)
         first_indent_index = next(
-            (index for index, level in enumerate(_lines) if level.depth >= paragraph_indent),
+            (
+                index
+                for index, level in enumerate(_lines)
+                if level.depth >= paragraph_indent
+            ),
             len(_lines),
         )
         indent_found = first_indent_index < len(_lines)
 
         candidate_lines = _lines[:first_indent_index]
-        if is_block_paragraph(
+        test_wrap_lines = _lines[first_indent_index - 1 : first_indent_index + 1]
+        not_wrap = True
+        if (
+            (first_indent_index - 1) == 0
+            and len(test_wrap_lines) > 1
+            and detect_paragraph_wrapping(
+                test_wrap_lines, cells_per_line, test_wrap_lines[0].depth
+            )
+        ):
+            not_wrap = False
+        if not_wrap and is_block_paragraph(
             candidate_lines, depth=0, cells_per_line=cells_per_line
         ):
             if indent_found:
                 first_indent_index_full = next(
-                    (index for index, level in enumerate(lines) if level.depth >= paragraph_indent),
+                    (
+                        index
+                        for index, level in enumerate(lines)
+                        if level.depth >= paragraph_indent
+                    ),
                     len(lines),
                 )
             else:
@@ -1026,8 +1042,6 @@ def create_list_detector(
             return (block_lines, cursor_offset)
 
         return ([], 0)
-
-
 
     _braille_page_capture_re = re.compile("(?:<\\?braille-page([ \u2800-\u28ff]*)\\?>)")
     _braille_ppn_capture_re = re.compile("(?:<\\?braille-ppn([ \u2800-\u28ff]*)\\?>)")
@@ -1043,17 +1057,19 @@ def create_list_detector(
         new_lines: list[ParsedLine] = []
 
         # consume PI
-        #set is_first if braille-page or braille-ppn to know if need to add spaces to first line
-        _blank_lines : int = 0
-        is_first=False
+        # set is_first if braille-page or braille-ppn to know if need to add spaces to first line
+        _blank_lines: int = 0
+        is_first = False
         has_running_head = False
         page_dict: dict[str, str] = {}
         while line := list_processing_instruction_re.match(text[new_cursor:]):
             if line.group(1) == "<?blank-line?>\n":
                 _blank_lines += 1
-            if line.group(1).startswith("<?braille-page")  or line.group(1).startswith("<?braille-ppn"):
+            if line.group(1).startswith("<?braille-page") or line.group(1).startswith(
+                "<?braille-ppn"
+            ):
                 is_first = True
-            elif line.group(1).startswith("<?running-head"):    
+            elif line.group(1).startswith("<?running-head"):
                 has_running_head = True
             # more than one blank line this is a hard stop
             if _blank_lines > 1:
@@ -1067,22 +1083,25 @@ def create_list_detector(
 
         page_dict = build_lines_pi(text, new_cursor)
         right_page_lengths = get_top_and_bottom_page_length(page_dict, layout)
-        line_match : ParsedLine|None =None
+        line_match: ParsedLine | None = None
 
         # if a blank line and either the page length bottom is 0 or the last line is a print page this is a hard stop because blank line should only be used for spacing and if there is no bottom page length or a print page then it is not doing spacing
-        if _blank_lines ==  1 and (
-            right_page_lengths.bottom==0 
-            or  new_lines[-1].pi == "<?print-page?>\n"
-            ):
+        if _blank_lines == 1 and (
+            right_page_lengths.bottom == 0 or new_lines[-1].pi == "<?print-page?>\n"
+        ):
             return ([], cursor_offset)
-        
+
         line_match = match_list_line(text[new_cursor:])
         if line_match and is_first and not has_running_head:
-            line_match.line_text= " " *line_match.depth +line_match.line_text+ " " * (right_page_lengths.top + 3) if right_page_lengths.top else ""
-            if _blank_lines ==  1 and len(line_match.line_text) <=  layout.cells_per_line:
+            line_match.line_text = (
+                " " * line_match.depth
+                + line_match.line_text
+                + " " * (right_page_lengths.top + 3)
+                if right_page_lengths.top
+                else line_match.line_text
+            )
+            if _blank_lines == 1 and len(line_match.line_text) <= layout.cells_per_line:
                 return ([], cursor_offset)
-
-
 
         # if centered heading stop and return [[], 0]
         center_line = heading_re.match(text[new_cursor:])
@@ -1106,45 +1125,70 @@ def create_list_detector(
 
         # fail if any has 1 set of guide dots rows or a table divider. and return
         if is_toc_or_table_line(new_lines):
-            return ([], cursor_offset)  
-        
+            return ([], cursor_offset)
+
         # if first line depth is paragraph_indent or block_paragraph_indent and
         _block[0] = _block[0].copy()
         if _block[0].depth == paragraph_indent:
-            _block[0].depth=run_over
-            
+            _block[0].depth = run_over
+
         # if last line length is less than cells per line and page number then add remaining spaces
         line = list_processing_instruction_re.match(text[new_cursor:])
-        if line and right_page_lengths.bottom and line.group(1) not in ["<?blank-line?>\n", "<?print-page?>\n"]:
-            new_lines[-1].line_text += " " * (right_page_lengths.bottom + 3)+ " " *new_lines[-1].depth
+        if (
+            line
+            and right_page_lengths.bottom
+            and line.group(1) not in ["<?blank-line?>\n", "<?print-page?>\n"]
+        ):
+            new_lines[-1].line_text += (
+                " " * (right_page_lengths.bottom + 3) + " " * new_lines[-1].depth
+            )
 
-        first_check = is_block_paragraph(_block, depth=run_over, cells_per_line=layout.cells_per_line   )
+        first_check = is_block_paragraph(
+            _block, depth=run_over, cells_per_line=layout.cells_per_line
+        )
         temp_list = get_list_pages(text, new_cursor, debug + 1)
         if not temp_list[0]:
-            return (new_lines,new_cursor)
-        
-        _block_list  =check_block_paragraph_before_indent(temp_list[0], paragraph_indent, layout.cells_per_line)
+            return (new_lines, new_cursor)
+
+        _block_list = check_block_paragraph_before_indent(
+            temp_list[0], paragraph_indent, layout.cells_per_line
+        )
+        if len(_block) == 1:
+            # _temp_block = [line for line in temp_list[0] if line.depth != -1]
+            if _block_list[0] and is_block_paragraph(
+                _block + _block_list[0],
+                depth=run_over,
+                cells_per_line=layout.cells_per_line,
+            ):
+                new_lines.extend(_block_list[0])
+                new_cursor += _block_list[1]
+                return (new_lines, new_cursor)
+            else:
+                new_lines.extend(temp_list[0])
+                return (new_lines, temp_list[1])
+
         if first_check and _block_list[0]:
             new_lines.extend(_block_list[0])
             new_cursor += _block_list[1]
-            return (new_lines, new_cursor)  
-        elif first_check :
             return (new_lines, new_cursor)
-        
-        #if paragraph or block paragraph follows list stop
-        _block = [line for line in temp_list[0]if line.depth != -1]
+        elif first_check:
+            return (new_lines, new_cursor)
+
+        # if paragraph or block paragraph follows list stop
+        _block = [line for line in temp_list[0] if line.depth != -1]
         if _block:
             # if first line depth is paragraph_indent or block_paragraph_indent and
             _block[0] = _block[0].copy()
             if _block[0].depth == paragraph_indent:
-                _block[0].depth=run_over
+                _block[0].depth = run_over
 
-            if len(_block) >1 and is_block_paragraph (_block, depth=run_over, cells_per_line=layout.cells_per_line):
+            if len(_block) > 1 and is_block_paragraph(
+                _block, depth=run_over, cells_per_line=layout.cells_per_line
+            ):
                 return (new_lines, new_cursor)
-        
+
         new_lines.extend(temp_list[0])
         return (new_lines, temp_list[1])
-
 
     def detect_list(
         text: str, cursor: int, state: DetectionState, output_text: str
@@ -1172,7 +1216,9 @@ def create_list_detector(
                 len(_lines),
             )
             if len(_lines[:first_level_2_index]) > 1 and is_block_paragraph(
-                _lines[:first_level_2_index], depth=0, cells_per_line=layout.cells_per_line
+                _lines[:first_level_2_index],
+                depth=0,
+                cells_per_line=layout.cells_per_line,
             ):
                 # if len(_lines[:first_level_2_index]) > 1 and
                 # detect_paragraph_wrapping(_lines[:first_level_2_index], cells_per_line, depth=0):
@@ -1194,7 +1240,9 @@ def create_list_detector(
                     "<p  class='left-justified'>"
                     + "\n".join(
                         [
-                            f"{line.pi}{line.line_text}".strip(" ").lstrip("\u2800")
+                            f"{line.pi.strip()}{line.line_text}".strip(" ").lstrip(
+                                "\u2800"
+                            )
                             for line in lines[:first_level_2_index]
                         ]
                     )
