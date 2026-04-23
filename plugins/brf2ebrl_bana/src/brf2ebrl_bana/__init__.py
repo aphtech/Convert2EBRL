@@ -9,8 +9,8 @@ from typing import Sequence
 
 from brf2ebrl.common import PageLayout
 from brf2ebrl.common.block_detectors import create_centered_detector, create_cell_heading, create_paragraph_detector, \
-    create_table_detector, detect_pre,  \
-    create_list_detector,create_toc_detector 
+    detect_pre, create_list_detector, create_toc_detector
+from brf2ebrl.common.table_detectors import create_table_detector
 from brf2ebrl.common.box_line_detectors import remove_box_lines_processing_instructions, tag_boxlines
 from brf2ebrl.common.detectors import detect_and_pass_processing_instructions, \
     create_running_head_detector, braille_page_counter_detector, xhtml_fixup_detector, \
