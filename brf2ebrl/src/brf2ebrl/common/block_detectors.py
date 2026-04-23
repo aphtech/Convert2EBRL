@@ -141,7 +141,7 @@ braille_page_ppn_re = re.compile(
 def is_toc_or_table_line(lines: list[ParsedLine]) -> bool:
     """return if the line is a toc or table line by looking for dividers or long runs of dots"""
 
-    # fail if any has 1 set of guide dots rows or a table divider. and return
+    # return true if any has 1 set of guide dots rows or a table divider. and return
     for line in lines:
         if re.findall("\u2810\u2812{2,}", line.line_text):
             return True
@@ -729,6 +729,8 @@ def create_toc_detector(cells_per_line: int) -> Detector:
         # fail if any has two rows or a table divider. and return [[],0]
         guide_dots = False
         for line in new_lines:
+            if "\u2800\u2800" in line.line_text and "\u2810\u2810" in line.line_text:
+                return ([], cursor_offset)
             # fail if a line has two sets of "\u2800\u2800"  non consecutive
             if len(re.findall("\u2800\u2800", line.line_text)) > 1:
                 return ([], cursor_offset)
