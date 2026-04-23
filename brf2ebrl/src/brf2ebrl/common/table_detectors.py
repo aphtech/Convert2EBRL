@@ -18,22 +18,15 @@ def create_table_detector() -> Detector:
         "((?:[\u2800-\u28ff]+?\n){1,2})(\u2810\u2812+?(?:\u2800\u2800\u2810\u2812+?)+?)\n"
     )
 
-    def row_column_check(widths: list[int], line: str) -> bool:
-        """compares each row to make sure it has the right seperator to see if it is a row"""
-        i = 0
-        for width in widths[:-1]:
-            end_of_cell = i + width
-            start_of_next_cell = end_of_cell + 2
-            if line[end_of_cell:start_of_next_cell] != "\u2800\u2800":
-                return False
-            i = start_of_next_cell
-        return True
-
-    def get_line(brf_text: str, pos: int, widths: list[int]) -> int | None:
-        """Gets each line after table header that matches table columns"""
-        pos2 = brf_text[pos:].find("\n") + 1
-
-        return pos2 if row_column_check(widths, brf_text[pos : pos + pos2]) else None
+    def get_line(brf_text: str, pos: int) -> int | None:
+        """Gets each line after table header that matches table rows"""
+        nl_pos = brf_text[pos:].find("\n")
+        if nl_pos < 0:
+            return None
+        line = brf_text[pos : pos + nl_pos + 1]
+        if re.match(r"^[\u2801-\u28ff]", line) or line.startswith("\u2800\u2800"):
+            return nl_pos + 1
+        return None
 
     def wrap_and_join(fmt: str, items: Iterable[str]) -> str:
         """Wraps each element and joins into a single string."""
@@ -81,20 +74,26 @@ def create_table_detector() -> Detector:
         cursor += match.end(2) + 1
         # cells
         row = 0
-        while end_cursor := get_line(text, cursor, col_widths):
-            line = text[cursor : cursor + end_cursor]
+        while end_cursor := get_line(text, cursor):
+            line = text[cursor : cursor + end_cursor].rstrip("\n")
             if line.startswith("\u2800\u2800"):
-                sep = "\u2800"
+                # Runover: split gives an empty first element before the leading separator
+                cells = line.split("\u2800\u2800")
+                for col_idx, cell in enumerate(cells[1:]):
+                    if col_idx < len(col_widths):
+                        cell_strip = cell.strip("\u2800\u2810")
+                        if cell_strip:
+                            if table[row][col_idx]:
+                                table[row][col_idx] += "\u2800" + cell_strip
+                            else:
+                                table[row][col_idx] = cell_strip
             else:
-                sep = ""
                 table.append([""] * len(col_widths))
                 row += 1
-
-            for index, cell in enumerate(line.split("\u2800\u2800")):
-                if index < len(col_widths):
-                    # need this temp var because of backslashes.
-                    cell_strip = cell.strip("\u2800\u2810\n")
-                    table[row] += f"{sep}{cell_strip}"
+                cells = line.split("\u2800\u2800")
+                for col_idx, cell in enumerate(cells):
+                    if col_idx < len(col_widths):
+                        table[row][col_idx] = cell.strip("\u2800\u2810")
             cursor += end_cursor
 
         complete_table = table[0] + "\n"
