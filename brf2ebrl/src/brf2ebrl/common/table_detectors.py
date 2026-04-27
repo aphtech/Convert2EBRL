@@ -101,6 +101,6 @@ def create_table_detector() -> Detector:
             "<tr>{}</tr>\n", [wrap_and_join("<td>{}</td>", row) for row in table[1:]]
         )
         complete_table = f"<table>\n{complete_table}\n</table>"
-        return DetectionResult(cursor, state, 0.9, f"{output_text}{complete_table}\n")
+        return DetectionResult(cursor, state, 0.91, f"{output_text}{complete_table}\n")
 
     return detect_table
