@@ -32,6 +32,20 @@ def create_table_detector() -> Detector:
         """Wraps each element and joins into a single string."""
         return "".join(fmt.format(s) for s in items)
 
+    def split_row_by_width(line: str, widths: list[int]) -> list[str]:
+        """Split row text using measured column boundaries."""
+        cells: list[str] = []
+        start = 0
+        for index, width in enumerate(widths):
+            next_start = start + width + 2
+            if index < len(widths) - 1:
+                cell = line[start:next_start]
+            else:
+                cell = line[start:]
+            cells.append(cell.strip("\u2800\u2810"))
+            start = next_start
+        return cells
+
     def detect_table(
         text: str, cursor: int, state: DetectionState, output_text: str
     ) -> DetectionResult | None:
@@ -44,7 +58,8 @@ def create_table_detector() -> Detector:
 
         # create header
         header_lines = match.group(1).split("\n")
-        table: list[str | list[str]] = ["<tr>"]
+        header_row = "<tr>"
+        table_rows: list[list[str]] = []
         if len(header_lines) > 1:
             pos = 0
             for index, width in enumerate(col_widths):
@@ -59,16 +74,16 @@ def create_table_detector() -> Detector:
                     + "</th>"
                 )
                 pos += width + 2
-                table[0] += cell_text
+                header_row += cell_text
         else:
-            table[0] += wrap_and_join(
+            header_row += wrap_and_join(
                 "<th>{}</th>",
                 [
                     cell.strip("\u2800")
                     for cell in header_lines[0].split("\u2800\u2800")
                 ],
             )
-        table[0] += "</tr>"
+        header_row += "</tr>"
         # header done
 
         cursor += match.end(2) + 1
@@ -77,28 +92,25 @@ def create_table_detector() -> Detector:
         while end_cursor := get_line(text, cursor):
             line = text[cursor : cursor + end_cursor].rstrip("\n")
             if line.startswith("\u2800\u2800"):
-                # Runover: split gives an empty first element before the leading separator
-                cells = line.split("\u2800\u2800")
-                for col_idx, cell in enumerate(cells[1:]):
-                    if col_idx < len(col_widths):
-                        cell_strip = cell.strip("\u2800\u2810")
-                        if cell_strip:
-                            if table[row][col_idx]:
-                                table[row][col_idx] += "\u2800" + cell_strip
-                            else:
-                                table[row][col_idx] = cell_strip
-            else:
-                table.append([""] * len(col_widths))
-                row += 1
-                cells = line.split("\u2800\u2800")
+                cells = split_row_by_width(line, col_widths)
                 for col_idx, cell in enumerate(cells):
-                    if col_idx < len(col_widths):
-                        table[row][col_idx] = cell.strip("\u2800\u2810")
+                    if cell and row > 0:
+                        if table_rows[row - 1][col_idx]:
+                            table_rows[row - 1][col_idx] += "\u2800" + cell
+                        else:
+                            table_rows[row - 1][col_idx] = cell
+            else:
+                table_rows.append([""] * len(col_widths))
+                row += 1
+                cells = split_row_by_width(line, col_widths)
+                for col_idx, cell in enumerate(cells):
+                    table_rows[row - 1][col_idx] = cell
             cursor += end_cursor
 
-        complete_table = table[0] + "\n"
+        complete_table = header_row + "\n"
         complete_table += wrap_and_join(
-            "<tr>{}</tr>\n", [wrap_and_join("<td>{}</td>", row) for row in table[1:]]
+            "<tr>{}</tr>\n",
+            [wrap_and_join("<td>{}</td>", row_cells) for row_cells in table_rows],
         )
         complete_table = f"<table>\n{complete_table}\n</table>"
         return DetectionResult(cursor, state, 0.91, f"{output_text}{complete_table}\n")
