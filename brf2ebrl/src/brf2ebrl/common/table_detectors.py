@@ -116,3 +116,161 @@ def create_table_detector() -> Detector:
         return DetectionResult(cursor, state, 0.91, f"{output_text}{complete_table}\n")
 
     return detect_table
+
+def create_listed_detector() -> Detector:
+    """Creates a detector for listed table format tables (BANA 11.16)."""
+
+    row_heading_re = re.compile(
+        rf"^[\u2800]{{4,}}(?P<header>[^\u2800\n].*?)(?P<sep>[3:\u2812])[\u2800]+(?P<value>[^\u2800\n].*)\n?$"
+    )
+    column_re = re.compile(
+        rf"^(?P<header>[^\u2800\n].*?)(?P<sep>[3:\u2812])[\u2800]+(?P<value>[^\u2800\n].*)\n?$"
+    )
+    runover_re = re.compile(rf"^[\u2800]{{2,}}(?P<value>[^\u2800\n].*)\n?$")
+
+    def get_line(brf_text: str, pos: int) -> tuple[str, int] | None:
+        if pos >= len(brf_text):
+            return None
+        nl_pos = brf_text.find("\n", pos)
+        if nl_pos < 0:
+            return brf_text[pos:], len(brf_text)
+        return brf_text[pos : nl_pos + 1], nl_pos + 1
+
+    def is_inter_row_line(line: str) -> bool:
+        return line in {
+            "<?blank-line?>\n",
+            "<?blank-line?>",
+        } or line.startswith("<?braille-page") or line.startswith(
+            "<?braille-ppn"
+        ) or line.startswith("<?print-page")
+
+    def is_boundary_line(line: str) -> bool:
+        stripped = line.strip(" \u2800\n")
+        return stripped.startswith("<div") or stripped.startswith("</div")
+
+    def is_rule_line(line: str) -> bool:
+        stripped = line.strip(" \u2800\n")
+        return len(stripped) >= 8 and len(set(stripped)) == 1
+
+    def parse_row(
+        brf_text: str,
+        pos: int,
+        expected_headers: list[str] | None,
+        separator: str | None,
+        join_space: str,
+    ) -> tuple[list[str], list[str], str, int] | None:
+        first_line = get_line(brf_text, pos)
+        if not first_line:
+            return None
+        line, pos = first_line
+        row_match = row_heading_re.match(line)
+        if not row_match:
+            return None
+        if separator and row_match.group("sep") != separator:
+            return None
+
+        headers = [row_match.group("header").strip("\u2800")]
+        values = [row_match.group("value").strip("\u2800")]
+        separator = row_match.group("sep")
+
+        while next_line := get_line(brf_text, pos):
+            line, next_pos = next_line
+            if (
+                is_inter_row_line(line)
+                or is_boundary_line(line)
+                or is_rule_line(line)
+                or row_heading_re.match(line)
+            ):
+                break
+
+            if col_match := column_re.match(line):
+                if col_match.group("sep") != separator:
+                    return None
+                headers.append(col_match.group("header").strip("\u2800"))
+                values.append(col_match.group("value").strip("\u2800"))
+                pos = next_pos
+                continue
+
+            if runover_match := runover_re.match(line):
+                if not values:
+                    return None
+                runover = runover_match.group("value").strip("\u2800")
+                if runover:
+                    values[-1] = f"{values[-1]}{join_space}{runover}" if values[-1] else runover
+                    pos = next_pos
+                    continue
+            return None
+
+        if len(headers) < 2:
+            return None
+        if expected_headers and headers != expected_headers:
+            return None
+        return headers, values, separator, pos
+
+    def wrap_and_join(fmt: str, items: Iterable[str]) -> str:
+        return "".join(fmt.format(item) for item in items)
+
+    def consume_inter_row_lines(brf_text: str, pos: int) -> tuple[int, str]:
+        consumed: list[str] = []
+        while current := get_line(brf_text, pos):
+            line, next_pos = current
+            if is_inter_row_line(line):
+                consumed.append(line)
+                pos = next_pos
+                continue
+            break
+        return pos, "".join(consumed)
+
+    def detect_listed_table(
+        text: str, cursor: int, state: DetectionState, output_text: str
+    ) -> DetectionResult | None:
+        join_space = "\u2800" if "\u2800" in text else " "
+        pos = cursor
+
+        pos, leading_pi = consume_inter_row_lines(text, pos)
+
+        first_row = parse_row(text, pos, None, None, join_space)
+        if not first_row:
+            return None
+
+        headers, values, separator, pos = first_row
+        rows = [values]
+        inter_row_pis: list[str] = []
+        trailing_pi = ""
+
+        while True:
+            pos, gap_pi = consume_inter_row_lines(text, pos)
+
+            current = get_line(text, pos)
+            if not current:
+                trailing_pi += gap_pi
+                break
+            line, _ = current
+            if is_boundary_line(line) or is_rule_line(line):
+                trailing_pi += gap_pi
+                break
+
+            next_row = parse_row(text, pos, headers, separator, join_space)
+            if not next_row:
+                trailing_pi += gap_pi
+                break
+
+            _, row_values, _, pos = next_row
+            inter_row_pis.append(gap_pi)
+            rows.append(row_values)
+
+        if len(rows) < 2:
+            return None
+
+        complete_table = f'{leading_pi}<table class="listed">\n'
+        complete_table += f"<tr>{wrap_and_join('<th>{}</th>', headers)}</tr>\n"
+        complete_table += f"<tr>{wrap_and_join('<td>{}</td>', rows[0])}</tr>\n"
+        for idx, row in enumerate(rows[1:], start=1):
+            complete_table += inter_row_pis[idx - 1]
+            complete_table += f"<tr>{wrap_and_join('<td>{}</td>', row)}</tr>\n"
+        complete_table += "</table>"
+        complete_table += trailing_pi
+        return DetectionResult(pos, state, 0.90, f"{output_text}{complete_table}\n")
+
+    return detect_listed_table
+
