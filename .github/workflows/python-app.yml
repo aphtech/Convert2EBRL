@@ -29,7 +29,7 @@ jobs:
       with:
         version: "0.11.3"
     - name: Install the project
-      run: uv sync --locked --all-extras --dev
+      run: uv sync --all-packages --frozen --all-extras --dev
     - name: Build exe
       run: |
         $env:PATH = "C:\msys64\usr\bin;$env:PATH"
