@@ -42,7 +42,7 @@ jobs:
     - name: Create release zip
       run: Compress-Archive -Path Convert2EBRL.dist -Destination convert2ebrl-continuous.zip
     - name: Update continuous tag
-      uses: actions/github-script@v7
+      uses: actions/github-script@v9
       with:
         script: |
           github.rest.git.updateRef({
@@ -52,7 +52,7 @@ jobs:
             sha: context.sha
           })
     - name: Update continuous release
-      uses: softprops/action-gh-release@v2
+      uses: softprops/action-gh-release@v3
       with:
         name: continuous
         tag_name: continuous
