@@ -361,6 +361,7 @@ def create_column_row_detector() -> Detector:
             return None
 
         # -- Consume TN body lines until the closing indicator --
+        tn_lines: list[str] = [fl_s]
         hdr_line: str | None = None
         if fl_s.endswith(TN_CLOSE):
             hdr_line = fl_s
@@ -371,10 +372,10 @@ def create_column_row_detector() -> Detector:
                     break
                 ln, pos = r
                 ls = ln.rstrip("\n")
+                tn_lines.append(ls)
                 if ls.endswith(TN_CLOSE):
                     hdr_line = ls
                     break
-                # Any other TN body line (including blank-line PIs) is discarded
 
         if hdr_line is None:
             return None
@@ -459,18 +460,19 @@ def create_column_row_detector() -> Detector:
 
             # No separator → table has ended
             break
-
+ 
         if not rows:
             return None
 
         # -- Assemble HTML --
+        tn_comment = "<!--\n" + "\n".join("" if ln == BLANK_PI else ln for ln in tn_lines) + "\n-->"
         html = '<table class="column-row">\n'
         html += f"<tr><th>{h1}</th><th>{h2}</th></tr>\n"
         for c1, c2, pi in rows:
             html += pi
             html += f"<tr><td>{c1}</td><td>{c2}</td></tr>\n"
         html += "</table>"
-        return DetectionResult(pos, state, 0.96, f"{output_text}{html}\n")
+        return DetectionResult(pos, state, 0.96, f"{output_text}{tn_comment}\n{html}\n")
 
     return detect_column_row
 
