@@ -300,3 +300,177 @@ def create_listed_detector() -> Detector:
 
     return detect_listed_table
 
+
+def create_column_row_detector() -> Detector:
+    """Detects column-row tables introduced by a transcriber's note header (BANA §11.17).
+
+    The TN block opens with 6+ blank cells + ⠈⠨⠣ (U+2808 U+2828 U+2823).
+    Its last line ends with the TN close indicator ⠈⠨⠜ (U+2808 U+2828 U+281C) and
+    contains two column headers separated by ⠒ (U+2812, dots 25).
+    The TN block is consumed and not emitted to the output.
+
+    Table body rows follow a blank-line PI after the TN, each formatted as:
+        col1-text⠒col2-text
+        ⠀⠀runover-continuation  (optional, appended to col2)
+    Processing instructions between rows (braille-page, print-page, etc.) are
+    preserved in the output.  Parsing stops at a blank-line PI, a box/rule line,
+    or any line that lacks the separator and is not a runover.
+    """
+    TN_OPEN = "\u2808\u2828\u2823"     # ⠈⠨⠣
+    TN_CLOSE = "\u2808\u2828\u281c"   # ⠈⠨⠜
+    SEP = "\u2812\u2800"              # ⠒⠀  colon (dots 25) + braille space
+    BLANK = "\u2800"
+    BLANK_PI = "<?blank-line?>"
+
+    def get_line(text: str, pos: int) -> tuple[str, int] | None:
+        if pos >= len(text):
+            return None
+        nl = text.find("\n", pos)
+        if nl < 0:
+            return text[pos:], len(text)
+        return text[pos : nl + 1], nl + 1
+
+    def is_blank_pi(line: str) -> bool:
+        return line.rstrip("\n") == BLANK_PI
+
+    def is_pi(line: str) -> bool:
+        return line.lstrip(" ").startswith("<?")
+
+    def is_boundary(line: str) -> bool:
+        s = line.strip(" \u2800\n")
+        return s.startswith("<div") or s.startswith("</div")
+
+    def is_rule(line: str) -> bool:
+        s = line.strip(" \u2800\n")
+        return len(s) >= 8 and len(set(s)) == 1
+
+    def detect_column_row(
+        text: str, cursor: int, state: DetectionState, output_text: str
+    ) -> DetectionResult | None:
+        pos = cursor
+
+        # -- Match TN opening line: 6+ blank cells followed by TN_OPEN --
+        r = get_line(text, pos)
+        if not r:
+            return None
+        fl, pos = r
+        fl_s = fl.rstrip("\n")
+        inner = fl_s.lstrip(BLANK)
+        leading = len(fl_s) - len(inner)
+        if leading < 6 or not inner.startswith(TN_OPEN):
+            return None
+
+        # -- Consume TN body lines until the closing indicator --
+        hdr_line: str | None = None
+        if fl_s.endswith(TN_CLOSE):
+            hdr_line = fl_s
+        else:
+            for _ in range(200):
+                r = get_line(text, pos)
+                if not r:
+                    break
+                ln, pos = r
+                ls = ln.rstrip("\n")
+                if ls.endswith(TN_CLOSE):
+                    hdr_line = ls
+                    break
+                # Any other TN body line (including blank-line PIs) is discarded
+
+        if hdr_line is None:
+            return None
+
+        # -- Parse column headers from the closing line --
+        content = hdr_line[: -len(TN_CLOSE)]  # strip TN_CLOSE suffix
+        si = content.find(SEP)
+        if si < 0:
+            return None
+        h1 = content[:si].strip(BLANK)
+        h2 = content[si + len(SEP) :].strip(BLANK)
+        if not h1 or not h2:
+            return None
+
+        # -- Skip the blank-line PI that separates the TN from the table body --
+        r = get_line(text, pos)
+        if r:
+            ln, np = r
+            if is_blank_pi(ln):
+                pos = np
+
+        # -- Collect table rows --
+        # Each entry: (col1_text, col2_text, leading_pi_string)
+        rows: list[tuple[str, str, str]] = []
+        pending_pi = ""
+
+        while True:
+            r = get_line(text, pos)
+            if not r:
+                break
+            ln, np = r
+            ls = ln.rstrip("\n")
+
+            # Stop at box/boundary or rule line
+            if is_boundary(ln) or is_rule(ls):
+                break
+
+            # Stop at blank line
+            if is_blank_pi(ln):
+                break
+
+            # Pass-through: non-blank processing instruction (braille-page, print-page …)
+            if is_pi(ln):
+                pending_pi += ln
+                pos = np
+                continue
+
+            # Gather this data line plus any following runover lines (2+ leading blanks)
+            # into one logical line before searching for the separator.
+            # The separator may appear anywhere in the logical line, including in a runover.
+            logical = ls
+            scan_pos = np
+            while True:
+                r2 = get_line(text, scan_pos)
+                if not r2:
+                    break
+                ln2, np2 = r2
+                ls2 = ln2.rstrip("\n")
+                if ls2.startswith(BLANK * 2):
+                    logical = logical + BLANK + ls2.lstrip(BLANK)
+                    scan_pos = np2
+                else:
+                    break
+
+            # Data row: must contain the separator (⠒⠀) or separator at end-of-logical-line
+            si = logical.find(SEP)
+            if si >= 0:
+                c1 = logical[:si].strip(BLANK)
+                c2 = logical[si + len(SEP) :].strip(BLANK)
+                rows.append((c1, c2, pending_pi))
+                pending_pi = ""
+                pos = scan_pos
+                continue
+            if logical.endswith("\u2812"):
+                si = len(logical) - 1
+                c1 = logical[:si].strip(BLANK)
+                c2 = ""
+                rows.append((c1, c2, pending_pi))
+                pending_pi = ""
+                pos = scan_pos
+                continue
+
+            # No separator → table has ended
+            break
+
+        if not rows:
+            return None
+
+        # -- Assemble HTML --
+        html = '<table class="column-row">\n'
+        html += f"<tr><th>{h1}</th><th>{h2}</th></tr>\n"
+        for c1, c2, pi in rows:
+            html += pi
+            html += f"<tr><td>{c1}</td><td>{c2}</td></tr>\n"
+        html += "</table>"
+        return DetectionResult(pos, state, 0.96, f"{output_text}{html}\n")
+
+    return detect_column_row
+
