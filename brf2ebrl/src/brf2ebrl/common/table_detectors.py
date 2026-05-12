@@ -414,8 +414,8 @@ def create_column_row_detector() -> Detector:
                 break
 
             # Stop at blank line
-            if is_blank_pi(ln):
-                break
+            #if is_blank_pi(ln):
+             #   break
 
             # Pass-through: non-blank processing instruction (braille-page, print-page …)
             if is_pi(ln):
@@ -434,7 +434,7 @@ def create_column_row_detector() -> Detector:
                     break
                 ln2, np2 = r2
                 ls2 = ln2.rstrip("\n")
-                if ls2.startswith(BLANK * 2):
+                if ls2.startswith(BLANK * 2) or ls2.startswith("<?"):
                     logical = logical + BLANK + ls2.lstrip(BLANK)
                     scan_pos = np2
                 else:
