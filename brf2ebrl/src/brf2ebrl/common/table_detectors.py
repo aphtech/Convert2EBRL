@@ -191,7 +191,7 @@ def create_listed_detector() -> Detector:
 
         headers = [row_match.group("header").strip("\u2800")]
         values = [row_match.group("value").strip("\u2800")]
-        separator = row_match.group("sep") or ""
+        separator = str(row_match.group("sep") or "")
 
         # Read subsequent lines belonging to this row
         while next_line := get_line(brf_text, pos):
@@ -259,8 +259,6 @@ def create_listed_detector() -> Detector:
         if not r:
             return None
         fl, pos = r
-        if "⠀⠀⠀⠀⠀⠀⠈⠨⠣⠠⠏⠗⠔⠞⠀⠿⠍⠁⠞⠀⠊⠎⠀" in fl:
-            breakpoint()
         fl_s = fl.rstrip("\n")
         inner = fl_s.lstrip(BLANK)
         leading = len(fl_s) - len(inner)
