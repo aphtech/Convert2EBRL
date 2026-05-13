@@ -119,6 +119,11 @@ def create_table_detector() -> Detector:
 
 def create_listed_detector() -> Detector:
     """Creates a detector for listed table format tables (BANA 11.16)."""
+    TN_OPEN = "\u2808\u2828\u2823"     # ⠈⠨⠣
+    TN_CLOSE = "\u2808\u2828\u281c"   # ⠈⠨⠜
+    SEP = "\u2812\u2800"              # ⠒⠀  colon (dots 25) + braille space
+    BLANK = "\u2800"
+    BLANK_PI = "<?blank-line?>"
 
     # Matches a row-heading line: 4+ leading blank cells, then header text, separator (3, :, or full-cell), spaces, and value text
     row_heading_re = re.compile(
@@ -130,6 +135,11 @@ def create_listed_detector() -> Detector:
     )
     # Matches a runover continuation line: 2+ leading blank cells followed by non-blank text
     runover_re = re.compile(rf"^[\u2800]{{2,}}(?P<value>[^\u2800\n].*)\n?$")
+
+    def is_blank_pi(line: str) -> bool:
+        return line.rstrip("\n") == BLANK_PI
+
+
 
     def get_line(brf_text: str, pos: int) -> tuple[str, int] | None:
         """Gets the next line of text starting at pos, or None if at end of text."""
@@ -244,9 +254,39 @@ def create_listed_detector() -> Detector:
         # Use braille blank cell as the join space when the source text is braille, otherwise plain space
         join_space = "\u2800" if "\u2800" in text else " "
         pos = cursor
+        # -- Match TN opening line: 6+ blank cells followed by TN_OPEN --
+        r = get_line(text, pos)
+        if not r:
+            return None
+        fl, pos = r
+        if "⠀⠀⠀⠀⠀⠀⠈⠨⠣⠠⠏⠗⠔⠞⠀⠿⠍⠁⠞⠀⠊⠎⠀" in fl:
+            breakpoint()
+        fl_s = fl.rstrip("\n")
+        inner = fl_s.lstrip(BLANK)
+        leading = len(fl_s) - len(inner)
+        if leading < 6 or not inner.startswith(TN_OPEN):
+            return None
 
-        # Skip any leading blank/page-number lines before the first row
-        pos, leading_pi = consume_inter_row_lines(text, pos)
+        # -- Consume TN body lines until the closing indicator --
+        tn_lines: list[str] = [fl_s]
+        for _ in range(20):
+            r = get_line(text, pos)
+            if not r:
+                break
+            ln, pos = r
+            ls = ln.rstrip("\n")
+            tn_lines.append(ls)
+            if ls.endswith(TN_CLOSE):
+                    break
+
+
+        # -- Skip the blank-line PI that separates the TN from the table body --
+        r = get_line(text, pos)
+        if r:
+            ln, np = r
+            if is_blank_pi(ln):
+                pos = np
+
 
         # The first row establishes the column headers and separator character for the table
         first_row = parse_row(text, pos, None, None, join_space)
@@ -287,8 +327,9 @@ def create_listed_detector() -> Detector:
         if len(rows) < 2:
             return None
 
+        tn_comment = "<!--\n" + "\n".join("" if ln == BLANK_PI else ln for ln in tn_lines) + "\n-->"
         # Assemble the HTML table, interleaving preserved PI strings between rows
-        complete_table = f'{leading_pi}<table class="listed">\n'
+        complete_table = f'<table class="listed">\n'
         complete_table += f"<tr>{wrap_and_join('<th>{}</th>', headers)}</tr>\n"
         complete_table += f"<tr>{wrap_and_join('<td>{}</td>', rows[0])}</tr>\n"
         for idx, row in enumerate(rows[1:], start=1):
@@ -296,7 +337,7 @@ def create_listed_detector() -> Detector:
             complete_table += f"<tr>{wrap_and_join('<td>{}</td>', row)}</tr>\n"
         complete_table += "</table>"
         complete_table += trailing_pi
-        return DetectionResult(pos, state, 0.90, f"{output_text}{complete_table}\n")
+        return DetectionResult(pos, state, 0.91, f"{output_text}{tn_comment}\n{complete_table}\n")
 
     return detect_listed_table
 
