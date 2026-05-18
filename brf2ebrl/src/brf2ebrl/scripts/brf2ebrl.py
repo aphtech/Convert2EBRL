@@ -51,9 +51,10 @@ def main():
     default_plugin_id: str = parser_modules[0].id
     arg_parser = argparse.ArgumentParser(description="Converts a BRF to eBraille")
     arg_parser.add_argument("--logging", default="INFO", help="Set the logging level, should be one of the standard Python logging levels.")
+    parser_list =[plugin.id     for plugin in parser_modules ]
     arg_parser.add_argument("--list-parsers", action=_ListPluginsAction, help="List parser plugins and exit")
     arg_parser.add_argument("--parser", dest="parser_plugin", default=default_plugin_id,
-                            help="Specify the parser plugin")
+                            help=f"Specify the parser plugin {parser_list}")
     arg_parser.add_argument(
         "--no-running-heads",
         help="Don't detect running heads",
