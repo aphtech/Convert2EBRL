@@ -4,8 +4,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 from brf2ebrl import ParserContext
-from brf2ebrl.common.box_line_detectors import convert_box_lines, remove_box_lines_processing_instructions
-from brf2ebrl.parser import DetectionResult
+from brf2ebrl.common.box_line_detectors import convert_box_lines, remove_box_lines_processing_instructions, tag_boxlines
+from brf2ebrl.parser import DetectionResult, NotifyLevel
 
 
 def test_convert_g_box():
@@ -44,7 +44,7 @@ def test_convert_g_color_box():
 
 
 
-def test_convert_enclosing_color_box():
+def test_convert_enclosing_box():
     brf = """
 ⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿
 ⠁⠃⠉⠀⠁⠃⠉⠀⠁⠃⠉⠀⠁⠃⠉⠀⠁⠃⠉⠀
@@ -81,7 +81,7 @@ def test_convert_enclosing_color_box():
 
 
 
-def test_convert_enclosing_and_g_color_box():
+def test_convert_enclosing_and_g_box():
     brf = """
 ⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿
 ⠁⠃⠉⠀⠁⠃⠉⠀⠁⠃⠉⠀⠁⠃⠉⠀⠁⠃⠉⠀
@@ -155,3 +155,47 @@ def test_remove_box_processing_instructions():
 '''
     actual = remove_box_lines_processing_instructions(brf, ParserContext())
     assert actual == expected_brf
+
+
+def test_orphan_top_box_line_warns():
+    brf = "\n⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶\n⠁⠃⠉⠀⠁⠃⠉⠀\n"
+    warnings = []
+    ctx = ParserContext(notify=lambda level, msg: warnings.append((level, msg())))
+    result = tag_boxlines(brf, ctx)
+    assert result == brf
+    assert len(warnings) == 1
+    assert warnings[0][0] == NotifyLevel.WARN
+    assert "top (7)" in warnings[0][1]
+    assert "line 2" in warnings[0][1]
+
+
+def test_orphan_bottom_box_line_warns():
+    brf = "\n⠁⠃⠉⠀⠁⠃⠉⠀\n⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛\n"
+    warnings = []
+    ctx = ParserContext(notify=lambda level, msg: warnings.append((level, msg())))
+    result = tag_boxlines(brf, ctx)
+    assert result == brf
+    assert len(warnings) == 1
+    assert warnings[0][0] == NotifyLevel.WARN
+    assert "bottom (g)" in warnings[0][1]
+    assert "line 3" in warnings[0][1]
+
+
+def test_orphan_exterior_box_line_warns():
+    brf = "\n⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿\n⠁⠃⠉⠀⠁⠃⠉⠀\n"
+    warnings = []
+    ctx = ParserContext(notify=lambda level, msg: warnings.append((level, msg())))
+    result = tag_boxlines(brf, ctx)
+    assert result == brf
+    assert len(warnings) == 1
+    assert warnings[0][0] == NotifyLevel.WARN
+    assert "exterior border (=)" in warnings[0][1]
+    assert "line 2" in warnings[0][1]
+
+
+def test_no_warnings_for_matched_box():
+    brf = "\n⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶\n⠁⠃⠉⠀⠁⠃⠉⠀\n⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛\n"
+    warnings = []
+    ctx = ParserContext(notify=lambda level, msg: warnings.append((level, msg())))
+    tag_boxlines(brf, ctx)
+    assert warnings == []
