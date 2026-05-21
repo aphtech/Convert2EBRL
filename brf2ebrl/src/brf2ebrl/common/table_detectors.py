@@ -12,6 +12,17 @@ from collections.abc import Iterable
 from brf2ebrl.parser import DetectionState, DetectionResult, Detector
 
 
+def strip_pi_markers(text: str) -> str:
+    """Remove <? and ?> delimiters from processing instructions within text.
+
+    Processing instructions found inside transcriber-note content would produce
+    invalid XML if left intact once the content is wrapped in an XML comment.
+    This function strips the opening <? and closing ?> markers while keeping
+    the instruction content, so the text remains readable in the comment.
+    """
+    return re.sub(r'<\?(.*?)\?>', r'\1', text, flags=re.DOTALL)
+
+
 def create_table_detector() -> Detector:
     """Creates a detector for finding simple tables more can be added"""
     seperator_re = re.compile(
@@ -325,7 +336,7 @@ def create_listed_detector() -> Detector:
         if len(rows) < 2:
             return None
 
-        tn_comment = "<!--\n" + "\n".join("" if ln == BLANK_PI else ln for ln in tn_lines) + "\n-->"
+        tn_comment = "<!--\n" + "\n".join("" if ln == BLANK_PI else strip_pi_markers(ln) for ln in tn_lines) + "\n-->"
         # Assemble the HTML table, interleaving preserved PI strings between rows
         complete_table = f'<table class="listed">\n'
         complete_table += f"<tr>{wrap_and_join('<th>{}</th>', headers)}</tr>\n"
@@ -504,7 +515,7 @@ def create_column_row_detector() -> Detector:
             return None
 
         # -- Assemble HTML --
-        tn_comment = "<!--\n" + "\n".join("" if ln == BLANK_PI else ln for ln in tn_lines) + "\n-->"
+        tn_comment = "<!--\n" + "\n".join("" if ln == BLANK_PI else strip_pi_markers(ln) for ln in tn_lines) + "\n-->"
         html = '<table class="column-row">\n'
         html += f"<tr><th>{h1}</th><th>{h2}</th></tr>\n"
         for c1, c2, pi in rows:
