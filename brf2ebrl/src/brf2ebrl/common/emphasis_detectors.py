@@ -218,7 +218,7 @@ _end_tags = r"(?:</strong>)*?(?:</em>)*?(?:</strong>)*?\u2800|</h[1-6]>|</pre>|<
 words_re = []
 for key, value in word.items():
     end_re = f"{value[0]}|{_end_tags}"
-    words_re.append(re.compile(f"({key})(.*?)({end_re})"))
+    words_re.append(re.compile(f"({key})(?!\u2800)(.*?)({end_re})"))
 
 
 def word_groups(match: re.Match[str]) -> str:
@@ -270,7 +270,7 @@ _end_tags = r"</h[1-6]>|</pre>|</p>|</li>|</t[hd]>"
 phrases_re = []
 for key, value in phrase.items():
     end_re = f"{value[0]}(?:</strong>)*(?:</em.*?>)*(?:</strong>)*|{_end_tags}"
-    phrases_re.append(re.compile(f"({key})(.*?)({end_re})"))
+    phrases_re.append(re.compile(f"({key})(?!\u2800)(.*?)({end_re})"))
 
 
 def phrase_groups(match: re.Match[str]) -> str:
