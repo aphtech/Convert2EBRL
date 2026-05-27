@@ -93,6 +93,10 @@ def create_centered_detector(
         "^[\u2801-\u28ff][\u2800-\u28ff]*\n"
     )
 
+    _guide_words_next_re = re.compile(
+        r"<\?(?:braille-page|running-head|braille-ppn)[ \u2800-\u28ff]*\?>"
+    )
+
     def detect_centered(
         text: str, cursor: int, state: DetectionState, output_text: str
     ) -> DetectionResult | None:
@@ -110,7 +114,17 @@ def create_centered_detector(
                 new_cursor += line.end()
             else:
                 break
-        if _next_line_re.match(text[new_cursor:]):
+        next_text = text[new_cursor:]
+        if (
+            lines
+            and _guide_words_next_re.match(next_text)
+            and any("\u2824" in line or "\u2800" not in line for line in lines)
+        ):
+            brl = "\u2800".join(lines)
+            return DetectionResult(
+                new_cursor, state, 0.9, f"{output_text}<!-- guide words {brl} -->\n"
+            )
+        if _next_line_re.match(next_text):
             brl = "\u2800".join(lines)
         return (
             DetectionResult(
