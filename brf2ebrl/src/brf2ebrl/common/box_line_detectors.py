@@ -6,7 +6,6 @@
 
 """Detectors for Box lines"""
 import re
-import logging
 
 from brf2ebrl import ParserContext
 from brf2ebrl.parser import DetectionState, DetectionResult, NotifyLevel
@@ -27,8 +26,8 @@ _ORPHAN_EXT_RE = re.compile(r"^\u283f{10,}$", re.MULTILINE)
 def _report_orphans(text: str, pattern: re.Pattern, label: str, ctx: ParserContext):
     for m in pattern.finditer(text):
         line_num = text.count("\n", 0, m.start()) + 1
-        #ctx.notify_str(NotifyLevel.WARN, f"Unmatched {label} box line at line {line_num}")
-        logging.warning(f"Unmatched {label} box line at line {line_num}")
+        ctx.notify_str(NotifyLevel.WARN, f"Unmatched {label} box line at line {line_num}")
+        #logging.warning(f"Unmatched {label} box line at line {line_num}")
 
 
 def _convert_groups(match):

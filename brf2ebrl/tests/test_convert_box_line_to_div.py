@@ -157,40 +157,40 @@ def test_remove_box_processing_instructions():
     assert actual == expected_brf
 
 
-def test_orphan_top_box_line_warns(caplog):
-    import logging
+def test_orphan_top_box_line_warns():
     brf = "\n⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶\n⠁⠃⠉⠀⠁⠃⠉⠀\n"
-    with caplog.at_level(logging.WARNING):
-        result = tag_boxlines(brf, ParserContext())
+    warnings = []
+    ctx = ParserContext(notify=lambda level, msg: warnings.append((level, msg())))
+    result = tag_boxlines(brf, ctx)
     assert result == brf
-    assert len(caplog.records) == 1
-    assert caplog.records[0].levelno == logging.WARNING
-    assert "top (7)" in caplog.records[0].message
-    assert "line 2" in caplog.records[0].message
+    assert len(warnings) == 1
+    assert warnings[0][0] == NotifyLevel.WARN
+    assert "top (7)" in warnings[0][1]
+    assert "line 2" in warnings[0][1]
 
 
-def test_orphan_bottom_box_line_warns(caplog):
-    import logging
+def test_orphan_bottom_box_line_warns():
     brf = "\n⠁⠃⠉⠀⠁⠃⠉⠀\n⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛\n"
-    with caplog.at_level(logging.WARNING):
-        result = tag_boxlines(brf, ParserContext())
+    warnings = []
+    ctx = ParserContext(notify=lambda level, msg: warnings.append((level, msg())))
+    result = tag_boxlines(brf, ctx)
     assert result == brf
-    assert len(caplog.records) == 1
-    assert caplog.records[0].levelno == logging.WARNING
-    assert "bottom (g)" in caplog.records[0].message
-    assert "line 3" in caplog.records[0].message
+    assert len(warnings) == 1
+    assert warnings[0][0] == NotifyLevel.WARN
+    assert "bottom (g)" in warnings[0][1]
+    assert "line 3" in warnings[0][1]
 
 
-def test_orphan_exterior_box_line_warns(caplog):
-    import logging
+def test_orphan_exterior_box_line_warns():
     brf = "\n⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿\n⠁⠃⠉⠀⠁⠃⠉⠀\n"
-    with caplog.at_level(logging.WARNING):
-        result = tag_boxlines(brf, ParserContext())
+    warnings = []
+    ctx = ParserContext(notify=lambda level, msg: warnings.append((level, msg())))
+    result = tag_boxlines(brf, ctx)
     assert result == brf
-    assert len(caplog.records) == 1
-    assert caplog.records[0].levelno == logging.WARNING
-    assert "exterior border (=)" in caplog.records[0].message
-    assert "line 2" in caplog.records[0].message
+    assert len(warnings) == 1
+    assert warnings[0][0] == NotifyLevel.WARN
+    assert "exterior border (=)" in warnings[0][1]
+    assert "line 2" in warnings[0][1]
 
 
 def test_no_warnings_for_matched_box():
