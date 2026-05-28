@@ -6,7 +6,6 @@ requires-python = "==3.13.*"
 members = [
     "brf2ebrl",
     "brf2ebrl-bana",
-    "brf2ebrl-nfb",
     "convert2ebrl",
     "convert2ebrl-workspace",
 ]
@@ -44,17 +43,6 @@ dev = [{ name = "pytest", specifier = ">=9.0.3" }]
 name = "brf2ebrl-bana"
 version = "0.1.0"
 source = { editable = "plugins/brf2ebrl_bana" }
-dependencies = [
-    { name = "brf2ebrl" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "brf2ebrl", editable = "brf2ebrl" }]
-
-[[package]]
-name = "brf2ebrl-nfb"
-version = "0.1.0"
-source = { editable = "plugins/brf2ebrl_nfb" }
 dependencies = [
     { name = "brf2ebrl" },
 ]
@@ -121,12 +109,11 @@ wheels = [
 
 [[package]]
 name = "convert2ebrl"
-version = "1.0.0"
+version = "1.1.0"
 source = { editable = "gui" }
 dependencies = [
     { name = "brf2ebrl" },
     { name = "brf2ebrl-bana" },
-    { name = "brf2ebrl-nfb" },
     { name = "packaging" },
     { name = "pyside6" },
 ]
@@ -140,7 +127,6 @@ dev = [
 requires-dist = [
     { name = "brf2ebrl", editable = "brf2ebrl" },
     { name = "brf2ebrl-bana", editable = "plugins/brf2ebrl_bana" },
-    { name = "brf2ebrl-nfb", editable = "plugins/brf2ebrl_nfb" },
     { name = "packaging", specifier = ">=25.0" },
     { name = "pyside6", specifier = ">=6.5.2" },
 ]
@@ -150,7 +136,7 @@ dev = [{ name = "nuitka", specifier = ">=4.0" }]
 
 [[package]]
 name = "convert2ebrl-workspace"
-version = "1.0.0"
+version = "1.1.0"
 source = { virtual = "." }
 
 [[package]]

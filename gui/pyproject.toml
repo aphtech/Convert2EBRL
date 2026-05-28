@@ -10,7 +10,6 @@ dependencies = [
     "pyside6>=6.5.2",
     "brf2ebrl",
     "brf2ebrl-bana",
-    "brf2ebrl-nfb",
     "packaging>=25.0",
 ]
 requires-python = ">=3.13,<3.14"
@@ -36,4 +35,3 @@ build-backend = "uv_build"
 [tool.uv.sources]
 brf2ebrl = { workspace = true }
 brf2ebrl_bana = { workspace = true }
-brf2ebrl_nfb = { workspace = true }
