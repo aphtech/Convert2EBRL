@@ -7,7 +7,7 @@ authors = [
     {name = "Ken Perry", email = "kperry@aph.org"},
 ]
 dependencies = [
-    "pyside6>=6.11.0",
+    "pyside6>=6.11.1",
     "brf2ebrl",
     "brf2ebrl-bana",
     "packaging>=25.0",
