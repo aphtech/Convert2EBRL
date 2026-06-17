@@ -25,7 +25,7 @@ convert2ebrl = "convert2ebrl.__main__:main"
 
 [dependency-groups]
 dev = [
-    "nuitka>=4.0",
+    "nuitka>=4.1.0",
 ]
 
 [build-system]
