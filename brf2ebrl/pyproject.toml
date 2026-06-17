@@ -8,7 +8,7 @@ authors = [
 ]
 dependencies = [
     "regex>=2024.11.6",
-    "pdfplumber",
+    "pdfplumber>=0.11.10",
     "pypdf>=6.13.2",
     "lxml>=6.1.0",
     "html5lib>=1.1",
