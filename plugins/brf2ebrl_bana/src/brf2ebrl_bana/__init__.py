@@ -167,14 +167,15 @@ def create_brf2ebrl_parser(
                 [create_ebrf_print_page_tags()],
                 most_confident_detector,
             ),
+            #remove processing instructions pass
+            Parser(
+                "Remove processing instructions.",
+                lambda x,_: "".join(part.split("?>", 1)[1] if "?>" in part else part for part in x.split("<?"))
+            ),
             # Make complete HTML5 pass
             Parser(
                 "Make complete XML",
                 xhtml_fixup_detector
-            ),
-            Parser(
-                "Remove processing instructions.",
-                lambda x,_: "".join(part.split("?>", 1)[1] if "?>" in part else part for part in x.split("<?"))
             ),
             Parser(
                 "Convert u+2800 to regular space as per ebraille standard",
