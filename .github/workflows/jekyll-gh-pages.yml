@@ -36,7 +36,7 @@ jobs:
           source: ./gh-pages
           destination: ./_site
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v7
+        uses: actions/upload-pages-artifact@v5
 
   # Deployment job
   deploy:
