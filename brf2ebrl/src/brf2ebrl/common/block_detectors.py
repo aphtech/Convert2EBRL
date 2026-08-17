@@ -19,6 +19,8 @@ _RUNNING_HEAD_RE = "(?:<\\?running-head[ \u2800-\u28ff]*\\?>)"
 _BRAILLE_PAGE_RE = "(?:<\\?braille-page[ \u2800-\u28ff]*\\?>)"
 _BRAILLE_PPN_RE = "(?:<\\?braille-ppn [ \u2800-\u28ff]*\\?>)"
 _BLANK_LINE_RE = "(?:<\\?blank-line\\?>)"
+# zero-indent footnote/endnote separator line, e.g. "⠐⠒⠒⠒⠒⠒⠒"
+_FOOTNOTE_MARKER_RE = re.compile("\u2810\u2812{2,}\n")
 _PROCESSING_INSTRUCTION_RE = (
     f"(?:(?:{_BRAILLE_PAGE_RE}\n)?"
     f"(?:{_BRAILLE_PPN_RE}\n)?"
@@ -335,7 +337,10 @@ def _create_indented_block_finder(
             new_cursor += parsed.end
 
             # Get next legal line: PI or run-over content
-            if pi_match := paragraph_processing_instruction_re.match(text[new_cursor:]):
+            if _FOOTNOTE_MARKER_RE.match(text[new_cursor:]):
+                # stop before a footnote marker; it is never part of a paragraph
+                current_match = None
+            elif pi_match := paragraph_processing_instruction_re.match(text[new_cursor:]):
                 current_match = pi_match
                 current_is_pi = True
             elif runover := _run_over_re.match(text[new_cursor:]):
@@ -815,11 +820,12 @@ def create_list_detector(
         f"(\u2800{{{min_indent},}})([\u2801-\u28ff][\u2800-\u28ff]*)\n+",
     )
 
-    def join_list(lines: list[ParsedLine]) -> str:
+    def join_list(lines: list[ParsedLine], is_footnote: bool = False) -> str:
         """
         join lists
         """
-        list_head = '\n<ul style="list-style-type: none">'
+        list_class = 'class="footnotes" ' if is_footnote else ""
+        list_head = f'\n<ul {list_class}style="list-style-type: none">'
         list_tail = "</ul>"
         list_str = f"{list_head}\n"
         for line in lines:
@@ -836,6 +842,7 @@ def create_list_detector(
         length: int,
         levels: list[int],
         current_level: int,
+        is_footnote: bool = False,
     ) -> list:
         """Recursive list builder, preserving processing instructions and supporting nested lists"""
         list_level = [lines[index].copy()]
@@ -876,10 +883,11 @@ def create_list_detector(
             return [index - original_index, re.sub(r"[\u2800]{2,}", "\u2800", joined)]
 
         # Otherwise, render HTML list, preserving PI lines
-        joined = join_list(list_level)
+        # only the outermost list carries the footnote class, not nested lists
+        joined = join_list(list_level, is_footnote and current_level == 0)
         return [index - original_index, re.sub(r"[\u2800]{2,}", "\u2800", joined)]
 
-    def make_list(lines: list[ParsedLine]) -> str:
+    def make_list(lines: list[ParsedLine], is_footnote: bool = False) -> str:
         """Make a list or nested list"""
 
         # create clean set of levels acending
@@ -887,10 +895,10 @@ def create_list_detector(
 
         # one level list
         if len(levels) == 1:
-            return join_list(lines)
+            return join_list(lines, is_footnote)
 
         #  nested list or over run list
-        _, brl_str = build_list(lines, 0, len(lines), levels, 0)
+        _, brl_str = build_list(lines, 0, len(lines), levels, 0, is_footnote)
         return brl_str
 
     def match_list_line(current_line: str) -> ParsedLine | None:
@@ -1118,10 +1126,21 @@ def create_list_detector(
         brl = ""
         lines: list[ParsedLine] = []
         new_cursor = cursor
-        if (cursor == 0 or text[cursor - 1] == "\n") and first_line_re.match(
-            text[cursor:]
-        ):
-            lines, new_cursor = get_list_pages(text, cursor)
+        # a footnote marker directly preceding a list is consumed and marks the list as footnotes
+        is_footnote = False
+        list_start = cursor
+        if cursor == 0 or text[cursor - 1] == "\n":
+            marker = _FOOTNOTE_MARKER_RE.match(text[cursor:])
+            if marker:
+                is_footnote = True
+                list_start = cursor + marker.end()
+        if (
+            list_start == 0 or text[list_start - 1] == "\n"
+        ) and first_line_re.match(text[list_start:]):
+            lines, new_cursor = get_list_pages(text, list_start)
+
+        if is_footnote and not lines:
+            return None
 
         confidence = 0.9
         levels = list({level.depth for level in lines if level.depth != -1})
@@ -1155,7 +1174,7 @@ def create_list_detector(
                     (index for index, level in enumerate(lines) if level.depth == 2),
                     len(lines),
                 )
-                new_cursor = cursor + sum(
+                new_cursor = list_start + sum(
                     line.end for line in lines[:first_level_2_index]
                 )
                 brl = (
@@ -1172,7 +1191,7 @@ def create_list_detector(
                 )
 
             if not brl:
-                brl = make_list(lines)
+                brl = make_list(lines, is_footnote)
 
         return (
             DetectionResult(new_cursor, state, confidence, f"{output_text}{brl}\n")
