@@ -34,3 +34,57 @@ def test_create_table_detector_keeps_second_column_with_extra_inter_column_space
     expected_row_heading = translate_ascii_to_unicode_braille(',SQU>E ROOT')
     expected_col_2 = translate_ascii_to_unicode_braille(',SPACE "6 ,DOTS #C-#D-#E')
     assert f"<td>{expected_row_heading}</td><td>{expected_col_2}</td>" in result.text
+
+
+def test_create_table_detector_detects_headerless_simple_table():
+    # A simple table with no heading/rule line: just rows of columns
+    # separated by 2+ spaces, with a consistent column count.
+    ascii_table = (
+        ',CATS  #C  #F   #I  #AB  #AE\n'
+        ',DOGS  #G  #AD  ""  """  """\n'
+    )
+    text = translate_ascii_to_unicode_braille(ascii_table)
+
+    detector = create_table_detector()
+    result = detector(text, 0, {}, "")
+
+    assert result is not None
+    assert result.cursor == len(text)
+
+    expected_row1 = [
+        translate_ascii_to_unicode_braille(cell)
+        for cell in (',CATS', '#C', '#F', '#I', '#AB', '#AE')
+    ]
+    expected_row2 = [
+        translate_ascii_to_unicode_braille(cell)
+        for cell in (',DOGS', '#G', '#AD', '""', '"""', '"""')
+    ]
+    expected_row1_html = "<tr>" + "".join(f"<td>{c}</td>" for c in expected_row1) + "</tr>"
+    expected_row2_html = "<tr>" + "".join(f"<td>{c}</td>" for c in expected_row2) + "</tr>"
+    assert expected_row1_html in result.text
+    assert expected_row2_html in result.text
+
+
+def test_create_table_detector_ignores_single_line_with_double_spaces():
+    # A lone line with a double space should not be treated as a table.
+    ascii_table = ',CATS  #C  #F   #I  #AB  #AE\n'
+    text = translate_ascii_to_unicode_braille(ascii_table)
+
+    detector = create_table_detector()
+    result = detector(text, 0, {}, "")
+
+    assert result is None
+
+
+def test_create_table_detector_ignores_rows_with_mismatched_column_counts():
+    # If the rows do not have a consistent column count, it is not a table.
+    ascii_table = (
+        ',CATS  #C  #F\n'
+        ',DOGS  #G  #AD  ""\n'
+    )
+    text = translate_ascii_to_unicode_braille(ascii_table)
+
+    detector = create_table_detector()
+    result = detector(text, 0, {}, "")
+
+    assert result is None

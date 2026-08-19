@@ -28,6 +28,7 @@ def create_table_detector() -> Detector:
     seperator_re = re.compile(
         "((?:[\u2800-\u28ff]+?\n){1,2})(\u2810\u2812+?(?:\u2800\u2800\u2810\u2812+?)+?)\n"
     )
+    column_split_re = re.compile("\u2800{2,}")
 
     def get_line(brf_text: str, pos: int) -> int | None:
         """Gets each line after table header that matches table rows"""
@@ -57,12 +58,49 @@ def create_table_detector() -> Detector:
             start = next_start
         return cells
 
+    def detect_headerless_table(
+        text: str, cursor: int, state: DetectionState, output_text: str
+    ) -> DetectionResult | None:
+        """Detects a simple table with no heading/rule line, just rows of
+        columns separated by 2+ blank cells, aligned by a consistent column count."""
+        rows: list[list[str]] = []
+        pos = cursor
+        col_count: int | None = None
+        while end_cursor := get_line(text, pos):
+            line = text[pos : pos + end_cursor].rstrip("\n")
+            # A line starting with 2+ blank cells is a runover continuation of a
+            # header-based row; without a header there is no column position to
+            # attach it to, so treat it as the end of the table instead.
+            if line.startswith("\u2800\u2800") or not column_split_re.search(line):
+                break
+            cells = [cell.strip("\u2800") for cell in column_split_re.split(line)]
+            if col_count is None:
+                col_count = len(cells)
+                if col_count < 2:
+                    break
+            elif len(cells) != col_count:
+                break
+            rows.append(cells)
+            pos += end_cursor
+
+        # Require at least two rows to avoid treating ordinary text with a
+        # single double-space as a table.
+        if col_count is None or col_count < 2 or len(rows) < 2:
+            return None
+
+        complete_table = wrap_and_join(
+            "<tr>{}</tr>\n",
+            [wrap_and_join("<td>{}</td>", row_cells) for row_cells in rows],
+        )
+        complete_table = f"<table>\n{complete_table}\n</table>"
+        return DetectionResult(pos, state, 0.91, f"{output_text}{complete_table}\n")
+
     def detect_table(
         text: str, cursor: int, state: DetectionState, output_text: str
     ) -> DetectionResult | None:
         match = seperator_re.match(text[cursor:])
         if not match:
-            return None
+            return detect_headerless_table(text, cursor, state, output_text)
 
         # code
         col_widths = [len(col) for col in match.group(2).split("\u2800\u2800")]
