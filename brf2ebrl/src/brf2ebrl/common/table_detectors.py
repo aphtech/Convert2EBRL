@@ -71,9 +71,26 @@ def create_table_detector() -> Detector:
             # A line starting with 2+ blank cells is a runover continuation of a
             # header-based row; without a header there is no column position to
             # attach it to, so treat it as the end of the table instead.
-            if line.startswith("\u2800\u2800") or not column_split_re.search(line):
+            if line.startswith("\u2800\u2800"):
                 break
-            cells = [cell.strip("\u2800") for cell in column_split_re.split(line)]
+            row_end = pos + end_cursor
+            if column_split_re.search(line):
+                cells = [cell.strip("\u2800") for cell in column_split_re.split(line)]
+            else:
+                # No column separator on this line: it may be a row label that
+                # is too long to fit alongside its data, overrunning onto the
+                # next (indented) line together with that row's data cells.
+                cont_end_cursor = get_line(text, row_end)
+                if not cont_end_cursor:
+                    break
+                cont_line = text[row_end : row_end + cont_end_cursor].rstrip("\n")
+                if not cont_line.startswith("\u2800\u2800"):
+                    break
+                combined = line.strip("\u2800") + "\u2800" + cont_line.lstrip("\u2800")
+                if not column_split_re.search(combined):
+                    break
+                cells = [cell.strip("\u2800") for cell in column_split_re.split(combined)]
+                row_end += cont_end_cursor
             if col_count is None:
                 col_count = len(cells)
                 if col_count < 2:
@@ -81,7 +98,7 @@ def create_table_detector() -> Detector:
             elif len(cells) != col_count:
                 break
             rows.append(cells)
-            pos += end_cursor
+            pos = row_end
 
         # Require at least two rows to avoid treating ordinary text with a
         # single double-space as a table.

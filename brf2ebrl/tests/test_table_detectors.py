@@ -88,3 +88,40 @@ def test_create_table_detector_ignores_rows_with_mismatched_column_counts():
     result = detector(text, 0, {}, "")
 
     assert result is None
+
+
+def test_create_table_detector_detects_headerless_table_with_row_label_overrun():
+    # Regression: a headerless table whose first row's label is too long to
+    # fit alongside its data overruns onto an indented continuation line that
+    # also carries that row's data cells (see the boxed table in the issue).
+    ascii_table = (
+        ',CO/\n'
+        '  _% (@S) _:  ""  #FJ  """  #AHJ  #BDJ\n'
+        ',TICKETS """  #D  """  #AF  """"  #CB\n'
+    )
+    text = translate_ascii_to_unicode_braille(ascii_table)
+
+    detector = create_table_detector()
+    result = detector(text, 0, {}, "")
+
+    assert result is not None
+    assert result.cursor == len(text)
+    assert result.text.count("<tr>") == 2
+    expected_label = translate_ascii_to_unicode_braille(',CO/ _% (@S) _:')
+    assert f"<td>{expected_label}</td>" in result.text
+
+
+def test_create_table_detector_ignores_row_label_overrun_without_data_columns():
+    # A line with no column separator followed by an indented line that also
+    # has no column separator is ordinary wrapped text, not a table row.
+    ascii_table = (
+        ',CO/\n'
+        '  ISN0 A TABLE ROW AT ALL4\n'
+        ',TICKETS """  #D  """  #AF  """"  #CB\n'
+    )
+    text = translate_ascii_to_unicode_braille(ascii_table)
+
+    detector = create_table_detector()
+    result = detector(text, 0, {}, "")
+
+    assert result is None
