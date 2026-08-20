@@ -715,11 +715,14 @@ def create_toc_detector(cells_per_line: int) -> Detector:
         new_lines: list[ParsedLine] = []
 
         # consume PI's if consicutive blanks stop and return [[],0]
+        # unless the blank lines are just page-bottom spacing ahead of a braille
+        # page turn, which is a normal mid-TOC page break, not a TOC terminator.
         while line := toc_processing_instruction_re.match(text[new_cursor:]):
             if (
                 new_lines
                 and line.group(1) == "<?blank-line?>\n"
                 and new_lines[-1].pi == line.group(1)
+                and not text[new_cursor + line.end():].startswith("<?braille-page")
             ):
                 return ([], cursor_offset)
             new_lines.append(ParsedLine(-1, line.group(1), "", line.end()))
