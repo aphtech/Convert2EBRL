@@ -117,11 +117,7 @@ def create_centered_detector(
             else:
                 break
         next_text = text[new_cursor:]
-        if (
-            lines
-            and _guide_words_next_re.match(next_text)
-            and any("\u2824" in line or "\u2800" not in line for line in lines)
-        ):
+        if lines and _guide_words_next_re.match(next_text):
             brl = "\u2800".join(lines)
             return DetectionResult(
                 new_cursor, state, 0.9, f"{output_text}<!-- guide words {brl} -->\n"
