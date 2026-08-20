@@ -17,6 +17,8 @@ from brf2ebrl.common.detectors import detect_and_pass_processing_instructions, \
     translate_ascii_to_unicode_braille, combine_detectors, convert_blank_lines_to_processing_instructions
 from brf2ebrl.common.emphasis_detectors import tag_emphasis
 from brf2ebrl.common.graphic_detectors import create_pdf_graphic_detector
+from brf2ebrl.common.nemeth_detectors import detect_block_nemeth, detect_and_pass_nemeth_block, \
+    tag_inline_nemeth, restore_nemeth_braille
 from brf2ebrl.common.page_numbers import create_ebrf_print_page_tags
 from brf2ebrl.common.selectors import most_confident_detector
 from brf2ebrl.parser import detector_parser, Parser
@@ -104,11 +106,24 @@ def create_brf2ebrl_parser(
                 "Convert box lines to div tags",
                 tag_boxlines
             ),
+            # Detect block-level (displayed) Nemeth math and wrap it in divs before
+            # block detection runs, so multi-line expressions are not mistaken for
+            # separate paragraphs/lists/headings.
+            detector_parser(
+                "Detect Nemeth",
+                {},
+                [
+                    detect_block_nemeth,
+                    detect_and_pass_processing_instructions,
+                ],
+                most_confident_detector,
+            ),
             # Detect blocks pass
             detector_parser(
                 "Detect blocks",
                 {},
                 [
+                    detect_and_pass_nemeth_block,
                     create_centered_detector(page_layout.cells_per_line, 3, "h1"),
                     create_cell_heading(6, "h3"),
                     create_cell_heading(4, "h2"),
@@ -149,6 +164,12 @@ def create_brf2ebrl_parser(
                 "Detecting inline TNs",
                 tag_inline_tn
             ),
+            # Wrap any remaining (inline) Nemeth math in spans now that block
+            # structure already exists.
+            Parser(
+                "Detecting inline Nemeth",
+                tag_inline_nemeth
+            ),
             Parser(
                 "Detect TN symbols lists",
                 tag_symbols_list_tn
@@ -157,6 +178,12 @@ def create_brf2ebrl_parser(
             Parser(
                 "Convert Emphasis",
                 tag_emphasis
+            ),
+            # Restore the braille shadow-encoded inside Nemeth tags now that the
+            # passes which could have misread it as other braille indicators are done.
+            Parser(
+                "Restore Nemeth braille",
+                restore_nemeth_braille
             ),
             # PDF Graphics
             create_image_detection_parser_pass(brf_path, images_path, output_path, page_layout),
