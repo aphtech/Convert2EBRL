@@ -4,8 +4,85 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-from brf2ebrl.common.block_detectors import create_centered_detector, create_toc_detector
+from brf2ebrl.common.block_detectors import (
+    create_cell_heading,
+    create_centered_detector,
+    create_toc_detector,
+)
 from brf2ebrl.common.detectors import translate_ascii_to_unicode_braille
+
+
+def test_create_cell_heading_detects_correctly_indented_heading_with_high_confidence():
+    content = translate_ascii_to_unicode_braille(",REMEMB]")
+    text = "⠀" * 4 + content + "\n"
+
+    detector = create_cell_heading(4, "h2")
+    result = detector(text, 0, {}, "")
+
+    assert result is not None
+    assert result.confidence == 0.9
+    assert result.text == f"<h2>{content}</h2>\n"
+
+
+def test_create_cell_heading_detects_off_by_one_indent_with_lower_confidence():
+    # Regression: a transcriber sometimes mistakes the cell number for a
+    # count of blanks to insert before the text, e.g. work/cell_5_bad.brf
+    # line 653's ",,REMEMB]" starting in cell 6 (5 leading blanks) instead
+    # of the correct cell 5 (4 leading blanks). Still recognized as a
+    # heading, but with lower confidence so a correctly indented heading
+    # (or another detector) wins when both are possible.
+    content = translate_ascii_to_unicode_braille(",REMEMB]")
+    text = "⠀" * 5 + content + "\n"
+
+    detector = create_cell_heading(4, "h2")
+    result = detector(text, 0, {}, "")
+
+    assert result is not None
+    assert result.confidence == 0.6
+    assert result.text == f"<h2>{content}</h2>\n"
+
+
+def test_create_cell_heading_does_not_match_indent_further_than_off_by_one():
+    content = translate_ascii_to_unicode_braille(",REMEMB]")
+    text = "⠀" * 6 + content + "\n"
+
+    detector = create_cell_heading(4, "h2")
+    result = detector(text, 0, {}, "")
+
+    assert result is None
+
+
+def test_create_centered_detector_detects_off_by_one_indent_with_lower_confidence():
+    # Regression: work/center_bad.brf line 359's ",,FAMILY ,,MA?" starts one
+    # cell later than the centered formula (floor((page_width-text_width)/2)+1)
+    # requires -- the transcriber mistake of treating the cell number as a
+    # blank-count. Still recognized as centered text, but with lower
+    # confidence.
+    cells_per_line = 40
+    brl_content = translate_ascii_to_unicode_braille(",,FAMILY ,,MA?")
+    correct_indent = (cells_per_line - len(brl_content)) // 2
+    text = "⠀" * (correct_indent + 1) + brl_content + "\n<?blank-line?>\n"
+
+    detector = create_centered_detector(cells_per_line, 3, "h1")
+    result = detector(text, 0, {}, "")
+
+    assert result is not None
+    assert result.confidence == 0.6
+    assert result.text == f"<h1>{brl_content}</h1>\n"
+
+
+def test_create_centered_detector_detects_correctly_indented_text_with_high_confidence():
+    cells_per_line = 40
+    brl_content = translate_ascii_to_unicode_braille(",,FAMILY ,,MA?")
+    correct_indent = (cells_per_line - len(brl_content)) // 2
+    text = "⠀" * correct_indent + brl_content + "\n<?blank-line?>\n"
+
+    detector = create_centered_detector(cells_per_line, 3, "h1")
+    result = detector(text, 0, {}, "")
+
+    assert result is not None
+    assert result.confidence == 0.9
+    assert result.text == f"<h1>{brl_content}</h1>\n"
 
 
 def test_create_centered_detector_detects_multi_word_guide_words_without_dash():

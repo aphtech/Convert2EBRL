@@ -57,8 +57,17 @@ def detect_pre(
 
 
 def create_cell_heading(indent: int, tag_name: str) -> Detector:
-    """Creates a detector for a heading indented by the specified amount."""
+    """Creates a detector for a heading indented by the specified amount.
+
+    Transcribers sometimes mistake the cell number for a count of blank
+    cells to insert before the text, which shifts the text one cell later
+    than it should be (e.g. a cell 5 heading starting in cell 6 instead).
+    That off-by-one indent is still recognized as a heading of this level,
+    but with a lower confidence so a correctly indented heading (or any
+    other detector) takes priority over it.
+    """
     heading_re = re.compile(f"\u2800{{{indent}}}([\u2801-\u28ff][\u2800-\u28ff]*)\n+")
+    mistake_re = re.compile(f"\u2800{{{indent + 1}}}([\u2801-\u28ff][\u2800-\u28ff]*)\n+")
 
     def detect_cell_heading(
         text: str, cursor: int, state: DetectionState, output_text: str
@@ -70,10 +79,18 @@ def create_cell_heading(indent: int, tag_name: str) -> Detector:
         ):
             lines.append(line.group(1))
             new_cursor += line.end()
+        confidence = 0.9
+        if not lines:
+            while line := mistake_re.match(
+                text[new_cursor:],
+            ):
+                lines.append(line.group(1))
+                new_cursor += line.end()
+            confidence = 0.6
         brl = "\u2800".join(lines)
         return (
             DetectionResult(
-                new_cursor, state, 0.9, f"{output_text}<{tag_name}>{brl}</{tag_name}>\n"
+                new_cursor, state, confidence, f"{output_text}<{tag_name}>{brl}</{tag_name}>\n"
             )
             if brl
             else None
@@ -105,28 +122,37 @@ def create_centered_detector(
         lines = []
         brl = ""
         new_cursor = cursor
+        confidence = 0.9
         while line := heading_re.match(
             text[new_cursor:],
         ):
             line_brl = line.group(2).rstrip("\u2800")
             indent, indent_mod = divmod(cells_per_line - len(line_brl), 2)
             indents = [indent] if indent_mod == 0 else [indent, indent + indent_mod]
-            if len(line.group(1)) in indents:
+            actual_indent = len(line.group(1))
+            if actual_indent in indents:
                 lines.append(line_brl)
                 new_cursor += line.end()
+            elif actual_indent in [i + 1 for i in indents]:
+                # transcriber mistake: treated the cell number as a count of
+                # blanks to insert, shifting the text one cell later than it
+                # should be. Still a centered heading, but less certain.
+                lines.append(line_brl)
+                new_cursor += line.end()
+                confidence = min(confidence, 0.6)
             else:
                 break
         next_text = text[new_cursor:]
         if lines and _guide_words_next_re.match(next_text):
             brl = "\u2800".join(lines)
             return DetectionResult(
-                new_cursor, state, 0.9, f"{output_text}<!-- guide words {brl} -->\n"
+                new_cursor, state, confidence, f"{output_text}<!-- guide words {brl} -->\n"
             )
         if _next_line_re.match(next_text):
             brl = "\u2800".join(lines)
         return (
             DetectionResult(
-                new_cursor, state, 0.9, f"{output_text}<{tag_name}>{brl}</{tag_name}>\n"
+                new_cursor, state, confidence, f"{output_text}<{tag_name}>{brl}</{tag_name}>\n"
             )
             if brl
             else None
