@@ -97,6 +97,46 @@ def test_create_toc_detector_continues_past_trailing_print_page_number_line():
     assert furniture not in result.text
 
 
+def test_create_toc_detector_continues_a_runover_split_by_a_page_turn():
+    # Regression: an entry's own multi-line runover (its title/guide dots
+    # already matched, but its description not yet finished) can be split
+    # by a real braille-page turn (BANA Formats 2016, 2.10.6 allows a TOC to
+    # continue across a page break). The runover lines right after the turn
+    # have no guide dots of their own -- they're a continuation of the
+    # entry above, not a new one -- but the TOC's guide-dots validation
+    # checked each page-turn segment in isolation and required every
+    # segment to have its own guide dots, so it dropped the runover's
+    # second half and every entry after it from the TOC (see
+    # work/toc2.brf line 306's "LESSON #AG").
+    cells_per_line = 40
+    heading = translate_ascii_to_unicode_braille(",TOPIC\n")
+    entry1_start = translate_ascii_to_unicode_braille(
+        '  ,LESSON #AF """""""""""""""""""""" #GG\n'
+        "      ,USE 3CRETE MODELS TO\n"
+    )
+    page_break = "<?braille-page ?>\n<?running-head ⠠?>\n"
+    entry1_cont = translate_ascii_to_unicode_braille(
+        "    SUBTRACT & RELATE !M TO WRITT5\n    RECORD+S4\n"
+    )
+    entry2 = translate_ascii_to_unicode_braille(
+        '  ,LESSON #AG """""""""""""""""""""" #HA\n'
+    )
+    text = heading + entry1_start + page_break + entry1_cont + "<?blank-line?>\n" + entry2
+
+    detector = create_toc_detector(cells_per_line)
+    result = detector(text, 0, {}, "")
+
+    assert result is not None
+    assert result.cursor == len(text)
+    entry1_cont_text = translate_ascii_to_unicode_braille("RECORD+S4")
+    entry2_title, entry2_page = translate_ascii_to_unicode_braille(
+        "LESSON #AG"
+    ), translate_ascii_to_unicode_braille("#HA")
+    assert entry1_cont_text in result.text
+    assert entry2_title in result.text
+    assert entry2_page in result.text
+
+
 def test_create_toc_detector_nests_subentries_under_a_wrapped_main_entry():
     # Regression: a main entry (chapter) whose title is too long for one
     # line wraps onto a run-over line that carries its guide dots and page

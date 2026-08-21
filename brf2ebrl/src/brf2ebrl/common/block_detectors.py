@@ -745,7 +745,7 @@ def create_toc_detector(cells_per_line: int) -> Detector:
         return None
 
     def get_toc_pages(
-        text: str, cursor_offset: int, debug: int = 0
+        text: str, cursor_offset: int, debug: int = 0, guide_dots_optional: bool = False
     ) -> tuple[list[ParsedLine], int]:
         """
         get toc pages
@@ -823,10 +823,26 @@ def create_toc_detector(cells_per_line: int) -> Detector:
                 guide_dots = True
 
         # not a toc probably a list
-        if not guide_dots:
+        # ...unless a run-over already in progress (its own entry's guide
+        # dots/page number have not appeared yet) was itself split by this
+        # page turn (BANA Formats 2016, 2.10.6 allows a TOC entry's runover
+        # to continue across a page break). Such a continuation page/segment
+        # has none of its own guide dots -- that's expected, not a sign the
+        # TOC has ended -- since it belongs to an entry an earlier segment
+        # already proved was a real TOC entry.
+        if not guide_dots and not guide_dots_optional:
             return ([], cursor_offset)
 
-        temp_list = get_toc_pages(text, new_cursor, debug + 1)
+        trailing_content_line = next(
+            (line for line in reversed(new_lines) if line.depth != -1), None
+        )
+        next_guide_dots_optional = trailing_content_line is not None and not _DOTS_RE.search(
+            trailing_content_line.line_text
+        )
+
+        temp_list = get_toc_pages(
+            text, new_cursor, debug + 1, guide_dots_optional=next_guide_dots_optional
+        )
         new_lines.extend(temp_list[0])
         return (new_lines, temp_list[1])
 
