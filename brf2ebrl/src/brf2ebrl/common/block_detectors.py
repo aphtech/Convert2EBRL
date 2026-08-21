@@ -464,6 +464,7 @@ _lower_alpha_with_paran_re = re.compile(
     "\u2825\u2827\u282d\u2835\u283a\u283d]+\u2802\u28c1\u2800[\u2800-\u28ff]+"
 )
 _end_punctuation_equal_re = re.compile(".*[\u2832\u2826\u2816][\u2804\u2834]*$")
+_BLANK_LINE_RUN_RE = re.compile(f"(?:{_BLANK_LINE_RE}\n)+")
 _DOTS_RE = re.compile("\u2810{2,}")
 _PRE_RE = re.compile(r"[\u2800-\u28ff]+")
 
@@ -713,14 +714,17 @@ def create_toc_detector(cells_per_line: int) -> Detector:
         # consume PI's if consicutive blanks stop and return [[],0]
         # unless the blank lines are just page-bottom spacing ahead of a braille
         # page turn, which is a normal mid-TOC page break, not a TOC terminator.
+        # Any number of consecutive blank lines can precede the page turn, so look
+        # past the whole run of blank lines (not just the next line) for it.
         while line := toc_processing_instruction_re.match(text[new_cursor:]):
             if (
                 new_lines
                 and line.group(1) == "<?blank-line?>\n"
                 and new_lines[-1].pi == line.group(1)
-                and not text[new_cursor + line.end():].startswith("<?braille-page")
             ):
-                return ([], cursor_offset)
+                blank_run = _BLANK_LINE_RUN_RE.match(text[new_cursor:])
+                if not text[new_cursor + blank_run.end():].startswith("<?braille-page"):
+                    return ([], cursor_offset)
             new_lines.append(ParsedLine(-1, line.group(1), "", line.end()))
             new_cursor += line.end()
 

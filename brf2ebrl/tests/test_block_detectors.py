@@ -4,7 +4,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-from brf2ebrl.common.block_detectors import create_centered_detector
+from brf2ebrl.common.block_detectors import create_centered_detector, create_toc_detector
 from brf2ebrl.common.detectors import translate_ascii_to_unicode_braille
 
 
@@ -24,3 +24,36 @@ def test_create_centered_detector_detects_multi_word_guide_words_without_dash():
 
     assert result is not None
     assert result.text == f"<!-- guide words {brl_content} -->\n"
+
+
+def test_create_toc_detector_continues_after_multiple_blank_lines_before_page_break():
+    # Regression: a TOC entry landing right after a page turn preceded by more
+    # than one blank line of page-bottom spacing (e.g. three "<?blank-line?>"
+    # PIs before "<?braille-page?>") was being dropped from the TOC and left
+    # as unparsed preformatted text (see BANA Formats 2016, section 2.10, on
+    # continuing TOCs across a page break).
+    cells_per_line = 40
+    heading = translate_ascii_to_unicode_braille(",TOPIC\n")
+    entry1 = translate_ascii_to_unicode_braille(
+        '  ,LESSON #A """""""""""""""""""" #AA\n'
+    )
+    entry2 = translate_ascii_to_unicode_braille(
+        '  ,LESSON #B """""""""""""""""""" #AB\n'
+    )
+    page_break = (
+        "<?blank-line?>\n<?blank-line?>\n<?blank-line?>\n"
+        "<?braille-page ?>\n<?braille-ppn ⠃⠼⠁?>\n"
+        "<?running-head ⠭?>\n<?blank-line?>\n"
+    )
+    text = heading + entry1 + page_break + entry2
+
+    detector = create_toc_detector(cells_per_line)
+    result = detector(text, 0, {}, "")
+
+    assert result is not None
+    assert result.cursor == len(text)
+    entry2_title, entry2_page = translate_ascii_to_unicode_braille(
+        "LESSON #B"
+    ), translate_ascii_to_unicode_braille("#AB")
+    assert entry2_title in result.text
+    assert entry2_page in result.text
