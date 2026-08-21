@@ -629,13 +629,42 @@ def create_toc_detector(cells_per_line: int) -> Detector:
 
         while index < length:
             current = lines[index]
-            next_line = lines[index + 1] if (index + 1) < length else None
 
             # Always include processing instructions
             if current.depth == -1:
                 list_level.append(current)
                 index += 1
                 continue
+
+            # A same-level merge below can jump the index forward by more than
+            # one line (see the "return to a shallower level" branch), landing
+            # on a line that is itself shallower than this recursion's own
+            # level -- eg. a later main entry that follows right after two
+            # merged runover lines. Hand it back to the caller unconsumed
+            # instead of folding it into this (too-deep) list.
+            if current.depth < current_level:
+                break
+
+            # A run-over that lands deeper than this entry's own next subentry
+            # level is completing the entry's title, not starting a
+            # subordinate (BANA Formats 2016, 2.10.6: all runovers share one
+            # margin two cells past the deepest subentry actually used in the
+            # table, which can be deeper than this entry's real next
+            # subentry level). Absorb such lines into the entry's own text
+            # while its guide dots/page number are still missing, so a
+            # shorter chapter/main entry whose title wraps isn't mistaken
+            # for a nested subentry and its real subordinates aren't
+            # mis-attributed to the wrong parent.
+            while (
+                (index + 1) < length
+                and lines[index + 1].depth > current_level + 2
+                and not re.search("\u2800\u2810{2,}\u2800", current.line_text)
+            ):
+                current = current.copy()
+                current.line_text += f"\u2800{lines[index + 1].line_text}"
+                index += 1
+
+            next_line = lines[index + 1] if (index + 1) < length else None
 
             # Check for deeper nested structure
             if next_line and next_line.depth > current_level:
@@ -656,9 +685,16 @@ def create_toc_detector(cells_per_line: int) -> Detector:
             # Check for return to a shallower level
             if next_line and next_line.depth < current_level and next_line.depth != -1:
                 list_level.append(current.copy())
-                if not re.search(
-                    "\u2800\u2810{2,}\u2800", current.line_text
-                ) and not re.search("\u2800\u2810{2,}\u2800", next_line.line_text):
+                # A return all the way to the main-entry margin (cell 1) is
+                # always the start of a brand new main entry (BANA Formats
+                # 2016, 2.10.6), never a continuation of the current entry's
+                # text, even if that new entry hasn't shown its own guide
+                # dots yet (its title may itself run over).
+                if (
+                    next_line.depth != 0
+                    and not re.search("\u2800\u2810{2,}\u2800", current.line_text)
+                    and not re.search("\u2800\u2810{2,}\u2800", next_line.line_text)
+                ):
                     list_level[-1].line_text += f"\n{next_line.line_text}"
                     index += 2
                     continue

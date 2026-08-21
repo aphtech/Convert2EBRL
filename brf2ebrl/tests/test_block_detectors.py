@@ -95,3 +95,68 @@ def test_create_toc_detector_continues_past_trailing_print_page_number_line():
     assert entry2_title in result.text
     assert entry2_page in result.text
     assert furniture not in result.text
+
+
+def test_create_toc_detector_nests_subentries_under_a_wrapped_main_entry():
+    # Regression: a main entry (chapter) whose title is too long for one
+    # line wraps onto a run-over line that carries its guide dots and page
+    # number (BANA Formats 2016, 2.10.6: runovers share one margin two
+    # cells past the deepest subentry actually used, which can land deeper
+    # than the entry's own subentries). That run-over was being mistaken
+    # for a one-off nested subentry: the chapter's own real subentries
+    # (its lessons) ended up as top-level siblings of the chapter instead
+    # of nested under it, and a lesson's own multi-line description could
+    # even swallow the next lesson into the wrong sub-list.
+    cells_per_line = 40
+    chapter_a = translate_ascii_to_unicode_braille(
+        ',A ,ATTRIBUTES """""""""""""""""""" #C\n'
+    )
+    lesson_1 = translate_ascii_to_unicode_braille(
+        '  ,LESSON #A """""""""""""""""""" #E\n'
+    )
+    chapter_b = translate_ascii_to_unicode_braille(";,B ,COMPOSITE ,%APES\n")
+    concepts = translate_ascii_to_unicode_braille(
+        '    ,3CEPTS """""""""""""""""""""""" #CC\n'
+    )
+    lesson_f = translate_ascii_to_unicode_braille(
+        '  ,LESSON #F """"""""""""""""""""""" #CE\n'
+    )
+    lesson_f_cont1 = translate_ascii_to_unicode_braille(
+        "      ,RECOGNIZE T A ;OLE POLYGON1\n"
+    )
+    lesson_f_cont2 = translate_ascii_to_unicode_braille(
+        '    C 2 DECOMPOS$ 9TO SMALL] "PS4\n'
+    )
+    lesson_g = translate_ascii_to_unicode_braille(
+        '  ,LESSON #G """"""""""""""""""""""" #DA\n'
+    )
+    text = (
+        chapter_a
+        + lesson_1
+        + chapter_b
+        + concepts
+        + lesson_f
+        + lesson_f_cont1
+        + lesson_f_cont2
+        + lesson_g
+    )
+
+    detector = create_toc_detector(cells_per_line)
+    result = detector(text, 0, {}, "")
+
+    assert result is not None
+    assert result.cursor == len(text)
+    # Chapter B's title and its run-over ("Concepts") merge into one entry...
+    chapter_b_title = translate_ascii_to_unicode_braille(",COMPOSITE ,%APES")
+    concepts_title = translate_ascii_to_unicode_braille(",3CEPTS")
+    assert chapter_b_title in result.text
+    assert concepts_title in result.text
+    assert result.text.index(chapter_b_title) < result.text.index(concepts_title)
+    # ...and LESSON G stays nested under chapter B (one <ol> for the
+    # top-level chapters, one for chapter A's lesson, one for chapter B's
+    # lessons) instead of under LESSON F or as a top-level sibling of the
+    # chapters.
+    assert result.text.count("<ol") == 3
+    chapter_b_sublist_open = result.text.rindex("<ol")
+    lesson_g_title = translate_ascii_to_unicode_braille("LESSON #G")
+    assert result.text.index(lesson_g_title) > chapter_b_sublist_open
