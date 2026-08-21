@@ -21,6 +21,7 @@ from brf2ebrl.common.nemeth_detectors import detect_block_nemeth, detect_and_pas
     tag_inline_nemeth, restore_nemeth_braille
 from brf2ebrl.common.page_numbers import create_ebrf_print_page_tags
 from brf2ebrl.common.selectors import most_confident_detector
+from brf2ebrl.common.volume_markers import remove_volume_markers
 from brf2ebrl.parser import detector_parser, Parser
 from brf2ebrl.plugin import create_plugin
 from brf2ebrl_bana.pages import create_braille_page_detector, \
@@ -53,6 +54,12 @@ def create_brf2ebrl_parser(
             Parser(
                 "Convert to unicode Braille",
                 translate_ascii_to_unicode_braille
+            ),
+            # Remove volume markers pass. Done early so they cannot interfere
+            # with later parsing (eg. spans, blocks, TOC).
+            Parser(
+                "Remove volume markers",
+                remove_volume_markers
             ),
             # Detect Braille pages pass
             detector_parser(
