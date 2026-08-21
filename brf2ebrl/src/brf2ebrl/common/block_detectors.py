@@ -563,6 +563,13 @@ def create_toc_detector(cells_per_line: int) -> Detector:
         f"(\u2800{{{min_indent},}})([\u2801-\u28ff][\u2800-\u28ff]*)\n+",
     )
 
+    # A print page can end mid-braille-page, leaving its number alone, pushed
+    # to the right margin, on its own line right before the page turn (BANA
+    # Formats 2016, section 2.10). That is page furniture, not TOC content.
+    _trailing_page_number_re = re.compile(
+        f"(\u2800+)([\u2801-\u28ff][\u2800-\u28ff]*)\n(?={_BRAILLE_PAGE_RE})"
+    )
+
     toc_entry_re = re.compile(
         r"([\u2800-\u28FF]+?)"  # Group 1: Section title (non-greedy)
         r"(?:\u2800\u2810{2,}\u2800|\u2800\u2800)"  # Divider: 2+ ⠐ or exactly two ⠀
@@ -711,22 +718,38 @@ def create_toc_detector(cells_per_line: int) -> Detector:
         new_cursor = cursor_offset
         new_lines: list[ParsedLine] = []
 
-        # consume PI's if consicutive blanks stop and return [[],0]
-        # unless the blank lines are just page-bottom spacing ahead of a braille
-        # page turn, which is a normal mid-TOC page break, not a TOC terminator.
-        # Any number of consecutive blank lines can precede the page turn, so look
-        # past the whole run of blank lines (not just the next line) for it.
-        while line := toc_processing_instruction_re.match(text[new_cursor:]):
+        while True:
+            # consume PI's if consicutive blanks stop and return [[],0]
+            # unless the blank lines are just page-bottom spacing ahead of a braille
+            # page turn, which is a normal mid-TOC page break, not a TOC terminator.
+            # Any number of consecutive blank lines can precede the page turn, so look
+            # past the whole run of blank lines (not just the next line) for it.
+            while line := toc_processing_instruction_re.match(text[new_cursor:]):
+                if (
+                    new_lines
+                    and line.group(1) == "<?blank-line?>\n"
+                    and new_lines[-1].pi == line.group(1)
+                ):
+                    blank_run = _BLANK_LINE_RUN_RE.match(text[new_cursor:])
+                    if not text[new_cursor + blank_run.end():].startswith("<?braille-page"):
+                        return ([], cursor_offset)
+                new_lines.append(ParsedLine(-1, line.group(1), "", line.end()))
+                new_cursor += line.end()
+
+            # A lone, short, right-margin print-page-number remnant directly ahead of
+            # a page turn is page furniture, not TOC content (see the note on
+            # _trailing_page_number_re above): skip it and keep consuming the PIs
+            # that follow, rather than letting it terminate the TOC scan for lacking
+            # guide dots.
+            furniture = _trailing_page_number_re.match(text[new_cursor:])
             if (
-                new_lines
-                and line.group(1) == "<?blank-line?>\n"
-                and new_lines[-1].pi == line.group(1)
+                furniture
+                and len(furniture.group(2)) <= 6
+                and len(furniture.group(1)) + len(furniture.group(2)) == cells_per_line
             ):
-                blank_run = _BLANK_LINE_RUN_RE.match(text[new_cursor:])
-                if not text[new_cursor + blank_run.end():].startswith("<?braille-page"):
-                    return ([], cursor_offset)
-            new_lines.append(ParsedLine(-1, line.group(1), "", line.end()))
-            new_cursor += line.end()
+                new_cursor += furniture.end()
+                continue
+            break
 
         # if centered heading stop and return [[], 0]
         center_line = heading_re.match(text[new_cursor:])
