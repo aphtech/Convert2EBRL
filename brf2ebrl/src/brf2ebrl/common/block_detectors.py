@@ -123,29 +123,42 @@ def create_cell_heading(
             lines.append(line.group(1))
             new_cursor += line.end()
         confidence = 0.9
+        # (matched text, position) for each low-confidence line; only reported
+        # if this detection result is the one actually selected -- selectors
+        # such as most_confident_detector evaluate every candidate detector
+        # to compare confidence, so a higher-confidence detector (eg. a
+        # correctly matching centered heading) may win instead.
+        pending_notifications: list[tuple[str, int]] = []
         if not lines:
             while line := mistake_re.match(
                 text[new_cursor:],
             ):
+                pending_notifications.append((line.group(1), new_cursor))
+                lines.append(line.group(1))
+                new_cursor += line.end()
+            confidence = 0.6
+        brl = "\u2800".join(lines)
+        if not brl:
+            return None
+
+        def notify_pending() -> None:
+            for notify_line_brl, pos in pending_notifications:
                 _notify_low_confidence_match(
                     parser_context,
                     position_label,
                     "position",
                     1,
-                    line.group(1),
+                    notify_line_brl,
                     text,
-                    new_cursor,
+                    pos,
                 )
-                lines.append(line.group(1))
-                new_cursor += line.end()
-            confidence = 0.6
-        brl = "\u2800".join(lines)
-        return (
-            DetectionResult(
-                new_cursor, state, confidence, f"{output_text}<{tag_name}>{brl}</{tag_name}>\n"
-            )
-            if brl
-            else None
+
+        return DetectionResult(
+            new_cursor,
+            state,
+            confidence,
+            f"{output_text}<{tag_name}>{brl}</{tag_name}>\n",
+            on_selected=notify_pending if pending_notifications else None,
         )
 
     return detect_cell_heading
@@ -221,20 +234,27 @@ def create_centered_detector(
                     pos,
                 )
 
+        on_selected = notify_pending if pending_notifications else None
         next_text = text[new_cursor:]
         if lines and _guide_words_next_re.match(next_text):
             brl = "\u2800".join(lines)
-            notify_pending()
             return DetectionResult(
-                new_cursor, state, confidence, f"{output_text}<!-- guide words {brl} -->\n"
+                new_cursor,
+                state,
+                confidence,
+                f"{output_text}<!-- guide words {brl} -->\n",
+                on_selected=on_selected,
             )
         if _next_line_re.match(next_text):
             brl = "\u2800".join(lines)
         if not brl:
             return None
-        notify_pending()
         return DetectionResult(
-            new_cursor, state, confidence, f"{output_text}<{tag_name}>{brl}</{tag_name}>\n"
+            new_cursor,
+            state,
+            confidence,
+            f"{output_text}<{tag_name}>{brl}</{tag_name}>\n",
+            on_selected=on_selected,
         )
 
     return detect_centered

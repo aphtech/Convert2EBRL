@@ -58,6 +58,14 @@ class DetectionResult:
     state: DetectionState
     confidence: float
     text: str
+    # Called once, only if this specific result is the one a selector (eg.
+    # most_confident_detector) actually chooses to apply. Selectors typically
+    # evaluate every candidate detector to compare confidence, so a detector
+    # must not perform side effects (like logging a warning) eagerly while
+    # building its DetectionResult -- that would fire even when a different,
+    # higher-confidence candidate wins. Deferring the side effect here ensures
+    # it only happens for the result that is actually used.
+    on_selected: Callable[[], None] | None = field(default=None, compare=False, kw_only=True)
 
 
 @dataclass(frozen=True)
@@ -109,6 +117,8 @@ def detector_parser(name: str, initial_state: DetectionState, detectors: Iterabl
             parser_context.check_cancelled()
             result = selector(text, cursor, state, text_builder, detectors)
             assert cursor != result.cursor or state != result.state, f"Input conditions not changed by detector, cursor={cursor}, state={state}, selected detector={result}"
+            if result.on_selected is not None:
+                result.on_selected()
             text_builder, cursor, state = result.text, result.cursor, result.state
         return text_builder
     return Parser(name=name, parse=run_detectors)
