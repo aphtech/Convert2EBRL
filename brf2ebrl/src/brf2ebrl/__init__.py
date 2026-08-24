@@ -24,6 +24,7 @@ def convert(selected_plugin: Plugin, input_brf_list: Iterable[str], output_ebrf:
                 selected_parser = selected_plugin.create_brf_parser(
                     brf_path=brf,
                     output_path=temp_file,
+                    parser_context=parser_context,
                     **parser_context.options
                 )[:parser_passes]
                 parser_steps = len(selected_parser)

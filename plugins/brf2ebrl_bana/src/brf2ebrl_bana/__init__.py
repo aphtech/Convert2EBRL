@@ -22,7 +22,7 @@ from brf2ebrl.common.nemeth_detectors import detect_block_nemeth, detect_and_pas
 from brf2ebrl.common.page_numbers import create_ebrf_print_page_tags
 from brf2ebrl.common.selectors import most_confident_detector
 from brf2ebrl.common.volume_markers import remove_volume_markers
-from brf2ebrl.parser import detector_parser, Parser
+from brf2ebrl.parser import detector_parser, Parser, ParserContext
 from brf2ebrl.plugin import create_plugin
 from brf2ebrl_bana.pages import create_braille_page_detector, \
     create_print_page_detector
@@ -36,6 +36,7 @@ def create_brf2ebrl_parser(
         output_path: str = "",
         images_path: str = "",
         detect_running_heads: bool = True,
+        parser_context: ParserContext = ParserContext(),
         *args,
         **kwargs
 ) -> Sequence[Parser]:
@@ -131,9 +132,9 @@ def create_brf2ebrl_parser(
                 {},
                 [
                     detect_and_pass_nemeth_block,
-                    create_centered_detector(page_layout.cells_per_line, 3, "h1"),
-                    create_cell_heading(6, "h3"),
-                    create_cell_heading(4, "h2"),
+                    create_centered_detector(page_layout.cells_per_line, 3, "h1", parser_context),
+                    create_cell_heading(6, "h3", parser_context),
+                    create_cell_heading(4, "h2", parser_context),
                     create_paragraph_detector(
                         first_line_indent=6,
                         run_over=4,

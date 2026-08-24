@@ -10,8 +10,47 @@ import re
 from dataclasses import dataclass
 from collections.abc import Callable
 
-from brf2ebrl.parser import DetectionState, DetectionResult, Detector
+from brf2ebrl.parser import DetectionState, DetectionResult, Detector, ParserContext, NotifyLevel
 from brf2ebrl.common import PageLayout, PageNumberPosition
+from brf2ebrl.common.detectors import _ASCII_TO_UNICODE_DICT
+
+_UNICODE_TO_ASCII_DICT = {v: k for k, v in _ASCII_TO_UNICODE_DICT.items()}
+
+
+def _braille_to_ascii(brl: str) -> str:
+    """Convert Unicode Braille back to its ASCII BRF representation for log messages."""
+    return brl.translate(_UNICODE_TO_ASCII_DICT)
+
+
+def _line_number_at(text: str, pos: int) -> int:
+    """1-based line number of the given cursor position within text."""
+    return text.count("\n", 0, pos) + 1
+
+
+def _notify_low_confidence_match(
+    parser_context: ParserContext,
+    detected_type: str,
+    position_label: str,
+    direction: int,
+    brl_text: str,
+    text: str,
+    pos: int,
+) -> None:
+    """Log a warning for a low-confidence centered/heading match.
+
+    direction is +1 when the text is one cell to the right of the expected
+    position, -1 when it is one cell to the left.
+    """
+    word = "right" if direction > 0 else "left"
+    sign = f"+{direction}" if direction > 0 else str(direction)
+    ascii_text = _braille_to_ascii(brl_text)
+    line_num = _line_number_at(text, pos)
+    parser_context.notify_str(
+        NotifyLevel.WARN,
+        f"Low-confidence {detected_type} detected and created: text is one cell to the "
+        f'{word} of the expected {position_label} ({sign}, text found was, "{ascii_text}") '
+        f"at line {line_num}.",
+    )
 
 # constants for list and paragraph.
 _PRINT_PAGE_RE = "(?:<\\?print-page[ \u2800-\u28ff]*?\\?>)"
@@ -56,7 +95,9 @@ def detect_pre(
     )
 
 
-def create_cell_heading(indent: int, tag_name: str) -> Detector:
+def create_cell_heading(
+    indent: int, tag_name: str, parser_context: ParserContext = ParserContext()
+) -> Detector:
     """Creates a detector for a heading indented by the specified amount.
 
     Transcribers sometimes mistake the cell number for a count of blank
@@ -66,6 +107,8 @@ def create_cell_heading(indent: int, tag_name: str) -> Detector:
     but with a lower confidence so a correctly indented heading (or any
     other detector) takes priority over it.
     """
+    level = indent + 1
+    position_label = f"Level {level} heading"
     heading_re = re.compile(f"\u2800{{{indent}}}([\u2801-\u28ff][\u2800-\u28ff]*)\n+")
     mistake_re = re.compile(f"\u2800{{{indent + 1}}}([\u2801-\u28ff][\u2800-\u28ff]*)\n+")
 
@@ -84,6 +127,15 @@ def create_cell_heading(indent: int, tag_name: str) -> Detector:
             while line := mistake_re.match(
                 text[new_cursor:],
             ):
+                _notify_low_confidence_match(
+                    parser_context,
+                    position_label,
+                    "position",
+                    1,
+                    line.group(1),
+                    text,
+                    new_cursor,
+                )
                 lines.append(line.group(1))
                 new_cursor += line.end()
             confidence = 0.6
@@ -100,7 +152,10 @@ def create_cell_heading(indent: int, tag_name: str) -> Detector:
 
 
 def create_centered_detector(
-    cells_per_line: int, min_indent: int, tag_name: str
+    cells_per_line: int,
+    min_indent: int,
+    tag_name: str,
+    parser_context: ParserContext = ParserContext(),
 ) -> Detector:
     """Creates a detector for detecting centered text."""
     heading_re = re.compile(
@@ -123,6 +178,9 @@ def create_centered_detector(
         brl = ""
         new_cursor = cursor
         confidence = 0.9
+        # (direction, matched text, position) for each low-confidence line;
+        # only reported once the detector actually produces output.
+        pending_notifications: list[tuple[int, str, int]] = []
         while line := heading_re.match(
             text[new_cursor:],
         ):
@@ -137,25 +195,46 @@ def create_centered_detector(
                 # transcriber mistake: treated the cell number as a count of
                 # blanks to insert, shifting the text one cell later than it
                 # should be. Still a centered heading, but less certain.
+                pending_notifications.append((1, line_brl, new_cursor))
+                lines.append(line_brl)
+                new_cursor += line.end()
+                confidence = min(confidence, 0.6)
+            elif actual_indent in [i - 1 for i in indents]:
+                # symmetric transcriber mistake: text shifted one cell
+                # earlier than the expected centered position.
+                pending_notifications.append((-1, line_brl, new_cursor))
                 lines.append(line_brl)
                 new_cursor += line.end()
                 confidence = min(confidence, 0.6)
             else:
                 break
+
+        def notify_pending() -> None:
+            for direction, notify_line_brl, pos in pending_notifications:
+                _notify_low_confidence_match(
+                    parser_context,
+                    "Center",
+                    "centered position",
+                    direction,
+                    notify_line_brl,
+                    text,
+                    pos,
+                )
+
         next_text = text[new_cursor:]
         if lines and _guide_words_next_re.match(next_text):
             brl = "\u2800".join(lines)
+            notify_pending()
             return DetectionResult(
                 new_cursor, state, confidence, f"{output_text}<!-- guide words {brl} -->\n"
             )
         if _next_line_re.match(next_text):
             brl = "\u2800".join(lines)
-        return (
-            DetectionResult(
-                new_cursor, state, confidence, f"{output_text}<{tag_name}>{brl}</{tag_name}>\n"
-            )
-            if brl
-            else None
+        if not brl:
+            return None
+        notify_pending()
+        return DetectionResult(
+            new_cursor, state, confidence, f"{output_text}<{tag_name}>{brl}</{tag_name}>\n"
         )
 
     return detect_centered

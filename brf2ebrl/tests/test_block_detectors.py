@@ -10,18 +10,30 @@ from brf2ebrl.common.block_detectors import (
     create_toc_detector,
 )
 from brf2ebrl.common.detectors import translate_ascii_to_unicode_braille
+from brf2ebrl.parser import NotifyLevel, ParserContext
+
+
+def _collecting_parser_context():
+    """A ParserContext plus the list its notify() calls will be appended to."""
+    notifications = []
+    return (
+        ParserContext(notify=lambda level, msg: notifications.append((level, msg()))),
+        notifications,
+    )
 
 
 def test_create_cell_heading_detects_correctly_indented_heading_with_high_confidence():
     content = translate_ascii_to_unicode_braille(",REMEMB]")
     text = "⠀" * 4 + content + "\n"
 
-    detector = create_cell_heading(4, "h2")
+    parser_context, notifications = _collecting_parser_context()
+    detector = create_cell_heading(4, "h2", parser_context)
     result = detector(text, 0, {}, "")
 
     assert result is not None
     assert result.confidence == 0.9
     assert result.text == f"<h2>{content}</h2>\n"
+    assert notifications == []
 
 
 def test_create_cell_heading_detects_off_by_one_indent_with_lower_confidence():
@@ -34,22 +46,87 @@ def test_create_cell_heading_detects_off_by_one_indent_with_lower_confidence():
     content = translate_ascii_to_unicode_braille(",REMEMB]")
     text = "⠀" * 5 + content + "\n"
 
-    detector = create_cell_heading(4, "h2")
+    parser_context, notifications = _collecting_parser_context()
+    detector = create_cell_heading(4, "h2", parser_context)
     result = detector(text, 0, {}, "")
 
     assert result is not None
     assert result.confidence == 0.6
     assert result.text == f"<h2>{content}</h2>\n"
+    assert len(notifications) == 1
+    level, msg = notifications[0]
+    assert level == NotifyLevel.WARN
+    assert "Level 5 heading" in msg
+    assert "+1" in msg
+    assert ",REMEMB]" in msg
 
 
 def test_create_cell_heading_does_not_match_indent_further_than_off_by_one():
     content = translate_ascii_to_unicode_braille(",REMEMB]")
     text = "⠀" * 6 + content + "\n"
 
-    detector = create_cell_heading(4, "h2")
+    parser_context, notifications = _collecting_parser_context()
+    detector = create_cell_heading(4, "h2", parser_context)
     result = detector(text, 0, {}, "")
 
     assert result is None
+    assert notifications == []
+
+
+def test_create_cell_heading_does_not_match_one_cell_to_the_left():
+    # Level 5/7 headings only tolerate a rightward (+1) mistake, never -1.
+    content = translate_ascii_to_unicode_braille(",REMEMB]")
+    text = "⠀" * 3 + content + "\n"
+
+    parser_context, notifications = _collecting_parser_context()
+    detector = create_cell_heading(4, "h2", parser_context)
+    result = detector(text, 0, {}, "")
+
+    assert result is None
+    assert notifications == []
+
+
+def test_create_cell_heading_level_7_detects_off_by_one_indent_with_lower_confidence():
+    content = translate_ascii_to_unicode_braille(",KEY ,T]MS")
+    text = "⠀" * 7 + content + "\n"
+
+    parser_context, notifications = _collecting_parser_context()
+    detector = create_cell_heading(6, "h3", parser_context)
+    result = detector(text, 0, {}, "")
+
+    assert result is not None
+    assert result.confidence == 0.6
+    assert result.text == f"<h3>{content}</h3>\n"
+    assert len(notifications) == 1
+    level, msg = notifications[0]
+    assert level == NotifyLevel.WARN
+    assert "Level 7 heading" in msg
+    assert "+1" in msg
+
+
+def test_create_cell_heading_level_7_high_confidence_has_no_warning():
+    content = translate_ascii_to_unicode_braille(",KEY ,T]MS")
+    text = "⠀" * 6 + content + "\n"
+
+    parser_context, notifications = _collecting_parser_context()
+    detector = create_cell_heading(6, "h3", parser_context)
+    result = detector(text, 0, {}, "")
+
+    assert result is not None
+    assert result.confidence == 0.9
+    assert notifications == []
+
+
+def test_create_cell_heading_level_7_does_not_match_one_cell_to_the_left():
+    content = translate_ascii_to_unicode_braille(",KEY ,T]MS")
+    text = "⠀" * 5 + content + "\n"
+
+    parser_context, notifications = _collecting_parser_context()
+    detector = create_cell_heading(6, "h3", parser_context)
+    result = detector(text, 0, {}, "")
+
+    assert result is None
+    assert notifications == []
 
 
 def test_create_centered_detector_detects_off_by_one_indent_with_lower_confidence():
@@ -63,12 +140,42 @@ def test_create_centered_detector_detects_off_by_one_indent_with_lower_confidenc
     correct_indent = (cells_per_line - len(brl_content)) // 2
     text = "⠀" * (correct_indent + 1) + brl_content + "\n<?blank-line?>\n"
 
-    detector = create_centered_detector(cells_per_line, 3, "h1")
+    parser_context, notifications = _collecting_parser_context()
+    detector = create_centered_detector(cells_per_line, 3, "h1", parser_context)
     result = detector(text, 0, {}, "")
 
     assert result is not None
     assert result.confidence == 0.6
     assert result.text == f"<h1>{brl_content}</h1>\n"
+    assert len(notifications) == 1
+    level, msg = notifications[0]
+    assert level == NotifyLevel.WARN
+    assert "Center" in msg
+    assert "+1" in msg
+    assert ",,FAMILY ,,MA?" in msg
+
+
+def test_create_centered_detector_detects_off_by_one_to_the_left_with_lower_confidence():
+    # Regression: work/short.brf line 1181's ",,FAMILY ,,MA?" starts one
+    # cell earlier than the centered formula requires.
+    cells_per_line = 40
+    brl_content = translate_ascii_to_unicode_braille(",,FAMILY ,,MA?")
+    correct_indent = (cells_per_line - len(brl_content)) // 2
+    text = "⠀" * (correct_indent - 1) + brl_content + "\n<?blank-line?>\n"
+
+    parser_context, notifications = _collecting_parser_context()
+    detector = create_centered_detector(cells_per_line, 3, "h1", parser_context)
+    result = detector(text, 0, {}, "")
+
+    assert result is not None
+    assert result.confidence == 0.6
+    assert result.text == f"<h1>{brl_content}</h1>\n"
+    assert len(notifications) == 1
+    level, msg = notifications[0]
+    assert level == NotifyLevel.WARN
+    assert "Center" in msg
+    assert "-1" in msg
+    assert ",,FAMILY ,,MA?" in msg
 
 
 def test_create_centered_detector_detects_correctly_indented_text_with_high_confidence():
@@ -77,12 +184,42 @@ def test_create_centered_detector_detects_correctly_indented_text_with_high_conf
     correct_indent = (cells_per_line - len(brl_content)) // 2
     text = "⠀" * correct_indent + brl_content + "\n<?blank-line?>\n"
 
-    detector = create_centered_detector(cells_per_line, 3, "h1")
+    parser_context, notifications = _collecting_parser_context()
+    detector = create_centered_detector(cells_per_line, 3, "h1", parser_context)
     result = detector(text, 0, {}, "")
 
     assert result is not None
     assert result.confidence == 0.9
     assert result.text == f"<h1>{brl_content}</h1>\n"
+    assert notifications == []
+
+
+def test_create_centered_detector_does_not_match_two_cells_to_the_right():
+    cells_per_line = 40
+    brl_content = translate_ascii_to_unicode_braille(",,FAMILY ,,MA?")
+    correct_indent = (cells_per_line - len(brl_content)) // 2
+    text = "⠀" * (correct_indent + 2) + brl_content + "\n<?blank-line?>\n"
+
+    parser_context, notifications = _collecting_parser_context()
+    detector = create_centered_detector(cells_per_line, 3, "h1", parser_context)
+    result = detector(text, 0, {}, "")
+
+    assert result is None
+    assert notifications == []
+
+
+def test_create_centered_detector_does_not_match_two_cells_to_the_left():
+    cells_per_line = 40
+    brl_content = translate_ascii_to_unicode_braille(",,FAMILY ,,MA?")
+    correct_indent = (cells_per_line - len(brl_content)) // 2
+    text = "⠀" * (correct_indent - 2) + brl_content + "\n<?blank-line?>\n"
+
+    parser_context, notifications = _collecting_parser_context()
+    detector = create_centered_detector(cells_per_line, 3, "h1", parser_context)
+    result = detector(text, 0, {}, "")
+
+    assert result is None
+    assert notifications == []
 
 
 def test_create_centered_detector_detects_multi_word_guide_words_without_dash():
