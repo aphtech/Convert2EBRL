@@ -1,83 +1,534 @@
-/* General Braille Settings */
+/* ==========================================================================
+   eBraille stylesheet
+   Built against:
+   - eBraille 1.0 (DAISY, 14 Aug 2025) — https://daisy.github.io/ebraille/published/1.0/
+   - eBraille Styling Best Practices — https://daisy.org/s/ebraille/best-practices/styling/
+   - Braille Formats 2016 (BANA) — https://www.brailleauthority.org/formats/2016manual-web/
+
+   Ground rules baked into every rule below:
+   - No font properties (font-family/size/weight/style/variant, color,
+     text-decoration, text-shadow, text-underline-position). The reading
+     system renders the braille glyphs; we don't touch that.
+   - Font-relative units only: ch (cell width) and rem (row height).
+     No px/pt/in/cm.
+   - No fixed page width — eBraille reflows to whatever line length the
+     device reports. Width-based @media queries handle adaptation, not a
+     hard max-width.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Reset
+   Browsers apply default UA styles to headings, lists, etc. that would
+   otherwise fight with braille layout rules. Zero everything out and build
+   up deliberately, tag by tag, from here.
+   -------------------------------------------------------------------------- */
 * {
+  font-weight: normal;
+  font-size: 1em;          /* neutralizes UA defaults (h1-h6 are bigger by
+                               default) without asserting an actual size —
+                               1em just inherits whatever the reading
+                               system is already using */
+  line-height: 1rem;      /* 1rem = single line spacing, one braille row */
+  letter-spacing: 0;
   margin: 0;
   padding: 0;
+  border: none;
+  list-style: none;
+  color: black;
+  text-decoration: none;
   box-sizing: border-box;
 }
 
+/* --------------------------------------------------------------------------
+   Root / body
+   -------------------------------------------------------------------------- */
 html, body {
+  /* No max-width: line length is device-dependent, not fixed at 40 cells
+     (that figure is a Formats §1.7 embosser default, not an eBraille rule). */
   margin: 0;
   padding: 0;
 }
 
-body {
-  padding: 0;
+/* --------------------------------------------------------------------------
+   Paragraphs
+   Formats §1.9.2 / §1.9.3. Heading levels: h1 = centered, h2 = cell-5,
+   h3 = cell-7 (per book convention).
+   -------------------------------------------------------------------------- */
+p {
+  /* Indented paragraph: first line starts in cell 3 (2 cells past margin),
+     runover returns to cell 1. */
+  text-indent: 2ch;
+  margin-left: 0;
 }
 
-section {
+p.left-justified {
+  /* Blocked paragraph (1-1): no first-line indent. Blank line precedes it
+     (Formats §1.9.3 / Appendix C), except when it directly follows a
+     cell-5 or cell-7 heading, which already carries its own leading
+     blank line. */
+  text-indent: 0;
+  margin-top: 1rem;
+}
+
+h2 + p.left-justified,
+h3 + p.left-justified {
+  margin-top: 0;
+}
+/* --------------------------------------------------------------------------
+   Lists (ul / ol) — Formats §8.3 (simple), §8.5 (nested)
+   Formula: for a list whose deepest nesting is D levels, EVERY entry in the
+   whole list (any level) gets margin-left = 2D ch (one shared runover column).
+   An entry at its own level L gets text-indent = 2(L-1) - 2D ch, pulling its
+   first line back to cell (2L-1). Supports nesting up to 7 levels (cap: 7+
+   levels of nesting all collapse to the 7-level formula).
+   -------------------------------------------------------------------------- */
+
+/* List markers (numbers/letters/bullets) are already literal braille characters
+   in the content per the eBraille tagging convention — CSS must not generate them. */
+:is(ol, ul) {
+  list-style: none;
+}
+
+/* Simple list, no subentries anywhere: 1-3 format */
+li {
+  text-indent: -2ch;
+  --li-indent: -2ch;
+  margin-left: 2ch;
+}
+
+/* Blank line before/after a (top-level) list, per §8.3.2 — except when it
+   directly follows a cell-5 or cell-7 heading (§8.3.3a), which is handled the
+   same way as the paragraph exception. (Top-box-line exception, §8.3.3b, is
+   deferred until we cover the box/div[type] tag.) */
+:is(ol, ul):not(li :is(ol, ul)) {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+h2 + :is(ol, ul):not(li :is(ol, ul)),
+h3 + :is(ol, ul):not(li :is(ol, ul)) {
+  margin-top: 0;
+}
+
+/* Nested lists (§8.5): uniform runover per list, based on its deepest level. */
+/* D = 2: whole list runover at 4ch (cell 5) */
+:is(ol, ul):not(li :is(ol, ul)):has(li :is(ol, ul)):not(:has(li :is(ol, ul) li :is(ol, ul))) li {
+  margin-left: 4ch;
+}
+:is(ol, ul):not(li :is(ol, ul)):has(li :is(ol, ul)):not(:has(li :is(ol, ul) li :is(ol, ul))) > li {
+  text-indent: -4ch;
+  --li-indent: -4ch;
+}
+:is(ol, ul):not(li :is(ol, ul)):has(li :is(ol, ul)):not(:has(li :is(ol, ul) li :is(ol, ul))) > li :is(ol, ul) > li {
+  text-indent: -2ch;
+  --li-indent: -2ch;
+}
+
+/* D = 3: whole list runover at 6ch (cell 7) */
+:is(ol, ul):not(li :is(ol, ul)):has(li :is(ol, ul) li :is(ol, ul)):not(:has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul))) li {
+  margin-left: 6ch;
+}
+:is(ol, ul):not(li :is(ol, ul)):has(li :is(ol, ul) li :is(ol, ul)):not(:has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul))) > li {
+  text-indent: -6ch;
+  --li-indent: -6ch;
+}
+:is(ol, ul):not(li :is(ol, ul)):has(li :is(ol, ul) li :is(ol, ul)):not(:has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul))) > li :is(ol, ul) > li {
+  text-indent: -4ch;
+  --li-indent: -4ch;
+}
+:is(ol, ul):not(li :is(ol, ul)):has(li :is(ol, ul) li :is(ol, ul)):not(:has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul))) > li :is(ol, ul) > li :is(ol, ul) > li {
+  text-indent: -2ch;
+  --li-indent: -2ch;
+}
+
+/* D = 4: whole list runover at 8ch (cell 9) */
+:is(ol, ul):not(li :is(ol, ul)):has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul)):not(:has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul))) li {
+  margin-left: 8ch;
+}
+:is(ol, ul):not(li :is(ol, ul)):has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul)):not(:has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul))) > li {
+  text-indent: -8ch;
+  --li-indent: -8ch;
+}
+:is(ol, ul):not(li :is(ol, ul)):has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul)):not(:has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul))) > li :is(ol, ul) > li {
+  text-indent: -6ch;
+  --li-indent: -6ch;
+}
+:is(ol, ul):not(li :is(ol, ul)):has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul)):not(:has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul))) > li :is(ol, ul) > li :is(ol, ul) > li {
+  text-indent: -4ch;
+  --li-indent: -4ch;
+}
+:is(ol, ul):not(li :is(ol, ul)):has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul)):not(:has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul))) > li :is(ol, ul) > li :is(ol, ul) > li :is(ol, ul) > li {
+  text-indent: -2ch;
+  --li-indent: -2ch;
+}
+
+/* D = 5: whole list runover at 10ch (cell 11) */
+:is(ol, ul):not(li :is(ol, ul)):has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul)):not(:has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul))) li {
+  margin-left: 10ch;
+}
+:is(ol, ul):not(li :is(ol, ul)):has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul)):not(:has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul))) > li {
+  text-indent: -10ch;
+  --li-indent: -10ch;
+}
+:is(ol, ul):not(li :is(ol, ul)):has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul)):not(:has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul))) > li :is(ol, ul) > li {
+  text-indent: -8ch;
+  --li-indent: -8ch;
+}
+:is(ol, ul):not(li :is(ol, ul)):has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul)):not(:has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul))) > li :is(ol, ul) > li :is(ol, ul) > li {
+  text-indent: -6ch;
+  --li-indent: -6ch;
+}
+:is(ol, ul):not(li :is(ol, ul)):has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul)):not(:has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul))) > li :is(ol, ul) > li :is(ol, ul) > li :is(ol, ul) > li {
+  text-indent: -4ch;
+  --li-indent: -4ch;
+}
+:is(ol, ul):not(li :is(ol, ul)):has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul)):not(:has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul))) > li :is(ol, ul) > li :is(ol, ul) > li :is(ol, ul) > li :is(ol, ul) > li {
+  text-indent: -2ch;
+  --li-indent: -2ch;
+}
+
+/* D = 6: whole list runover at 12ch (cell 13) */
+:is(ol, ul):not(li :is(ol, ul)):has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul)):not(:has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul))) li {
+  margin-left: 12ch;
+}
+:is(ol, ul):not(li :is(ol, ul)):has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul)):not(:has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul))) > li {
+  text-indent: -12ch;
+  --li-indent: -12ch;
+}
+:is(ol, ul):not(li :is(ol, ul)):has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul)):not(:has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul))) > li :is(ol, ul) > li {
+  text-indent: -10ch;
+  --li-indent: -10ch;
+}
+:is(ol, ul):not(li :is(ol, ul)):has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul)):not(:has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul))) > li :is(ol, ul) > li :is(ol, ul) > li {
+  text-indent: -8ch;
+  --li-indent: -8ch;
+}
+:is(ol, ul):not(li :is(ol, ul)):has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul)):not(:has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul))) > li :is(ol, ul) > li :is(ol, ul) > li :is(ol, ul) > li {
+  text-indent: -6ch;
+  --li-indent: -6ch;
+}
+:is(ol, ul):not(li :is(ol, ul)):has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul)):not(:has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul))) > li :is(ol, ul) > li :is(ol, ul) > li :is(ol, ul) > li :is(ol, ul) > li {
+  text-indent: -4ch;
+  --li-indent: -4ch;
+}
+:is(ol, ul):not(li :is(ol, ul)):has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul)):not(:has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul))) > li :is(ol, ul) > li :is(ol, ul) > li :is(ol, ul) > li :is(ol, ul) > li :is(ol, ul) > li {
+  text-indent: -2ch;
+  --li-indent: -2ch;
+}
+
+/* D = 7: whole list runover at 14ch (cell 15) */
+:is(ol, ul):not(li :is(ol, ul)):has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul)) li {
+  margin-left: 14ch;
+}
+:is(ol, ul):not(li :is(ol, ul)):has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul)) > li {
+  text-indent: -14ch;
+  --li-indent: -14ch;
+}
+:is(ol, ul):not(li :is(ol, ul)):has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul)) > li :is(ol, ul) > li {
+  text-indent: -12ch;
+  --li-indent: -12ch;
+}
+:is(ol, ul):not(li :is(ol, ul)):has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul)) > li :is(ol, ul) > li :is(ol, ul) > li {
+  text-indent: -10ch;
+  --li-indent: -10ch;
+}
+:is(ol, ul):not(li :is(ol, ul)):has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul)) > li :is(ol, ul) > li :is(ol, ul) > li :is(ol, ul) > li {
+  text-indent: -8ch;
+  --li-indent: -8ch;
+}
+:is(ol, ul):not(li :is(ol, ul)):has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul)) > li :is(ol, ul) > li :is(ol, ul) > li :is(ol, ul) > li :is(ol, ul) > li {
+  text-indent: -6ch;
+  --li-indent: -6ch;
+}
+:is(ol, ul):not(li :is(ol, ul)):has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul)) > li :is(ol, ul) > li :is(ol, ul) > li :is(ol, ul) > li :is(ol, ul) > li :is(ol, ul) > li {
+  text-indent: -4ch;
+  --li-indent: -4ch;
+}
+:is(ol, ul):not(li :is(ol, ul)):has(li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul) li :is(ol, ul)) > li :is(ol, ul) > li :is(ol, ul) > li :is(ol, ul) > li :is(ol, ul) > li :is(ol, ul) > li :is(ol, ul) > li {
+  text-indent: -2ch;
+  --li-indent: -2ch;
+}
+
+/* --------------------------------------------------------------------------
+   Table of contents (ol.toc) — Formats §2.10
+   Indentation is already correct: ol.toc is still :is(ol, ul), so the
+   nested-list rules above already apply margin-left/text-indent by depth
+   (§2.10.6 explicitly reuses the same 1-3 / 1-5,3-5 / 1-7,3-7,5-7 formula).
+   This section only adds what's specific to a contents entry.
+   -------------------------------------------------------------------------- */
+
+/* Entry with a page number: <li><span>title</span><span>page</span></li>.
+   Once flexed, text-indent set on li by the nested-list rules above still
+   works correctly — text-indent is inherited, and a flex item establishes
+   its own block box for wrapped text, so the title span's first line still
+   gets pulled back by the inherited value. No extra override needed. */
+ol.toc li:has(> span + span) {
+  display: flex;
+  flex-wrap: wrap;
+  text-indent: 0; /* neutralize the nested-list text-indent inherited from
+    above — Chromium miscalculates flex-item sizing when a flex container
+    itself carries a negative text-indent, starving later flex items of
+    space. Re-applied correctly on the title span below instead. */
+}
+ol.toc li:has(> span + span) > span:first-of-type {
+  text-indent: var(--li-indent, 0); /* recover the nested-list hanging
+    indent from the custom property (custom properties inherit normally,
+    unaffected by the li's own text-indent override above), applied here
+    where it actually works: a block box that wraps the title text. */
+}
+
+/* The nested subentry <ol>, if present, is also a direct child of the li —
+   without this it becomes a flex item competing for space in the same row
+   as the title/dots/page-number. flex-basis: 100% forces it onto its own
+   line instead, and the high order keeps it visually last. */
+ol.toc li:has(> span + span) > ol {
+  flex-basis: 100%;
+  order: 99;
+}
+
+/* Guide dots (dot 5 = ⠐) between the title and the page number, per §2.10.7a:
+   preceded and followed by a blank cell. This is a SINGLE fill item sitting
+   in normal flex flow between the title and the page number — not layered
+   behind the title. flex-grow computes its exact start position (wherever
+   the title's box actually ends) at render time, for whatever title length
+   or device width shows up, so there's no separate grid to misalign.
+   min-width: 0 + overflow: hidden keep the long unbreakable dot string from
+   inflating the flex item's automatic minimum size and starving the page
+   number of space (the same failure mode the earlier squeeze bug came from). */
+ol.toc li:has(> span + span) > span:first-of-type {
+  flex: 0 0 auto; /* natural content width only — don't grow or shrink */
+}
+ol.toc li:has(> span + span)::before {
+  order: 2;
+  content: "\A0⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐"; /* leading
+    blank cell only — the LEADING character survives shrink/overflow-clip
+    because content overflows from the trailing edge, not the start. Do NOT
+    rely on a trailing \A0 here for the blank cell before the page number:
+    under real flex-shrink (long title, tight space), overflow: hidden clips
+    from the end of this content first, silently eating a trailing character
+    — which is exactly what caused dots to run flush against the page
+    number with no gap. The guaranteed trailing blank cell is a fixed
+    margin on the page-number span below instead, which never shrinks. */
+  width: 2ch; /* small starting size so flex-wrap's line-fitting check (which
+    uses this pre-shrink hypothetical size, not the final shrunk size) does
+    not see the full unbreakable dot string and wrap the row prematurely */
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  align-self: flex-end;
+}
+ol.toc li:has(> span + span) > span:last-of-type {
+  order: 3;
+  flex-shrink: 0;
+  align-self: flex-end;
+  margin-left: 1ch; /* guaranteed blank cell before the page number (§2.10.7a)
+    — fixed, non-shrinkable margin, independent of how much the dot-fill
+    above has to compress */
+}
+
+/* "Volume N" divider (§2.10.9b/d): centered, no page number, no guide dots.
+   display: block takes it out of any inline flow and forces it onto its
+   own line even in the rare case where trailing text shares the same <li>. */
+ol.toc li > span.tn {
   display: block;
+  text-align: center;
+  text-indent: 0;
+  margin-left: 0;
 }
 
+/* --------------------------------------------------------------------------
+   Headings — h2 (cell-5) and h3 (cell-7), per Formats §4.5/§4.6. h3's rules
+   are the same shape as h2's, just blocked one level deeper (cell 7 instead
+   of cell 5). One asymmetry worth noting: §4.6.6 says a cell-7 heading can
+   never be followed by ANY heading (centered, cell-5, or cell-7) — unlike
+   cell-5, which can be followed by another cell-5 or a cell-7. That's a
+   content-authoring constraint with nothing for CSS to select against, and
+   it's why h3 doesn't get "heading following it" exception rules the way h2
+   does below — under valid content, that case shouldn't arise.
+   -------------------------------------------------------------------------- */
+h2 {
+  text-indent: 0;     /* "blocked" per §4.5.2 — no hanging/runover, every
+                          wrapped line of the heading stays at cell 5 */
+  margin-left: 4ch;   /* cell 5 = 4 cells past the cell-1 margin */
+  margin-top: 1rem;   /* blank line before, §4.5.1 */
+}
+
+h3 {
+  text-indent: 0;     /* "blocked" per §4.6.3 — same as h2, one level deeper */
+  margin-left: 6ch;   /* cell 7 = 6 cells past the cell-1 margin */
+  margin-top: 1rem;   /* blank line before, §4.6.2 */
+}
+
+/* No blank line between chained headings (§4.5.6, §4.5.7, §4.6.2 exception) */
+h2 + h2,
+h2 + h3 {
+  margin-top: 0;
+}
+
+/* h1 (centered), Formats §4.4. Box-adjacency exceptions (§4.4.1-1, §4.3.5)
+   are deferred until div[type="⠶"] (boxes) is built — don't yet know how
+   its top/bottom lines will be structured to select against. ToC (§4.4.1-2)
+   and alphabetic-reference (§4.4.1-3) exceptions don't appear applicable to
+   this corpus: h1 never nests inside ol.toc, and there's no alphabetic-
+   reference structure in the books. §4.3.3 (connected headings) has no
+   reflow-safe CSS equivalent — not implementable, not silently skipped.
+   §4.4.3 (balanced line breaks) IS approximated by text-wrap: balance below
+   — it's not a true "logical" break point (that's still a human judgment
+   call), but it balances line lengths at render time regardless of device
+   width, which is the closest CSS gets to the spirit of the rule. */
 h1 {
   text-align: center;
-  margin: 0 0 1em 0;
+  text-wrap: balance;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  padding-inline: 3ch; /* §4.4.2: at least 3 blank cells each side, even on
+                           a heading nearly as long as the line */
 }
 
-h2 {
-  margin: 1em 0 0.5em 4ch;
+/* --------------------------------------------------------------------------
+   span[role="doc-pagebreak"] — print page change indicator, Formats §1.
+   A full row of dots 3-6 (⠤) from the left margin up to the page number,
+   with NO space between the row and the number (unlike ToC guide dots,
+   which do require a blank cell — this is a different, stricter rule).
+   No braille-page concept exists in eBraille's continuous reflow model, so
+   the print-only "bare number in the top-right corner" fallback (used when
+   a print page boundary lands at the start of a braille page, or continues
+   across one) never applies here — this render is unconditional.
+
+   KNOWN LIMITATION: correctly reaches the true left margin (cell 1) only
+   when this span has no <li> ancestor — verified true for 499 of 512
+   instances (97.5%) across the four sample books. For the remaining 13
+   (nested 1-3 levels inside a list), nested lists compound their margin
+   structurally (each ancestor <li> shifts its containing block rightward)
+   and there's no CSS mechanism found that cancels that out while the span
+   stays in normal document flow (needed so it still occupies its own line
+   and surrounding text wraps around it correctly) — position: absolute
+   would escape the nesting but drops it out of flow entirely, and a
+   self-referencing custom-property accumulation technique (which would
+   have tracked the true cumulative offset) was tested four ways and
+   confirmed non-functional in this browser. Those 13 cases will render
+   the indicator partially, not fully, indented instead of at true cell 1.
+   Flagged and accepted rather than solved with a per-book hardcoded
+   enumeration, which would silently fail to generalize to other books. */
+span[role="doc-pagebreak"] {
+  display: flex;  /* width defaults to auto — 100% of the containing block.
+    For the non-nested case (body or a <p>, neither of which reduce width
+    via margin) that's already exactly the true page width with zero risk
+    of overflow. An earlier version used width: 100vw to also try reaching
+    past list-margin nesting, but 100vw doesn't reliably account for
+    scrollbar space — it caused real horizontal overflow (confirmed via
+    document.scrollWidth exceeding the viewport), which could push the
+    right-aligned page number past the visible edge. Not worth that risk
+    for a technique that didn't fully solve the nested case anyway (see
+    limitation note above) — removed. */
+  text-indent: 0;    /* neutralize an inherited negative text-indent from a
+                         surrounding indented paragraph or nested list —
+                         same Chromium flex-container miscalculation bug
+                         found earlier with ol.toc */
+  break-after: avoid; /* "keep with next" — replaces the class="keepwithnext"
+                         the converter conditionally added; applied
+                         universally via CSS instead, since a pagebreak
+                         indicator should never be orphaned from whatever
+                         content follows it */
+}
+span[role="doc-pagebreak"]::before {
+  content: "⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤"; /* dots 3-6, no
+    blank cell on either side — the row touches the page number directly */
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
-p {
-  margin: 0.5em 0;
-  text-indent: 2ch;
+/* --------------------------------------------------------------------------
+   ul.footnotes — Formats §16.5 (notes at the end of a print page). The
+   <li> items need no new rules at all: 1-3 margins, full line width, and
+   no retained font attributes (§16.5.1d/e/f) are exactly what the plain
+   `li` rule above already does — reference marks and note text are
+   literal content, same as every other tag in this sheet.
+   The only two things specific to this tag:
+   1. No blank line before or after the list (§16.5.1b/h say the separation
+      line itself carries no surrounding blank line by default; the one
+      documented exception — a blank line forced by an unrelated format
+      rule, e.g. the notes falling at the end of another list — is
+      content-dependent and not handled here).
+   2. The note separation line (dots 5,25,25,25,25,25,25 across seven
+      cells, §16.5.1a) is hardcoded here rather than by the converter.
+   -------------------------------------------------------------------------- */
+ul.footnotes {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+ul.footnotes::before {
+  content: "⠐⠒⠒⠒⠒⠒⠒";
+  display: block;
+  break-after: avoid; /* keep this generated separator glued to the first
+    <li> that follows it — since the real separator was removed by the
+    converter and this is standing in for it, it must not get stranded
+    alone at a fragmentation boundary with the notes pushed past it */
 }
 
-.source-line {
-  text-indent: 0;
+/* --------------------------------------------------------------------------
+   div.tn — standard (>7 word) transcriber's note, Formats §3.2.2.
+   TN indicators (⠈⠨⠣ / ⠈⠨⠜) are already embedded as literal content, same
+   as span.tn — CSS only handles the 7-5 block margins.
+   -------------------------------------------------------------------------- */
+div.tn {
+  text-indent: 2ch;  /* first line at cell 7 (6ch offset) = margin-left(4ch)
+                         + text-indent(2ch) */
+  margin-left: 4ch;  /* runover at cell 5 = 4ch offset from the cell-1 margin */
 }
 
-/* General braille layout */
-/* Keep headings with following content */
-h1, h2, h3 {
-    break-after: avoid;
-    break-inside: avoid;
+/* --------------------------------------------------------------------------
+   div[type="⠶"] — boxed material, Formats §7. The book's own Special
+   Symbols page confirms the drawing characters: ⠶ = top box line, ⠛ =
+   bottom box line (dots-1245). Lines start at the true left margin and
+   span the full page width (§7.3.3) — no list-nesting escape problem here,
+   unlike doc-pagebreak: all 184 real instances have zero <li> ancestors,
+   so plain block width (100% of the containing block, the default) is
+   already correct.
+   -------------------------------------------------------------------------- */
+div[type="⠶"] {
+  margin-top: 1rem;    /* blank line before box, §7.2.1 */
+  margin-bottom: 1rem; /* blank line after box, §7.2.1 */
+}
+div[type="⠶"]::before {
+  content: "⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶⠶";
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+}
+div[type="⠶"]::after {
+  content: "⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛";
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
-/* Heading hierarchy */
-h3 {
-    margin-top: 1rem;
-    margin-bottom: 0;
-    margin-left: 6ch;
+/* No blank line directly after the top box line, or directly before the
+   bottom box line (§7.2.1c/d) — suppress the first/last child's own
+   margin so it sits flush against the generated line instead. */
+div[type="⠶"] > h1:first-child,
+div[type="⠶"] > h2:first-child,
+div[type="⠶"] > h3:first-child,
+div[type="⠶"] > :is(ol, ul):not(li :is(ol, ul)):first-child {
+  margin-top: 0;
+}
+div[type="⠶"] > h1:last-child,
+div[type="⠶"] > :is(ol, ul):not(li :is(ol, ul)):last-child {
+  margin-bottom: 0;
 }
 
-/* Paragraphs: 3-1 */
-/* Lists */
-ul, ol {
-    list-style: none;
-    margin: 1rem 0;
-    padding-left: 0;
+/* No blank line between a box and an accompanying heading immediately
+   before it (§7.2.1e general case; §4.4.1 exception 1 for centered
+   headings specifically) — margins collapse to their max, so both the
+   box's margin-top AND the heading's own trailing margin need zeroing;
+   h2/h3 don't have a margin-bottom of their own, only h1 does. */
+h1 + div[type="⠶"],
+h2 + div[type="⠶"],
+h3 + div[type="⠶"] {
+  margin-top: 0;
 }
-
-h2 + ul, h2 + ol,
-h3 + ul, h3 + ol {
-    margin-top: 0;
-}
-
-li {
-    padding-left: 2ch;
-    text-indent: -2ch;
-}
-
-/* Print pagebreaks are semantic markers in eBraille.
-   Keep them inline so they do not impose fixed-layout behavior. */
-[role~="doc-pagebreak"] {
-    display: inline;
-    text-indent: 0;
-}
-
-
-h2,
-h3 {
-    text-align: left;
-    text-indent: 0;
+h1:has(+ div[type="⠶"]) {
+  margin-bottom: 0;
 }
