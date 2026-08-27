@@ -13,7 +13,7 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QTableView, QAbstractItemVie
 from brf2ebrl.utils.metadata import MetadataItem, Creator, Title, Identifier, Language, BrailleSystem, DateCopyrighted, \
     DateTranscribed, Producer, CellType, CompleteTranscription
 
-from convert2ebrl.tabs.metadata_model import MetadataTableModel
+from convert2ebrl.metadata.metadata_model import MetadataTableModel
 
 REQUIRED_METADATA_TYPES = (Identifier, Title, Creator, Producer, Language, BrailleSystem, CellType, CompleteTranscription, DateCopyrighted, DateTranscribed)
 ADDITIONAL_METADATA_TYPES = {Title().name: Title, Creator().name: Creator, Producer().name: Producer, Language().name: Language, BrailleSystem().name: BrailleSystem}
