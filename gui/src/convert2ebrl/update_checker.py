@@ -20,20 +20,20 @@ class UpdateChecker(QObject):
     errorOccurred = Signal(str)
     def __init__(self, parent: QObject|None = None):
         super().__init__(parent)
-        self.network_manager = QNetworkAccessManager(self)
-        self.reply = None
+        self._network_manager = QNetworkAccessManager(self)
+        self._reply = None
     def check_for_update(self, update_url: QUrl):
         self.checkingForUpdates.emit()
         logging.info("Checking for update at %s", update_url.toDisplayString())
-        self.reply = self.network_manager.get(QNetworkRequest(update_url))
-        self.reply.readyRead.connect(self.on_ready_read)
-        self.reply.finished.connect(self.on_finished)
-        self.reply.errorOccurred.connect(self.on_error)
+        self._reply = self._network_manager.get(QNetworkRequest(update_url))
+        self._reply.readyRead.connect(self.on_ready_read)
+        self._reply.finished.connect(self.on_finished)
+        self._reply.errorOccurred.connect(self.on_error)
     @Slot()
     def on_ready_read(self):
-        if self.reply:
-            if self.reply.error() == QNetworkReply.NetworkError.NoError and self.reply.attribute(QNetworkRequest.Attribute.HttpStatusCodeAttribute) == 200:
-                response_text = str(self.reply.readAll(), "utf-8")
+        if self._reply:
+            if self._reply.error() == QNetworkReply.NetworkError.NoError and self._reply.attribute(QNetworkRequest.Attribute.HttpStatusCodeAttribute) == 200:
+                response_text = str(self._reply.readAll(), "utf-8")
                 if m := _APP_VERSION_RE.search(response_text):
                     if Version(QCoreApplication.applicationVersion()) < Version(m.group(1)):
                         self.updateAvailable.emit(m.group(1))
@@ -43,11 +43,11 @@ class UpdateChecker(QObject):
                     self.errorOccurred.emit("Unable to find latest version")
     @Slot()
     def on_finished(self):
-        if self.reply:
-            self.reply.deleteLater()
+        if self._reply:
+            self._reply.deleteLater()
     @Slot(QNetworkReply.NetworkError)
     def on_error(self, _: QNetworkReply.NetworkError):
-        if self.reply:
-            self.errorOccurred.emit(self.reply.errorString())
+        if self._reply:
+            self.errorOccurred.emit(self._reply.errorString())
         else:
             self.errorOccurred.emit("Unknown error")
