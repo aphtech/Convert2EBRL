@@ -33,7 +33,7 @@ class UpdateChecker(QObject):
     def on_ready_read(self):
         if self._reply:
             if self._reply.error() == QNetworkReply.NetworkError.NoError and self._reply.attribute(QNetworkRequest.Attribute.HttpStatusCodeAttribute) == 200:
-                response_text = str(self._reply.readAll(), "utf-8")
+                response_text = self._reply.readAll().toStdString()
                 if m := _APP_VERSION_RE.search(response_text):
                     if Version(QCoreApplication.applicationVersion()) < Version(m.group(1)):
                         self.updateAvailable.emit(m.group(1))
