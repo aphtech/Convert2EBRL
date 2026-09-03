@@ -4,6 +4,8 @@
 # Convert2EBRL is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 # Convert2EBRL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with Convert2EBRL. If not, see <https://www.gnu.org/licenses/>.
+import json
+
 from PySide6.QtCore import QObject, QUrl, QUrlQuery, Slot, Signal
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply
 
@@ -28,7 +30,9 @@ class OpenLibrary(QObject):
     @Slot()
     def on_ready_read(self):
         if reply := self._reply:
-            pass
+            if reply.error() == QNetworkReply.NetworkError.NoError and reply.attribute(QNetworkRequest.Attribute.HttpStatusCodeAttribute) == 200:
+                json_doc = json.loads(reply.readAll().toStdString())
+                print(json.dumps(json_doc, indent=4))
     @Slot()
     def on_finished(self):
         if reply := self._reply:
