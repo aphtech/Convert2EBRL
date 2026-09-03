@@ -6,20 +6,21 @@
 # You should have received a copy of the GNU General Public License along with Convert2EBRL. If not, see <https://www.gnu.org/licenses/>.
 from collections.abc import Iterable, Callable
 
-from PySide6.QtCore import QObject, Slot
+from PySide6.QtCore import Slot
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QTableView, QAbstractItemView, QGroupBox, QHBoxLayout, QPushButton, \
     QMenu
+
 from brf2ebrl.utils.metadata import MetadataItem, Creator, Title, Identifier, Language, BrailleSystem, DateCopyrighted, \
     DateTranscribed, Producer, CellType, CompleteTranscription
-
 from convert2ebrl.metadata.metadata_model import MetadataTableModel
+from convert2ebrl.metadata.openlibrary import OpenLibrary
 
 REQUIRED_METADATA_TYPES = (Identifier, Title, Creator, Producer, Language, BrailleSystem, CellType, CompleteTranscription, DateCopyrighted, DateTranscribed)
 ADDITIONAL_METADATA_TYPES = {Title().name: Title, Creator().name: Creator, Producer().name: Producer, Language().name: Language, BrailleSystem().name: BrailleSystem}
 
 class MetadataTableWidget(QGroupBox):
-    def __init__(self, title: str, metadata_entries: Iterable[MetadataItem]=(), editable: bool=False, parent: QObject|None=None):
+    def __init__(self, title: str, metadata_entries: Iterable[MetadataItem]=(), editable: bool=False, parent: QWidget|None=None):
         super().__init__(title, parent)
         self._table_model = MetadataTableModel(metadata_entries=metadata_entries)
         layout = QVBoxLayout(self)
@@ -62,13 +63,16 @@ class MetadataTableWidget(QGroupBox):
 
 
 class MetadataWidget(QWidget):
-    def __init__(self, parent: QObject | None = None):
+    def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
         layout = QVBoxLayout(self)
+        self._isbn_search_button = QPushButton("Search ISBN")
+        layout.addWidget(self._isbn_search_button)
         self._required_metadata = MetadataTableWidget("Required metadata", metadata_entries=[x() for x in REQUIRED_METADATA_TYPES], editable=False)
         layout.addWidget(self._required_metadata)
         self._additional_metadata = MetadataTableWidget("Additional metadata", metadata_entries=(), editable=True)
         layout.addWidget(self._additional_metadata)
+        self._isbn_search_button.clicked.connect(lambda: OpenLibrary(self).search("9780439950466"))
     @property
     def metadata_entries(self) -> Iterable[MetadataItem]:
         return *self._required_metadata.metadata_entries, *self._additional_metadata.metadata_entries
