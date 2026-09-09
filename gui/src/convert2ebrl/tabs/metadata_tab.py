@@ -65,6 +65,7 @@ class MetadataTableWidget(QGroupBox):
 class MetadataWidget(QWidget):
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
+        self._library_search = OpenLibrary(self)
         layout = QVBoxLayout(self)
         self._isbn_search_button = QPushButton("Search ISBN")
         layout.addWidget(self._isbn_search_button)
@@ -72,7 +73,8 @@ class MetadataWidget(QWidget):
         layout.addWidget(self._required_metadata)
         self._additional_metadata = MetadataTableWidget("Additional metadata", metadata_entries=(), editable=True)
         layout.addWidget(self._additional_metadata)
-        self._isbn_search_button.clicked.connect(lambda: OpenLibrary(self).search_isbn("9780439950466"))
+        self._isbn_search_button.clicked.connect(lambda: self._library_search.search_isbn("9780439950466"))
+        self._library_search.searchFinished.connect(lambda: print("Result found"))
     @property
     def metadata_entries(self) -> Iterable[MetadataItem]:
         return *self._required_metadata.metadata_entries, *self._additional_metadata.metadata_entries

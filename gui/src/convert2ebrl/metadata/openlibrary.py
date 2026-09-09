@@ -10,13 +10,13 @@ from collections.abc import Iterable
 from PySide6.QtCore import QObject, QUrl, QUrlQuery, Slot, Signal
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply
 
-from brf2ebrl.utils.metadata import MetadataItem
+from brf2ebrl.utils.metadata import MetadataItem, Title, Creator
 
 
 class OpenLibrary(QObject):
     errorOccurred = Signal(str)
     searchStarted = Signal()
-    searchFinished = Signal(Iterable[MetadataItem])
+    searchFinished = Signal()
     def __init__(self, /, parent: QObject|None = None):
         super().__init__(parent)
         self._network_manager = QNetworkAccessManager(self)
@@ -40,10 +40,18 @@ class OpenLibrary(QObject):
                 try:
                     json_doc = json.loads(reply.readAll().toStdString())
                     docs = json_doc.get("docs", [])
+                    result = []
                     if len(docs) > 0:
                         editions = docs[0].get("editions", {}).get("docs", [])
                         if len(editions) > 0:
-                            print(editions[0])
+                            edition = editions[0]
+                            print(json.dumps(edition, indent=4))
+                            if title := edition.get("title"):
+                                result.append(Title(title))
+                            if author := edition.get("author_name"):
+                                result.append(Creator(", ".join(author)))
+                    print("emitting result")
+                    self.searchFinished.emit()
                 except:
                     self.errorOccurred.emit("There was a problem performing the search")
     @Slot()
