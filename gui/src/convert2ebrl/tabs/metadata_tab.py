@@ -74,7 +74,7 @@ class MetadataWidget(QWidget):
         self._additional_metadata = MetadataTableWidget("Additional metadata", metadata_entries=(), editable=True)
         layout.addWidget(self._additional_metadata)
         self._isbn_search_button.clicked.connect(lambda: self._library_search.search_isbn("9780439950466"))
-        self._library_search.searchFinished.connect(lambda: print("Result found"))
+        self._library_search.searchFinished.connect(lambda: print(", ".join(f"{x.name}: '{x.value}'" for x in self._library_search.result)))
     @property
     def metadata_entries(self) -> Iterable[MetadataItem]:
         return *self._required_metadata.metadata_entries, *self._additional_metadata.metadata_entries
