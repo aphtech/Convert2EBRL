@@ -10,15 +10,17 @@ from collections.abc import Iterable
 from PySide6.QtCore import QObject, QUrl, QUrlQuery, Slot, Signal
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply
 
-from brf2ebrl.utils.metadata import MetadataItem, Title, Creator
+from brf2ebrl.utils.metadata import Title, Creator, MetadataItem
 
 
 class OpenLibrary(QObject):
     errorOccurred = Signal(str)
     searchStarted = Signal()
+    resultReady = Signal()
     searchFinished = Signal()
     def __init__(self, /, parent: QObject|None = None):
         super().__init__(parent)
+        self._result = []
         self._network_manager = QNetworkAccessManager(self)
         self._reply = None
 
@@ -28,11 +30,15 @@ class OpenLibrary(QObject):
         query.addQueryItem("fields", "*,editions")
         query_url = QUrl("https://openlibrary.org/search.json")
         query_url.setQuery(query)
+        self._result = []
         self.searchStarted.emit()
         self._reply = self._network_manager.get(QNetworkRequest(query_url))
         self._reply.readyRead.connect(self.on_ready_read)
         self._reply.finished.connect(self.on_finished)
         self._reply.errorOccurred.connect(self.on_error_occurred)
+    @property
+    def result(self) -> Iterable[MetadataItem]:
+        return self._result
     @Slot()
     def on_ready_read(self):
         if reply := self._reply:
@@ -50,13 +56,14 @@ class OpenLibrary(QObject):
                                 result.append(Title(title))
                             if author := edition.get("author_name"):
                                 result.append(Creator(", ".join(author)))
-                    print("emitting result")
-                    self.searchFinished.emit()
+                    self._result = result
+                    self.resultReady.emit()
                 except:
                     self.errorOccurred.emit("There was a problem performing the search")
     @Slot()
     def on_finished(self):
         if reply := self._reply:
+            self.searchFinished.emit()
             reply.deleteLater()
     @Slot(QNetworkReply.NetworkError)
     def on_error_occurred(self, _: QNetworkReply.NetworkError):
