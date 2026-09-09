@@ -9,7 +9,7 @@ from collections.abc import Iterable, Callable
 from PySide6.QtCore import Slot
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QTableView, QAbstractItemView, QGroupBox, QHBoxLayout, QPushButton, \
-    QMenu
+    QMenu, QFormLayout, QLineEdit, QMessageBox
 
 from brf2ebrl.utils.metadata import MetadataItem, Creator, Title, Identifier, Language, BrailleSystem, DateCopyrighted, \
     DateTranscribed, Producer, CellType, CompleteTranscription
@@ -65,16 +65,32 @@ class MetadataTableWidget(QGroupBox):
 class MetadataWidget(QWidget):
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
-        self._library_search = OpenLibrary(self)
         layout = QVBoxLayout(self)
-        self._isbn_search_button = QPushButton("Search ISBN")
-        layout.addWidget(self._isbn_search_button)
+        isbn_search = OnlineIsbnSearchWidget()
+        layout.addWidget(isbn_search)
         self._required_metadata = MetadataTableWidget("Required metadata", metadata_entries=[x() for x in REQUIRED_METADATA_TYPES], editable=False)
         layout.addWidget(self._required_metadata)
         self._additional_metadata = MetadataTableWidget("Additional metadata", metadata_entries=(), editable=True)
         layout.addWidget(self._additional_metadata)
-        self._isbn_search_button.clicked.connect(lambda: self._library_search.search_isbn("9780439950466"))
-        self._library_search.searchFinished.connect(lambda: print(", ".join(f"{x.name}: '{x.value}'" for x in self._library_search.result)))
     @property
     def metadata_entries(self) -> Iterable[MetadataItem]:
         return *self._required_metadata.metadata_entries, *self._additional_metadata.metadata_entries
+
+class OnlineIsbnSearchWidget(QGroupBox):
+    def __init__(self, parent: QWidget | None = None):
+        super().__init__("Online search", parent=parent)
+        self._library_search = OpenLibrary(self)
+        layout = QFormLayout(self)
+        isbn_edit = QLineEdit()
+        isbn_edit.setText("9780439950466")
+        layout.addRow("ISBN", isbn_edit)
+        search_button = QPushButton("Search")
+        layout.addRow(search_button)
+        search_button.clicked.connect(lambda: self._library_search.search_isbn(isbn_edit.text()))
+        self._library_search.searchStarted.connect(lambda: search_button.setEnabled(False))
+        self._library_search.searchFinished.connect(lambda: search_button.setEnabled(True))
+        self._library_search.resultReady.connect(self.on_result_found)
+    @Slot()
+    def on_result_found(self):
+        result_text = "\n".join(f"{x.name}: {x.value}" for x in self._library_search.result)
+        QMessageBox.question(self, "Use result?", fr"A book has been found matching your search, would you like to use this metadata?\n{result_text}")
