@@ -5,24 +5,30 @@
 # Convert2EBRL is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with Convert2EBRL. If not, see <https://www.gnu.org/licenses/>.
 import json
+from collections.abc import Iterable
 
 from PySide6.QtCore import QObject, QUrl, QUrlQuery, Slot, Signal
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply
 
+from brf2ebrl.utils.metadata import MetadataItem
+
 
 class OpenLibrary(QObject):
     errorOccurred = Signal(str)
+    searchStarted = Signal()
+    searchFinished = Signal(Iterable[MetadataItem])
     def __init__(self, /, parent: QObject|None = None):
         super().__init__(parent)
         self._network_manager = QNetworkAccessManager(self)
         self._reply = None
 
-    def search(self, isbn: str):
+    def search_isbn(self, isbn: str):
         query = QUrlQuery()
         query.addQueryItem("isbn", isbn)
         query.addQueryItem("fields", "*,editions")
         query_url = QUrl("https://openlibrary.org/search.json")
         query_url.setQuery(query)
+        self.searchStarted.emit()
         self._reply = self._network_manager.get(QNetworkRequest(query_url))
         self._reply.readyRead.connect(self.on_ready_read)
         self._reply.finished.connect(self.on_finished)
@@ -31,8 +37,15 @@ class OpenLibrary(QObject):
     def on_ready_read(self):
         if reply := self._reply:
             if reply.error() == QNetworkReply.NetworkError.NoError and reply.attribute(QNetworkRequest.Attribute.HttpStatusCodeAttribute) == 200:
-                json_doc = json.loads(reply.readAll().toStdString())
-                print(json.dumps(json_doc, indent=4))
+                try:
+                    json_doc = json.loads(reply.readAll().toStdString())
+                    docs = json_doc.get("docs", [])
+                    if len(docs) > 0:
+                        editions = docs[0].get("editions", {}).get("docs", [])
+                        if len(editions) > 0:
+                            print(editions[0])
+                except:
+                    self.errorOccurred.emit("There was a problem performing the search")
     @Slot()
     def on_finished(self):
         if reply := self._reply:
