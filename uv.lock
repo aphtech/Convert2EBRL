@@ -108,7 +108,7 @@ wheels = [
 
 [[package]]
 name = "convert2ebrl"
-version = "1.1.0"
+version = "1.2.0"
 source = { editable = "gui" }
 dependencies = [
     { name = "brf2ebrl" },
@@ -135,7 +135,7 @@ dev = [{ name = "nuitka", specifier = ">=4.1.0" }]
 
 [[package]]
 name = "convert2ebrl-workspace"
-version = "1.1.0"
+version = "1.2.0"
 source = { virtual = "." }
 
 [[package]]

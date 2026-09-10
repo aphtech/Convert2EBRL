@@ -42,11 +42,15 @@ class MainWindow(QMainWindow):
         about_action = QAction("About", self)
         about_action.triggered.connect(lambda _: show_about())
 
+        release_notes_action = QAction("View release notes", self)
+        release_notes_action.triggered.connect(lambda _: QDesktopServices.openUrl(QUrl(QApplication.instance().property("releases_site"))))
+
         menu = self.menuBar()
         help_menu = menu.addMenu("&Help")
         help_menu.addAction(log_view_action)
         help_menu.addAction(update_check_action)
         help_menu.addAction(about_action)
+        help_menu.addAction(release_notes_action)
     def _open_log_viewer(self):
         if not self._log_viewer:
             self._log_viewer = LogViewerDialog(self)

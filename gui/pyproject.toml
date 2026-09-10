@@ -19,6 +19,7 @@ license = {text = "GPL-3[0-or-later"}
 [project.urls]
 homepage = "https://github.com//aphtech/convert2ebrl"
 download-site = "https://github.com/aphtech/Convert2EBRL/releases/latest/download"
+releases-site = "https://github.com/aphtech/convert2ebrl/releases"
 
 [project.gui-scripts]
 convert2ebrl = "convert2ebrl.__main__:main"
