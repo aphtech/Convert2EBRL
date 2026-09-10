@@ -27,7 +27,7 @@ jobs:
     - name: Install UV
       uses: astral-sh/setup-uv@v7
       with:
-        version: "0.11.3"
+        version: "0.12.11"
     - name: Install the project
       run: uv sync --all-packages --frozen --all-extras --dev
     - name: Build exe
@@ -59,8 +59,13 @@ jobs:
         files: convert2ebrl-continuous.zip
         prerelease: true
         draft: false
+    - name: Collect files for artifact
+      run: |
+        copy Convert2EBRL.dist output/Convert2EBRL.dist
+        copy gui/icons output/icons
+        copy gui/conveyor.conf output/conveyor.conf
     - name: Upload binary artifact
       uses: actions/upload-artifact@v7
       with:
         name: convert2ebrl-dist
-        path: Convert2EBRL.dist
+        path: output
