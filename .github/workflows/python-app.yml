@@ -61,8 +61,8 @@ jobs:
         draft: false
     - name: Collect files for artifact
       run: |
-        copy Convert2EBRL.dist output/Convert2EBRL.dist
-        copy gui/icons output/icons
+        copy Convert2EBRL.dist/* output/Convert2EBRL.dist
+        copy gui/icons/* output/icons
         copy gui/conveyor.conf output/conveyor.conf
     - name: Upload binary artifact
       uses: actions/upload-artifact@v7
