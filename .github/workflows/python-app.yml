@@ -39,8 +39,13 @@ jobs:
     - name: add-release-hash
       if: github.ref_type == 'tag'
       run: uv run python -m "convert2ebrl.hash_utils" "Convert2EBRL.dist\Convert2EBRL.exe" "Convert2EBRL.dist\build-data.txt" > "Convert2EBRL.dist\release.hash"
+    - name: Collect files for artifact
+      run: |
+        xcopy Convert2EBRL.dist output\Convert2EBRL\Convert2EBRL.dist /S /I
+        xcopy gui\icons output\Convert2EBRL\icons /S /I
+        copy gui\conveyor.conf output\Convert2EBRL\conveyor.conf
     - name: Create release zip
-      run: Compress-Archive -Path Convert2EBRL.dist -Destination convert2ebrl-continuous.zip
+      run: Compress-Archive -Path output\\Convert2EBRL -Destination convert2ebrl-continuous.zip
     - name: Update continuous tag
       uses: actions/github-script@v9
       with:
@@ -59,11 +64,6 @@ jobs:
         files: convert2ebrl-continuous.zip
         prerelease: true
         draft: false
-    - name: Collect files for artifact
-      run: |
-        xcopy Convert2EBRL.dist output\Convert2EBRL.dist /S /I
-        xcopy gui\icons output\icons /S /I
-        copy gui\conveyor.conf output\conveyor.conf
     - name: Upload binary artifact
       uses: actions/upload-artifact@v7
       with:
