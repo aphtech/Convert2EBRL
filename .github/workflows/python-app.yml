@@ -37,7 +37,7 @@ jobs:
     - name: Add build data
       run: git show --no-patch > Convert2EBRL.dist/build-data.txt
     - name: add-release-hash
-      if: github.ref_type == 'tag'
+      if: github.ref == 'refs/heads/release'
       run: uv run python -m "convert2ebrl.hash_utils" "Convert2EBRL.dist\Convert2EBRL.exe" "Convert2EBRL.dist\build-data.txt" > "Convert2EBRL.dist\release.hash"
     - name: Collect files for artifact
       run: |
