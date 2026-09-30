@@ -1,0 +1,15 @@
+[project]
+name = "liblouis"
+version = "3.39.0"
+description = "Vendored liblouis Python bindings, Windows DLL and the tables used by brf2ebrl."
+readme = "README.md"
+requires-python = ">=3.12"
+license = {text = "LGPL-2.1-or-later"}
+dependencies = []
+
+[tool.uv.build-backend]
+module-name = "louis"
+
+[build-system]
+requires = ["uv_build>=0.11.3,<0.12.0"]
+build-backend = "uv_build"

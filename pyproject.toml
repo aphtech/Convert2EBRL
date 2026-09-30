@@ -10,4 +10,5 @@ members = [
     "gui",
     "brf2ebrl",
     "plugins/brf2ebrl_bana",
+    "vendor/liblouis",
 ]

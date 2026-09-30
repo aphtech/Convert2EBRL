@@ -92,7 +92,7 @@ def create_navigation_html(title: str = "-", braille_title: str = "⠤", heading
                 ATTR(hidden=""),
                 H2("⠠⠇⠊⠌ ⠷ ⠏⠁⠛⠑⠎"),
                 OL(
-                    *[LI(A(ATTR(href=r.href), r.page_num_braille)) for r in page_refs]
+                    *[LI(A(ATTR(href=r.href, title=r.title), r.page_num_braille)) for r in page_refs]
                 )
             )
         )

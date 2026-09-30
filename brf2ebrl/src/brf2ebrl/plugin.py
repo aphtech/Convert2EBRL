@@ -24,6 +24,7 @@ from lxml.builder import ElementMaker
 
 from brf2ebrl.parser import Parser
 from brf2ebrl.utils import list_sub_paths
+from brf2ebrl.utils.back_translation import back_translate_page_number
 from brf2ebrl.utils.ebrl import create_navigation_html, PageRef, HeadingRef
 from brf2ebrl.utils.metadata import DEFAULT_METADATA, MetadataItem, ensure_default_metadata
 from brf2ebrl.utils.opf import PACKAGE, METADATA, MANIFEST, SPINE, ITEM, ITEMREF, META, FORMAT, DATE
@@ -149,8 +150,10 @@ class EBrlZippedBundler(Bundler):
                                     _HEADING_TAGS.index(element.tag) + 1)))
                     elif element.tag == "span" and element.get("role") == "doc-pagebreak":
                         page_id = element.get("id")
+                        page_num_braille = element.text_content()
                         page_refs.append(
-                            PageRef(href=f"{vol_name}#{page_id}", page_num_braille=element.text_content(), title=""))
+                            PageRef(href=f"{vol_name}#{page_id}", page_num_braille=page_num_braille,
+                                    title=back_translate_page_number(page_num_braille)))
         if detected_title is None:
             detected_title = ""
         return create_navigation_html(opf_name=opf_name, page_refs=page_refs, heading_refs=headings,
