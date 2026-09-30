@@ -5,6 +5,7 @@ A set of tools for converting documents to eBraille. This repository contains a 
 * gui: A graphical tool for converting BRF documents into eBraille.
 * brf2ebrl: The parser library for converting documents.
 * plugins: Subprojects within this directory are parser plugins for specific Braille codes.
+* vendor/liblouis: A vendored copy of liblouis used by brf2ebrl for back-translation, see [vendor/liblouis/README.md](vendor/liblouis/README.md).
 
 ## Development status
 

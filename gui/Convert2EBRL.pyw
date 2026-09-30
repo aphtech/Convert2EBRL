@@ -11,6 +11,8 @@
 # nuitka-project: --enable-plugins=pyside6
 # nuitka-project: --include-package-data=brf2ebrl
 # nuitka-project: --include-package=brf2ebrl_bana
+# nuitka-project: --include-package-data=louis
+# nuitka-project: --include-data-files={MAIN_DIRECTORY}/../vendor/liblouis/src/louis/liblouis.dll=louis/liblouis.dll
 # nuitka-project: --product-version={APP_VERSION}
 
 import sys
