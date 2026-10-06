@@ -22,12 +22,19 @@ from brf2ebrl.common.nemeth_detectors import detect_block_nemeth, detect_and_pas
 from brf2ebrl.common.page_numbers import create_ebrf_print_page_tags
 from brf2ebrl.common.selectors import most_confident_detector
 from brf2ebrl.common.volume_markers import remove_volume_markers
-from brf2ebrl.parser import detector_parser, Parser, ParserContext
+from brf2ebrl.parser import detector_parser, Parser, ParserContext, DetectionState
 from brf2ebrl.plugin import create_plugin
 from brf2ebrl_bana.pages import create_braille_page_detector, \
     create_print_page_detector
 from brf2ebrl_bana.tn_detectors import tn_indicators_block_matcher, \
     tag_inline_tn, tag_symbols_list_tn
+
+
+def _run_over_paragraph_matcher(brl: str, state: DetectionState) -> tuple[str | None, DetectionState]:
+    """Make a paragraph only when the block has a run-over line, a lone line is left for the heading detectors."""
+    if len([line for line in brl.split("\n") if line and not line.startswith("<?")]) > 1:
+        return f"<p>{brl}</p>", state
+    return None, state
 
 
 def create_brf2ebrl_parser(
@@ -141,6 +148,13 @@ def create_brf2ebrl_parser(
                         layout=page_layout,
                         indicator_matcher=tn_indicators_block_matcher,
                         confidence=0.95,
+                    ),
+                    create_paragraph_detector(
+                        first_line_indent=6,
+                        run_over=4,
+                        layout=page_layout,
+                        indicator_matcher=_run_over_paragraph_matcher,
+                        confidence=0.94,
                     ),
                     create_paragraph_detector(
                         first_line_indent=2,

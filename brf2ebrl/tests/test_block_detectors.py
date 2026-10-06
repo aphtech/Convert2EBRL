@@ -4,9 +4,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+from brf2ebrl.common import PageLayout, PageNumberPosition
 from brf2ebrl.common.block_detectors import (
     create_cell_heading,
     create_centered_detector,
+    create_paragraph_detector,
     create_toc_detector,
 )
 from brf2ebrl.common.detectors import translate_ascii_to_unicode_braille
@@ -414,3 +416,65 @@ def test_create_toc_detector_nests_subentries_under_a_wrapped_main_entry():
     chapter_b_sublist_open = result.text.rindex("<ol")
     lesson_g_title = translate_ascii_to_unicode_braille("LESSON #G")
     assert result.text.index(lesson_g_title) > chapter_b_sublist_open
+
+
+def test_create_paragraph_detector_detects_7_5_paragraph_with_run_over_lines():
+    # Regression: run-over lines are recorded at the run-over depth, but the
+    # block was checked at depth 0, so any paragraph with a non-zero run-over
+    # (eg. a BANA 7-5 caption or transcriber's note) spanning more than one
+    # line was rejected and each line was left to the heading detectors.
+    lines = [
+        r"      ^1,FIGURE ^1#A4D ,CELLS 3TA9 ?\S&S",
+        r'    ( *ROMO"SS1 : 3TA9 HUNDR$S TO ?\S&S',
+        "    ( G5ES4 ,^! G5ES 3TA9 ,,DNA & =M !",
+        "    BLUEPR9T = YR P]SONAL;Y & H1L?4",
+    ]
+    text = translate_ascii_to_unicode_braille("\n".join(lines)) + "\n<?blank-line?>\n"
+
+    detector = create_paragraph_detector(first_line_indent=6, run_over=4, layout=PageLayout())
+    result = detector(text, 0, {}, "")
+
+    assert result is not None
+    expected = "\n".join(translate_ascii_to_unicode_braille(line.strip()) for line in lines)
+    assert result.text == f"<p>{expected}</p>\n"
+    assert result.cursor == text.index("<?blank-line?>")
+
+
+def test_create_paragraph_detector_7_5_does_not_take_cell_7_heading_followed_by_cell_5_line():
+    # A short cell 7 heading followed directly by a cell 5 line is not a
+    # wrapped 7-5 paragraph as the cell 5 line's first word would have fit on
+    # the heading line. This holds even on a page with a top right print page
+    # number, which pads the measured length of a paragraph's first line.
+    layout = PageLayout(
+        odd_print_page_number=PageNumberPosition.TOP_RIGHT,
+        even_print_page_number=PageNumberPosition.TOP_RIGHT,
+    )
+    page_pis = "<?braille-page ⠀⠀⠁⠃?>\n<?braille-ppn ⠙⠼⠉⠁?>\n"
+    body = translate_ascii_to_unicode_braille(
+        "      ,R1D+ & ,WRIT+ ,PRACTICE\n"
+        "    ,R1D ! PASSAGE 2L & !N ANSW] !\n"
+        "    FOLL[+ \"QS4\n"
+    )
+    previous_line = translate_ascii_to_unicode_braille("    ,/&>DIZ$ ,TE/ ,PREP\n")
+    text = page_pis + previous_line + body + "<?blank-line?>\n"
+
+    detector = create_paragraph_detector(first_line_indent=6, run_over=4, layout=layout)
+
+    assert detector(text, len(page_pis) + len(previous_line), {}, "") is None
+
+
+def test_create_paragraph_detector_3_1_paragraph_still_detected():
+    # The run-over depth check must leave 3-1 paragraphs (run-over 0) as before.
+    lines = [
+        "  ,G5ES C SIGNIFICANTLY 9FLU;E YR H1L?4",
+        ",= EXAMPLE1 IF MEMB]S ( YR BIOLOGICAL",
+        "FAMILY DEVELOP A 41SE S* Z C.ER1 Y H A",
+    ]
+    text = translate_ascii_to_unicode_braille("\n".join(lines)) + "\n<?blank-line?>\n"
+
+    detector = create_paragraph_detector(first_line_indent=2, run_over=0, layout=PageLayout())
+    result = detector(text, 0, {}, "")
+
+    assert result is not None
+    expected = "\n".join(translate_ascii_to_unicode_braille(line.strip()) for line in lines)
+    assert result.text == f"<p>{expected}</p>\n"

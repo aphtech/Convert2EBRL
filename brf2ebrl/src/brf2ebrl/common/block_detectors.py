@@ -484,8 +484,19 @@ def _create_indented_block_finder(
         if line := _first_line_re.match(text[cursor:]):
             lines, new_cursor = get_paragraph_lines(text, cursor, line)
 
-            if lines and is_block_paragraph(lines, cells_per_line=cells_per_line):
-                return (lines, new_cursor)
+            if lines:
+                first_line = lines[0].copy()
+                if run_over:
+                    # run-over lines are recorded at the run-over depth, so check the
+                    # block at that depth. The first line is indented like a heading,
+                    # so measure it without the page number padding so a heading
+                    # followed by a run-over indented line is not taken as wrapped.
+                    first_line.line_text = " " * (first_line_indent - run_over) + first_line.line_text.strip(" ")
+                    first_line.depth = run_over
+                if is_block_paragraph(
+                    [first_line, *lines[1:]], depth=run_over, cells_per_line=cells_per_line
+                ):
+                    return (lines, new_cursor)
         return ([], new_cursor)
 
     return find_paragraph_braille

@@ -401,7 +401,8 @@ def create_listed_detector() -> Detector:
             complete_table += f"<tr>{wrap_and_join('<td>{}</td>', row)}</tr>\n"
         complete_table += "</table>"
         complete_table += trailing_pi
-        return DetectionResult(pos, state, 0.91, f"{output_text}{tn_comment}\n{complete_table}\n")
+        # above a TN paragraph on its own as the TN belongs to the table, below column-row tables
+        return DetectionResult(pos, state, 0.955, f"{output_text}{tn_comment}\n{complete_table}\n")
 
     return detect_listed_table
 
