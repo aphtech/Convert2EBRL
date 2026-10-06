@@ -55,6 +55,10 @@ def test_create_cell_heading_detects_off_by_one_indent_with_lower_confidence():
     assert result is not None
     assert result.confidence == 0.6
     assert result.text == f"<h2>{content}</h2>\n"
+    # the warning is deferred until the parser selects this result
+    assert notifications == []
+    assert result.on_selected is not None
+    result.on_selected()
     assert len(notifications) == 1
     level, msg = notifications[0]
     assert level == NotifyLevel.WARN
@@ -99,6 +103,10 @@ def test_create_cell_heading_level_7_detects_off_by_one_indent_with_lower_confid
     assert result is not None
     assert result.confidence == 0.6
     assert result.text == f"<h3>{content}</h3>\n"
+    # the warning is deferred until the parser selects this result
+    assert notifications == []
+    assert result.on_selected is not None
+    result.on_selected()
     assert len(notifications) == 1
     level, msg = notifications[0]
     assert level == NotifyLevel.WARN
@@ -149,6 +157,10 @@ def test_create_centered_detector_detects_off_by_one_indent_with_lower_confidenc
     assert result is not None
     assert result.confidence == 0.6
     assert result.text == f"<h1>{brl_content}</h1>\n"
+    # the warning is deferred until the parser selects this result
+    assert notifications == []
+    assert result.on_selected is not None
+    result.on_selected()
     assert len(notifications) == 1
     level, msg = notifications[0]
     assert level == NotifyLevel.WARN
@@ -172,6 +184,10 @@ def test_create_centered_detector_detects_off_by_one_to_the_left_with_lower_conf
     assert result is not None
     assert result.confidence == 0.6
     assert result.text == f"<h1>{brl_content}</h1>\n"
+    # the warning is deferred until the parser selects this result
+    assert notifications == []
+    assert result.on_selected is not None
+    result.on_selected()
     assert len(notifications) == 1
     level, msg = notifications[0]
     assert level == NotifyLevel.WARN
