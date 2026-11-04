@@ -56,16 +56,17 @@ _CAPTION = _FIGURE_THEN_TN.splitlines()[8:12]
 _TN = _FIGURE_THEN_TN.splitlines()[12:15]
 
 
-def test_7_5_caption_and_transcribers_note_are_two_paragraphs_not_headings():
+def test_7_5_caption_and_transcribers_note_are_a_figure_and_a_note_not_headings():
     html = _convert(_FIGURE_THEN_TN)
 
     assert not _HEADING_RE.search(html)
     caption_brl = _braille(translate_ascii_to_unicode_braille("".join(_CAPTION)))
     tn_brl = _braille(translate_ascii_to_unicode_braille("".join(_TN)))
-    # the caption is one paragraph with all its run-over lines and keeps its bold
-    caption = _element_containing(html, "p", _braille(translate_ascii_to_unicode_braille(",CELLS 3TA9")))
+    # the caption is one figcaption, inside a figure, with all its run-over lines and keeps its bold
+    caption = _element_containing(html, "figcaption", _braille(translate_ascii_to_unicode_braille(",CELLS 3TA9")))
     assert _braille(caption) == caption_brl
     assert caption.count("<strong>") == 2
+    assert re.search(r"<figure>\s*<figcaption>" + re.escape(caption) + r"</figcaption>\s*</figure>", html)
     # the transcriber's note is a separate TN block, from its opening to its closing indicator
     tn = _element_containing(html, "div", _braille(translate_ascii_to_unicode_braille("DIAGRAM")))
     assert _braille(tn) == tn_brl
@@ -100,7 +101,7 @@ def test_centered_heading_followed_by_7_5_caption():
 
     assert re.search(r"<h1[^>]*>⠠⠉⠑⠇⠇ ⠠⠌⠗⠥⠉⠞⠥⠗⠑</h1>", html)
     assert len(_HEADING_RE.findall(html)) == 1
-    caption = _element_containing(html, "p", _braille(translate_ascii_to_unicode_braille(",CELLS 3TA9")))
+    caption = _element_containing(html, "figcaption", _braille(translate_ascii_to_unicode_braille(",CELLS 3TA9")))
     assert _braille(caption) == _braille(translate_ascii_to_unicode_braille("".join(_CAPTION)))
 
 
@@ -109,7 +110,7 @@ def test_cell_5_heading_followed_by_7_5_caption():
 
     assert re.search(r"<h2[^>]*>⠠⠉⠑⠇⠇ ⠠⠌⠗⠥⠉⠞⠥⠗⠑</h2>", html)
     assert len(_HEADING_RE.findall(html)) == 1
-    caption = _element_containing(html, "p", _braille(translate_ascii_to_unicode_braille(",CELLS 3TA9")))
+    caption = _element_containing(html, "figcaption", _braille(translate_ascii_to_unicode_braille(",CELLS 3TA9")))
     assert _braille(caption) == _braille(translate_ascii_to_unicode_braille("".join(_CAPTION)))
 
 

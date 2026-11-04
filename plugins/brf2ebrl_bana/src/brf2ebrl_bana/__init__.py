@@ -27,13 +27,18 @@ from brf2ebrl.plugin import create_plugin
 from brf2ebrl_bana.pages import create_braille_page_detector, \
     create_print_page_detector
 from brf2ebrl_bana.tn_detectors import tn_indicators_block_matcher, \
-    tag_inline_tn, tag_symbols_list_tn
+    tag_inline_tn, tag_symbols_list_tn, _START_TN_SYMBOL, _END_TN_SYMBOL
 
 
 def _run_over_paragraph_matcher(brl: str, state: DetectionState) -> tuple[str | None, DetectionState]:
-    """Make a paragraph only when the block has a run-over line, a lone line is left for the heading detectors."""
+    """Make a caption only when the block has a run-over line, a lone line is left for the heading detectors.
+
+    BANA uses 7-5 margins for print captions (Formats 6.2.2). A block opening a
+    transcriber's note it does not close is a note, not a caption, so stays a paragraph."""
     if len([line for line in brl.split("\n") if line and not line.startswith("<?")]) > 1:
-        return f"<p>{brl}</p>", state
+        if brl.startswith(_START_TN_SYMBOL) and _END_TN_SYMBOL not in brl:
+            return f"<p>{brl}</p>", state
+        return f"<figure>\n<figcaption>{brl}\n</figcaption>\n</figure>", state
     return None, state
 
 
