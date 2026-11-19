@@ -7,6 +7,49 @@ Two pieces of work, kept as small as possible:
 
 Inputs reviewed: `issue-71043/07-26.zip`, `08-26.zip`, `10-26.zip` (the source BRFs plus the hand-made target `.ebrl`), and `issue-71043/Editing notes for NFB Braille Monitor periodicals.docx`. I also ran the current BANA converter on the October issue (`bm2610v01.brf` + `bm2610v02.brf`) and compared its output with the target.
 
+## Implementation status
+
+Implemented on branch `nfb-newsletter-plugin`. Each commit is a point you can test.
+
+| Commit | What | How to test |
+|---|---|---|
+| Plan and test script | this plan, `issue-71043/run_issue71043.ps1` | `.\issue-71043\run_issue71043.ps1 -Parser BANA` |
+| NFB plugin with linked TOC | `plugins/brf2ebrl_nfb`, registered in the workspace, GUI dependencies and Nuitka build; CLI default stays BANA | `uv run pytest` in `plugins/brf2ebrl_nfb`; `.\issue-71043\run_issue71043.ps1` |
+| GUI Converter combo box | `general_tab.py`, `brf_to_ebrf.py`, `settings/keys.py` | `uv run Convert2EBRL.pyw` in `gui`, choose NFB, restart, convert |
+| Contracted back-translation | `en-ueb-g2.ctb` vendored, `back_translate_contracted()` | `uv run pytest` in `brf2ebrl` |
+| Links and optional print HTML | `links.py`, `print_source.py` | `.\issue-71043\run_issue71043.ps1` and `… -NoPrint` |
+
+Results on the three samples (ours / target, for July, Aug/Sept and October):
+- **Separators:** 13/11, 16/16, 9/9.
+- **Captions:** 9/9, 26/26, 14/14.
+- **Bylines:** 10/10, 8/8, 7/7.
+- **Dialogue:** October 159/145, Aug/Sept 115/112. July has 20 speaker and continuation paragraphs, which its target does not mark.
+- **TOC links:** every entry is linked to the right article (52 links, each checked by following it).
+- **With the print file:** the braille text is byte-identical to the run without it.
+- **BANA:** output unchanged for the 42 books in `work/ebrl-test-files/books` (§7).
+
+**Changes from the plan, found while implementing:**
+- **Page layout:** the plugin forces its own page number positions (odd top right, no print pages). No CLI page layout or GUI profile is needed, and none was added.
+- **Page numbers:** BANA's braille page detector only knows Arabic numbers. `brf2ebrl_nfb/pages.py` also accepts the roman numerals of the preliminary pages, which otherwise stay in the text.
+- **Paragraphs:** the shared paragraph finder rejects a paragraph that starts on the line holding the top right page number, because it measures the first line without the page number. NFB paragraphs (3-1, 1-3, 5-3, 7-5) are found by indent shape instead. This is safe because the newsletter has no blank lines.
+- **Page breaks:** there are none in the output. BANA only turns *print* pages into `doc-pagebreak`, and the newsletter has none, which matches the target. The TOC therefore matches entries to titles by text, with a fuzzy fallback instead of a page number fallback.
+- **Captions:** also recognised without brackets (`,,PHOTO ,,CAP;N3`), one cell late, and continued into a second 7-5 paragraph. Other bracketed 7-5 text, such as "[Video begins]", becomes `p.direction`.
+- **Bylines:** also "Presented by …" and "An Address Delivered by" with the names on the next line.
+- **Print file encoding:** the sample print files are UTF-8, not Windows-1252. The reader uses the declared charset, then UTF-8, then Windows-1252.
+- **Print messages:** the "using print file" message and the match summary go to the log, not to notifications, because the GUI and CLI show any notification as a warning.
+- **Not done:**
+  - the book title from print `<title>`;
+  - "skip print when under half the titles match";
+  - the link-only fallback for addresses whose back-translation fails.
+- **BANA check:** the PDF graphic matcher can place a tactile graphic `<object>` differently between two runs with no code change (A-B2513, A-B2533). The check treats that alone as unchanged.
+
+**Known gaps (left for later):**
+- letter salutations and signatures at cell 5 become `h2`;
+- numbered steps become lists;
+- bold editor's notes at the margin become `p.left-justified`.
+
+**Risk found:** `find_plugins()` imports every installed plugin, so a plugin that fails to import stops the CLI and GUI for BANA too. Making it skip a broken plugin with a warning would be a small change to `brf2ebrl/plugin.py`.
+
 ---
 
 ## 1. What is different about the newsletter BRFs
