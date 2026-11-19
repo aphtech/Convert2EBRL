@@ -23,6 +23,8 @@ from collections.abc import Callable
 from brf2ebrl.common import PageLayout
 from brf2ebrl.common.block_detectors import _notify_low_confidence_match
 from brf2ebrl.parser import Detector, DetectionResult, DetectionState, ParserContext
+from brf2ebrl.utils.back_translation import back_translate_contracted
+from brf2ebrl_nfb.print_source import PrintIssue, match_heading
 from brf2ebrl_nfb.toc import detect_toc
 
 _SEPARATOR_LINE_RE = re.compile("^\u2800+(\u2810\u2812{6,})\u2800*$", re.MULTILINE)
@@ -99,11 +101,25 @@ def _is_byline_start(line: str, next_line: str = "") -> bool:
     return False
 
 
-def create_centered_detector(cells_per_line: int, parser_context: ParserContext = ParserContext()) -> Detector:
+def _print_text(braille: str) -> str:
+    return back_translate_contracted(braille) or ""
+
+
+def _unique_id(base: str, used: frozenset[str]) -> str:
+    heading_id, n = base, 2
+    while heading_id in used:
+        heading_id, n = f"{base}-{n}", n + 1
+    return heading_id
+
+
+def create_centered_detector(cells_per_line: int, parser_context: ParserContext = ParserContext(),
+                             print_issue: PrintIssue | None = None) -> Detector:
     """Centered lines: title page lines, article title plus byline, or a section heading.
 
     Based on the shared centered detector, with the same one cell tolerance, but it keeps the
-    lines separate, does not require a blank line after the heading and never makes guide words."""
+    lines separate, does not require a blank line after the heading and never makes guide words.
+    With the print HTML, article titles get the print title as a readable id and section
+    headings get the print level."""
 
     def detect_centered(text: str, cursor: int, state: DetectionState, output_text: str) -> DetectionResult | None:
         lines: list[str] = []
@@ -147,14 +163,24 @@ def create_centered_detector(cells_per_line: int, parser_context: ParserContext 
                 if heading.startswith(_SPECIAL_SYMBOLS):
                     html += f"<h2>{heading}</h2>\n"
                 elif state.get("article_start", True) or byline:
-                    html += f'<h1 class="article-title">{heading}</h1>\n'
+                    id_attr = ""
+                    if print_issue and (match := match_heading(print_issue, _print_text(heading), (2,))):
+                        used_ids = state.get("nfb_ids", frozenset())
+                        heading_id = _unique_id(match.slug, used_ids)
+                        new_state["nfb_ids"] = used_ids | {heading_id}
+                        id_attr = f' id="{heading_id}"'
+                    html += f'<h1 class="article-title"{id_attr}>{heading}</h1>\n'
                     new_state["article_start"] = False
                     if byline and len(pending_notifications) <= 1:
                         # A title with its byline is an article heading even when one line is a
                         # cell off centre, so prefer it to the cell 5 heading detector.
                         confidence = max(confidence, 0.93)
                 else:
-                    html += f"<h2>{heading}</h2>\n"
+                    # Braille cannot show the print level of a section heading; the print can.
+                    tag = "h2"
+                    if print_issue and (match := match_heading(print_issue, _print_text(heading), (3, 4))):
+                        tag = "h3" if match.level == 4 else "h2"
+                    html += f"<{tag}>{heading}</{tag}>\n"
             if byline:
                 html += f'<p class="byline">{byline}</p>\n'
         return DetectionResult(new_cursor, new_state, confidence, output_text + html,
@@ -258,12 +284,13 @@ def _paragraph_matcher(brl: str, state: DetectionState) -> tuple[str | None, Det
     return f"<p>{brl}</p>", dict(state, open_caption=False)
 
 
-def create_nfb_block_detectors(page_layout: PageLayout, parser_context: ParserContext) -> list[Detector]:
+def create_nfb_block_detectors(page_layout: PageLayout, parser_context: ParserContext,
+                               print_issue: PrintIssue | None = None) -> list[Detector]:
     """The NFB specific detectors for the "Detect blocks" pass, ahead of the shared ones."""
     return [
         detect_separator,
         track_braille_pages,
-        create_centered_detector(page_layout.cells_per_line, parser_context),
+        create_centered_detector(page_layout.cells_per_line, parser_context, print_issue),
         # Photo captions in 7-5, starting with ".<".
         create_shape_paragraph_detector(6, 4, _caption_matcher, 0.96, stop_before=_after_closing_bracket),
         # The same one cell late (cell 8), a common transcriber slip.

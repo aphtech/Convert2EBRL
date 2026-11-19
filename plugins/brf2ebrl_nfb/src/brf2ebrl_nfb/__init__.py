@@ -8,6 +8,9 @@
 The pipeline is the BANA one with the passes the newsletter does not need removed
 (print page numbers, running heads) and NFB specific block detectors added. Nothing
 here changes the shared detectors, so BANA conversions are unaffected."""
+import logging
+import os
+import re
 import string
 from dataclasses import replace
 from typing import Sequence
@@ -31,10 +34,15 @@ from brf2ebrl.plugin import create_plugin
 from brf2ebrl_bana.tn_detectors import tn_indicators_block_matcher, tag_inline_tn, tag_symbols_list_tn
 
 from brf2ebrl_nfb.bundler import NfbZippedBundler
+from brf2ebrl_nfb.links import create_link_pass
 from brf2ebrl_nfb.detectors import create_nfb_block_detectors, mark_article_separators
 from brf2ebrl_nfb.pages import create_nfb_braille_page_detector
+from brf2ebrl_nfb.print_source import find_print_html, load_print_issue
 
 PLUGIN_ID = "NFB"
+_ARTICLE_TITLE_RE = re.compile('<h1 class="article-title"')
+# Article titles matched to the print get its readable id; the others get h_N later.
+_PRINT_ID_TITLE_RE = re.compile('<h1 class="article-title" id=')
 
 
 def nfb_page_layout(page_layout: PageLayout) -> PageLayout:
@@ -61,6 +69,21 @@ def create_brf2ebrl_parser(
 ) -> Sequence[Parser]:
     # The newsletter has no running heads, so detect_running_heads is ignored.
     page_layout = nfb_page_layout(page_layout)
+    # The issue's print HTML is used, when it is next to the BRF, to refine links and headings.
+    print_path = find_print_html(brf_path)
+    print_issue = load_print_issue(print_path) if print_path else None
+    if print_issue:
+        logging.info("Using print file %s to refine links and headings of %s.", print_path, brf_path)
+    link_stats: dict[str, int] = {}
+
+    def report_print_matches(text: str, _: ParserContext) -> str:
+        titles = len(_ARTICLE_TITLE_RE.findall(text))
+        print_titles = len(_PRINT_ID_TITLE_RE.findall(text))
+        logging.info("Print file %s: %d/%d article titles and %d/%d links matched in %s.",
+                     os.path.basename(print_issue.path), print_titles, titles,
+                     link_stats.get("print_links", 0), link_stats.get("links", 0), brf_path)
+        return text
+
     return [
         x
         for x in [
@@ -119,7 +142,7 @@ def create_brf2ebrl_parser(
                 {},
                 [
                     detect_and_pass_nemeth_block,
-                    *create_nfb_block_detectors(page_layout, parser_context),
+                    *create_nfb_block_detectors(page_layout, parser_context, print_issue),
                     create_cell_heading(6, "h3", parser_context),
                     create_cell_heading(4, "h2", parser_context),
                     create_paragraph_detector(
@@ -173,6 +196,11 @@ def create_brf2ebrl_parser(
                 "Restore Nemeth braille",
                 restore_nemeth_braille
             ),
+            Parser(
+                "Link web and email addresses",
+                create_link_pass(print_issue=print_issue, stats=link_stats)
+            ),
+            Parser("Report print matches", report_print_matches) if print_issue else None,
             _create_image_detection_parser_pass(brf_path, images_path, output_path, page_layout),
             detector_parser(
                 "Print page numbers to ebrf",
