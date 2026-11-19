@@ -29,6 +29,8 @@ from convert2ebrl.utils import RunnableAdapter, load_settings_profiles, save_set
     save_settings_profile
 
 DISCOVERED_PARSER_PLUGINS = find_plugins()
+# The same plugins keyed by plugin id (find_plugins() keys them by entry point name).
+PLUGINS_BY_ID = {plugin.id: plugin for plugin in DISCOVERED_PARSER_PLUGINS.values()}
 
 class SettingsProfilesWidget(QWidget):
     currentSettingsProfileChanged = Signal(SettingsProfile)
@@ -133,7 +135,7 @@ class Brf2EbrfWidget(QWidget):
         self._profiles_tool = SettingsProfilesWidget()
         layout.addWidget(self._profiles_tool)
         tab_widget = QTabWidget()
-        self._brf2ebrf_form = ConversionGeneralSettingsWidget()
+        self._brf2ebrf_form = ConversionGeneralSettingsWidget(PLUGINS_BY_ID)
         tab_widget.addTab(self._brf2ebrf_form, "General")
         self._page_settings_form = ConversionPageSettingsWidget()
         tab_widget.addTab(self._page_settings_form, "Page settings")
@@ -209,6 +211,10 @@ class Brf2EbrfWidget(QWidget):
     @Slot()
     def on_apply(self):
         number_of_steps = 1000
+        selected_plugin = PLUGINS_BY_ID.get(self._brf2ebrf_form.selected_plugin_id)
+        if selected_plugin is None:
+            QMessageBox.critical(self, "No converter", "No conversion plugin is selected or installed.")
+            return
         brf_list = expand_input_brfs(self._brf2ebrf_form.input_brfs)
         num_of_inputs = len(brf_list)
         output_ebrf = self._brf2ebrf_form.output_ebrf
@@ -268,7 +274,7 @@ class Brf2EbrfWidget(QWidget):
         t.notify.connect(on_notification)
         t.errorRaised.connect(error_raised)
         QThreadPool.globalInstance().start(
-            RunnableAdapter(t, list(DISCOVERED_PARSER_PLUGINS.values())[0], brf_list, output_ebrf, parser_options=parser_options))
+            RunnableAdapter(t, selected_plugin, brf_list, output_ebrf, parser_options=parser_options))
 
 
 def save_notifications(parent: QWidget | None, notifications: Iterable[Notification], default_dir: str):

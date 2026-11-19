@@ -6,13 +6,18 @@
 # You should have received a copy of the GNU General Public License along with Convert2EBRL. If not, see <https://www.gnu.org/licenses/>.
 
 import os
+from collections.abc import Mapping
 
+from brf2ebrl.plugin import Plugin
 from PySide6.QtCore import Signal, QObject, QSettings, Slot, QStandardPaths
 from PySide6.QtWidgets import QWidget, QFormLayout, QComboBox, QCheckBox, QFileDialog
 
 from convert2ebrl.settings.defaults import CONVERSION_LAST_DIR as DEFAULT_LAST_DIR
-from convert2ebrl.settings.keys import CONVERSION_LAST_DIR as LAST_DIR_SETTING_KEY
+from convert2ebrl.settings.keys import CONVERSION_LAST_DIR as LAST_DIR_SETTING_KEY, CONVERSION_PLUGIN as PLUGIN_SETTING_KEY
 from convert2ebrl.widgets import FilePickerWidget
+
+
+DEFAULT_PLUGIN_ID = "BANA"
 
 
 class ConversionGeneralSettingsWidget(QWidget):
@@ -20,9 +25,15 @@ class ConversionGeneralSettingsWidget(QWidget):
     imagesDirectoryChanged = Signal(str)
     outputEbrfChanged = Signal(str)
 
-    def __init__(self, parent: QObject | None = None):
+    def __init__(self, plugins: Mapping[str, Plugin] | None = None, parent: QObject | None = None):
         super().__init__(parent)
         layout = QFormLayout(self)
+        self._plugin_combo = QComboBox()
+        self._plugin_combo.setEditable(False)
+        # Entry point order is not guaranteed, so list BANA first, then the rest by name.
+        for plugin in sorted((plugins or {}).values(), key=lambda p: (p.id != DEFAULT_PLUGIN_ID, p.name)):
+            self._plugin_combo.addItem(plugin.name, plugin.id)
+        layout.addRow("Converter", self._plugin_combo)
         self._input_type_combo = QComboBox()
         self._input_type_combo.setEditable(False)
         self._input_type_combo.addItems(["List of BRF", "Directory of BRF"])
@@ -62,6 +73,10 @@ class ConversionGeneralSettingsWidget(QWidget):
             settings = QSettings()
             self._input_type_combo.setCurrentIndex(int(bool(settings.value("Conversion/input_type", defaultValue=False, type=bool))))
         restore_from_settings()
+        saved_plugin_index = self._plugin_combo.findData(QSettings().value(PLUGIN_SETTING_KEY, DEFAULT_PLUGIN_ID))
+        self._plugin_combo.setCurrentIndex(saved_plugin_index if saved_plugin_index >= 0 else 0)
+        self._plugin_combo.currentIndexChanged.connect(
+            lambda _: QSettings().setValue(PLUGIN_SETTING_KEY, self.selected_plugin_id))
         def on_input_type_changed(index):
             settings = QSettings()
             settings.setValue("Conversion/input_type", bool(index))
@@ -111,6 +126,11 @@ class ConversionGeneralSettingsWidget(QWidget):
             if input_files:
                 settings.setValue(LAST_DIR_SETTING_KEY, os.path.dirname(input_files[0]))
             return input_files
+
+    @property
+    def selected_plugin_id(self) -> str | None:
+        """The id of the plugin chosen in the Converter box, for example BANA or NFB."""
+        return self._plugin_combo.currentData()
 
     @property
     def input_brfs(self) -> list[str]:
