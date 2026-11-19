@@ -14,6 +14,21 @@ from louis.bundled import table_path
 _PAGE_NUMBER_TABLES = [table_path("unicode.dis"), table_path("en-ueb-g1.ctb")]
 
 
+_CONTRACTED_TABLES = [table_path("unicode.dis"), table_path("en-ueb-g2.ctb")]
+
+
+def _has_untranslated(print_text: str) -> bool:
+    # liblouis marks braille it cannot back-translate as \dots/ or with private use characters.
+    return "\\" in print_text or any("" <= c <= "" for c in print_text)
+
+
+@cache
+def back_translate_contracted(braille: str) -> str | None:
+    """Back-translate contracted (grade 2) UEB Unicode braille, or None if part of it cannot be."""
+    print_text = louis.backTranslateString(_CONTRACTED_TABLES, braille.strip("⠀")).strip()
+    return None if not print_text or _has_untranslated(print_text) else print_text
+
+
 @cache
 def back_translate_page_number(page_num_braille: str) -> str:
     """Back-translate a Unicode braille page number to its print equivalent."""

@@ -10,7 +10,7 @@ All files come from liblouis v3.39.0.
 
 * `src/louis/__init__.py`: the official ctypes bindings (`python/louis/__init__.py.in` in the source tree). The only change is the library loading, marked with a `Convert2EBRL` comment.
 * `src/louis/liblouis.dll`: from `bin/` in `liblouis-3.39.0-win64.zip` (sha256 `64d669ac30f1411e0023b1cecc81c7a7b5374678ee41302c95ac8c7c8fbc6591`, matching the GitHub release asset digest). It only depends on `KERNEL32.dll` and `msvcrt.dll`.
-* `src/louis/tables/`: `unicode.dis`, `en-ueb-g1.ctb` and the tables they include, from `share/liblouis/tables/` in the same zip.
+* `src/louis/tables/`: `unicode.dis`, `en-ueb-g1.ctb`, `en-ueb-g2.ctb` and the tables they include, from `share/liblouis/tables/` in the same zip. `en-ueb-g2.ctb` (contracted UEB) is used by the NFB plugin to back-translate web and email addresses; it only includes `en-ueb-g1.ctb`.
 * `src/louis/bundled.py`: helper giving absolute paths to the bundled tables.
 
 On platforms other than Windows the bindings load a system installed liblouis, but still use the bundled tables.
