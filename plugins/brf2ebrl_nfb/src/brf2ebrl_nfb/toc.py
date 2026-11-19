@@ -15,6 +15,7 @@ has been converted."""
 import re
 
 from brf2ebrl.parser import DetectionResult, DetectionState
+from brf2ebrl_nfb.lines import join_lines
 
 TOC_PLACEHOLDER_PREFIX = "nfb-toc-"
 
@@ -25,6 +26,7 @@ _PART_RE = re.compile("\u2800{3,}(\u2820\u2810\u280f\u2800\u283c[\u2801-\u281a]+
 _ENTRY_FIRST_LINE_RE = re.compile("([\u2801-\u28ff][\u2800-\u28ff]*)\n")
 _ENTRY_RUN_OVER_RE = re.compile("\u2800\u2800([\u2801-\u28ff][\u2800-\u28ff]*)\n")
 _SKIPPABLE_PI_RE = re.compile("<\\?(?:blank-line|braille-page [\u2800-\u28ff]*)\\?>\n")
+_BRAILLE_PAGE_PI_RE = re.compile("<\\?braille-page [\u2800-\u28ff]*\\?>\n")
 # Optional guide dots, then a braille page number (arabic, or roman for preliminary pages).
 _ENTRY_PAGE_RE = re.compile(
     "(?:\u2800\u2810+)?\u2800(\u283c[\u2801\u2803\u2809\u2819\u2811\u280b\u281b\u2813\u280a\u281a]+"
@@ -37,15 +39,26 @@ def _match_entry(text: str, pos: int) -> tuple[str, str, int] | None:
     if not first:
         return None
     lines = [first.group(1).rstrip("\u2800")]
-    end = first.end()
-    while run_over := _ENTRY_RUN_OVER_RE.match(text, end):
+    end = pos = first.end()
+    pending_pis: list[str] = []
+    while True:
+        # An entry can run over onto the next braille page.
+        if pi := _BRAILLE_PAGE_PI_RE.match(text, pos):
+            pending_pis.append(pi.group().rstrip("\n"))
+            pos = pi.end()
+            continue
+        run_over = _ENTRY_RUN_OVER_RE.match(text, pos)
+        if not run_over:
+            break
+        lines.extend(pending_pis)
+        pending_pis = []
         lines.append(run_over.group(1).rstrip("\u2800"))
-        end = run_over.end()
+        end = pos = run_over.end()
     page = _ENTRY_PAGE_RE.search(lines[-1])
     if not page:
         return None
     lines[-1] = lines[-1][:page.start()]
-    return "\u2800".join(lines), page.group(1), end
+    return join_lines(lines, "\u2800"), page.group(1), end
 
 
 def detect_toc(text: str, cursor: int, state: DetectionState, output_text: str) -> DetectionResult | None:

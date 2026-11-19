@@ -42,6 +42,8 @@ ARTICLES_VOLUME_1 = [
 ]
 
 ARTICLES_VOLUME_2 = [
+    # As in the real issues, the page after the title page starts with a blank line.
+    "",
     centered(",X'S ,\\R ,TURN ,N["),
     centered("BY ,JONA?AN ,MOS5"),
     "  ,P>AGRAPH4",

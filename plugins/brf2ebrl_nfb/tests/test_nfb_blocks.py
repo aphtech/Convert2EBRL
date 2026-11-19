@@ -90,7 +90,9 @@ def test_separator_then_title_and_byline():
 
 
 def test_centered_heading_inside_article_is_h2():
+    # As in the real issues, the page after the title page starts with a blank line.
     body = [
+        "",
         centered(",WELCOME TO ! ,MOVE;T"),
         "  ,P>AGRAPH4",
         centered(",WAYS TO ,A3ESS ! ,MONITOR"),

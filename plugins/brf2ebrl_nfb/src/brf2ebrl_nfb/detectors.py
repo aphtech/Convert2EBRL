@@ -16,7 +16,11 @@ Detection state keys used here:
     open_caption   a bracketed photo caption has not been closed yet
     article_start  the next centered heading starts an article (after a separator or the TOC)
     in_dialogue    inside a transcript, so 5-3 paragraphs are dialogue continuations
+
+Lines are joined with join_lines, so a line ending in a hyphen, dash or continuation indicator
+joins the next with no space, and the other line breaks become spaces.
 """
+import difflib
 import re
 from collections.abc import Callable
 
@@ -24,8 +28,11 @@ from brf2ebrl.common import PageLayout
 from brf2ebrl.common.block_detectors import _notify_low_confidence_match
 from brf2ebrl.parser import Detector, DetectionResult, DetectionState, ParserContext
 from brf2ebrl.utils.back_translation import back_translate_contracted
-from brf2ebrl_nfb.print_source import PrintIssue, match_heading
+from brf2ebrl_nfb.lines import join_lines, wraps
+from brf2ebrl_nfb.print_source import PrintIssue, match_heading, normalise
 from brf2ebrl_nfb.toc import detect_toc
+
+_DEFAULT_CELLS_PER_LINE = 40
 
 _SEPARATOR_LINE_RE = re.compile("^\u2800+(\u2810\u2812{6,})\u2800*$", re.MULTILINE)
 _SEPARATOR_PI_RE = re.compile("<\\?nfb-separator ([\u2800-\u28ff]+)\\?>\n?")
@@ -54,6 +61,30 @@ _SPEAKER_RE = re.compile("\u2820[^\u2800\n]*(?:\u2800[^\u2800\n]+){0,3}(?<=\u281
 
 # End of a sentence: period, question or exclamation mark, possibly followed by closing quotes or brackets.
 _SENTENCE_END_RE = re.compile("[\u2832\u2826\u2816][\u2834\u2820\u281c\u2810]*$")
+# Any non blank line: (indent, text).
+_ANY_LINE_RE = re.compile("(\u2800*)([\u2801-\u28ff][\u2800-\u28ff]*)\n")
+# The title page goes on over the next page when that page starts straight after a title page line,
+# with no blank line (otherwise the next page starts the body, eg. with ",WELCOME TO ! ,MOVE;T").
+_AFTER_TITLE_PAGE_RE = re.compile('<p class="titlepage">[^<]*</p>\n+<\\?braille-page \\?>\n?$')
+# Trailing processing instructions and white space, skipped to find the previous block.
+_TRAILING_PI_RE = re.compile("(?:<\\?braille-page [\u2800-\u28ff]*\\?>|\\s)+$")
+# Blank lines straight after a braille page break.
+_PAGE_TOP_BLANK_RE = re.compile("(<\\?braille-page [\u2800-\u28ff]*\\?>)(?:\\s*<\\?blank-line\\?>)+$")
+# Blocks after which a blocked line starts a heading, as after a blank line.
+_HEADING_CONTEXT_RE = re.compile('(?:<\\?blank-line\\?>|</h[1-6]>|<p class="(?:byline|separator)">[^<]*</p>|</nav>)$')
+# "Dear ...:" opening a letter.
+_DEAR = "\u2820\u2819\u2811\u281c\u2800"
+_COLON = "\u2812"
+# A list item marker: a bullet (_4) or a number and period (#A4).
+_LIST_MARKER_RE = re.compile("\u2838\u2832|\u283c[\u2801-\u281a]+\u2832")
+# Indent pairs (first line, next line) where an off centre line is a paragraph's first line.
+_PARAGRAPH_STARTS = {(4, 2), (2, 0), (6, 4)}
+# A CC line of a letter looks like a speaker label.
+_CC = "\u2820\u2820\u2809\u2809\u2812"
+# So does a letter's "Re:" line, which may be in capitals (,RE3 / ,,,RE3).
+_RE_LINE_RE = re.compile("\u2820+\u2817\u2811\u2812\u2800")
+# A letter's address follows its date, a one line 1-1 paragraph.
+_AFTER_DATE_LINE_RE = re.compile('<p class="left-justified">[^<\n]*</p>\\s*(?:<\\?blank-line\\?>\\s*)+$')
 
 
 def mark_article_separators(text: str, _: ParserContext) -> str:
@@ -101,6 +132,11 @@ def _is_byline_start(line: str, next_line: str = "") -> bool:
     return False
 
 
+def _is_centered(indent: int, line: str, cells_per_line: int) -> bool:
+    """The line is centered, give or take a cell."""
+    return abs(indent - (cells_per_line - len(line)) / 2) <= 1
+
+
 def _print_text(braille: str) -> str:
     return back_translate_contracted(braille) or ""
 
@@ -121,6 +157,23 @@ def create_centered_detector(cells_per_line: int, parser_context: ParserContext 
     With the print HTML, article titles get the print title as a readable id and section
     headings get the print level."""
 
+    def _split_print_heading(lines: list[str]) -> tuple[list[str], list[str]]:
+        """With the print, the first lines that make up a print heading, and the centered lines after it.
+
+        Without the print, or when the whole run or no part of it is a print heading, all lines are the heading."""
+        if not print_issue or len(lines) < 2:
+            return lines, []
+        levels = (2, 3, 4)
+        # The number of lines whose text is most like a print heading, preferring all of them.
+        best_k, best_ratio = len(lines), 0.0
+        for k in range(len(lines), 0, -1):
+            text = normalise(_print_text(join_lines(lines[:k], "\u2800")))
+            if match := match_heading(print_issue, text, levels):
+                ratio = difflib.SequenceMatcher(None, text, match.key).ratio()
+                if ratio > best_ratio:
+                    best_k, best_ratio = k, ratio
+        return lines[:best_k], lines[best_k:]
+
     def detect_centered(text: str, cursor: int, state: DetectionState, output_text: str) -> DetectionResult | None:
         lines: list[str] = []
         new_cursor = cursor
@@ -136,6 +189,11 @@ def create_centered_detector(cells_per_line: int, parser_context: ParserContext 
             if actual_indent in indents:
                 pass
             elif actual_indent - 1 in indents or actual_indent + 1 in indents:
+                # A 5-3 or 7-5 paragraph's first line can be a cell off centre; it wraps onto the next line.
+                next_line = _ANY_LINE_RE.match(text, m.end())
+                if next_line and (actual_indent, len(next_line.group(1))) in _PARAGRAPH_STARTS \
+                        and wraps(actual_indent + len(brl), next_line.group(2), cells_per_line):
+                    break
                 pending_notifications.append((1 if actual_indent - 1 in indents else -1, brl, new_cursor))
                 confidence = min(confidence, 0.6)
             else:
@@ -151,13 +209,15 @@ def create_centered_detector(cells_per_line: int, parser_context: ParserContext 
                                              text, pos)
 
         new_state = dict(state, in_dialogue=False, open_caption=False)
-        if state.get("nfb_title_page", False):
+        # The title page can go on at the top of the second page, which has no page number either.
+        if state.get("nfb_title_page", False) or _AFTER_TITLE_PAGE_RE.search(output_text[-1000:]):
             html = "".join(f'<p class="titlepage">{line}</p>\n' for line in lines)
         else:
             by_index = next((i for i, line in enumerate(lines)
                              if _is_byline_start(line, lines[i + 1] if i + 1 < len(lines) else "")), len(lines))
-            heading = "\u2800".join(lines[:by_index])
-            byline = "\u2800".join(lines[by_index:])
+            heading_lines, other_lines = _split_print_heading(lines[:by_index])
+            heading = join_lines(heading_lines, "\u2800")
+            byline = join_lines(lines[by_index:], "\u2800")
             html = ""
             if heading:
                 if heading.startswith(_SPECIAL_SYMBOLS):
@@ -181,6 +241,8 @@ def create_centered_detector(cells_per_line: int, parser_context: ParserContext 
                     if print_issue and (match := match_heading(print_issue, _print_text(heading), (3, 4))):
                         tag = "h3" if match.level == 4 else "h2"
                     html += f"<{tag}>{heading}</{tag}>\n"
+            # Centered lines under a heading that are not part of the print heading, such as a source and date.
+            html += "".join(f'<p class="centered">{line}</p>\n' for line in other_lines)
             if byline:
                 html += f'<p class="byline">{byline}</p>\n'
         return DetectionResult(new_cursor, new_state, confidence, output_text + html,
@@ -195,13 +257,19 @@ def create_shape_paragraph_detector(
         matcher: Callable[[str, DetectionState], tuple[str | None, DetectionState]],
         confidence: float,
         stop_before: Callable[[str, str], bool] = lambda previous_line, line: False,
+        min_lines: int = 1,
+        first_line_must_wrap: bool = False,
+        cells_per_line: int = _DEFAULT_CELLS_PER_LINE,
 ) -> Detector:
     """A paragraph is a first line at first_line_indent followed by run-over lines at run_over.
 
     The newsletter has no blank lines between blocks, so the indents alone mark where a block
     ends. Unlike the shared paragraph finder there is no line wrapping check, which wrongly
     rejects paragraphs that start on the line holding the top right page number. Braille page
-    processing instructions may fall inside a paragraph, as in the shared finder."""
+    processing instructions may fall inside a paragraph, as in the shared finder.
+
+    min_lines rejects shorter blocks. first_line_must_wrap rejects a block whose first line is not
+    full, ie. the second line's first word would have fitted on it, so it is a line on its own."""
     first_re = re.compile(f"\u2800{{{first_line_indent}}}([\u2801-\u28ff][\u2800-\u28ff]*)\n")
     run_over_re = re.compile(f"\u2800{{{run_over}}}([\u2801-\u28ff][\u2800-\u28ff]*)\n")
 
@@ -227,7 +295,17 @@ def create_shape_paragraph_detector(
             pending_pis = []
             lines.append(line.group(1).rstrip("\u2800"))
             new_cursor = pos = line.end()
-        html, new_state = matcher("\n".join(lines), state)
+        text_lines = [line for line in lines if not line.startswith("<?")]
+        if len(text_lines) < min_lines:
+            return None
+        if first_line_must_wrap:
+            if len(text_lines) < 2 or not wraps(first_line_indent + len(text_lines[0]), text_lines[1], cells_per_line):
+                return None
+            # Centered lines, such as a title, can fall in the same cells.
+            indents = [first_line_indent] + [run_over] * (len(text_lines) - 1)
+            if all(_is_centered(indent, line, cells_per_line) for indent, line in zip(indents, text_lines)):
+                return None
+        html, new_state = matcher(join_lines(lines), state)
         if html is None:
             return None
         return DetectionResult(new_cursor, new_state, confidence, f"{output_text}{html}\n")
@@ -255,7 +333,7 @@ def _caption_matcher(brl: str, state: DetectionState) -> tuple[str | None, Detec
 
 
 def _is_speaker_line(line: str) -> bool:
-    return bool(_SPEAKER_RE.match(line))
+    return bool(_SPEAKER_RE.match(line)) and not line.startswith(_CC) and not _RE_LINE_RE.match(line)
 
 
 def _looks_like_toc_entry(brl: str) -> bool:
@@ -263,8 +341,14 @@ def _looks_like_toc_entry(brl: str) -> bool:
 
 
 def _starts_transcript(previous_line: str, line: str) -> bool:
-    """A margin line after a finished sentence that opens with a speaker label starts a transcript."""
-    return bool(_SENTENCE_END_RE.search(previous_line)) and _is_speaker_line(line)
+    """A margin line after a finished sentence that opens with a speaker label starts a transcript.
+
+    Inside a paragraph every word of the label must be capitalised, so a sentence such as
+    "Immediately the car speaks: ..." carries on the paragraph."""
+    if not (_SENTENCE_END_RE.search(previous_line) and _is_speaker_line(line)):
+        return False
+    label = _SPEAKER_RE.match(line).group()
+    return all(_is_name(word) for word in label.split("\u2800") if word)
 
 
 def _speaker_matcher(brl: str, state: DetectionState) -> tuple[str | None, DetectionState]:
@@ -284,20 +368,299 @@ def _paragraph_matcher(brl: str, state: DetectionState) -> tuple[str | None, Det
     return f"<p>{brl}</p>", dict(state, open_caption=False)
 
 
+def _quote_matcher(brl: str, state: DetectionState) -> tuple[str | None, DetectionState]:
+    """A 5-3 paragraph outside a transcript, such as a quoted news item."""
+    if state.get("in_dialogue", False):
+        return None, state
+    return f'<p class="quote">{brl}</p>', dict(state, open_caption=False)
+
+
+def _indented_quote_matcher(brl: str, state: DetectionState) -> tuple[str | None, DetectionState]:
+    """A 7-5 paragraph that is not a caption, such as text read out in a transcript."""
+    return f'<p class="quote-indent">{brl}</p>', dict(state, open_caption=False)
+
+
+# Slack for deciding whether consecutive lines of a block were wrapped or broken on purpose.
+_WRAP_SLACK = 3
+
+
+def _follows_break(output_text: str) -> bool:
+    """The block before ended with a blank line, or was a heading, byline, separator or the TOC.
+
+    A blank first line of a page is not counted: a heading at the top of a page has no blank line
+    before it, so the blank line there says nothing about what follows."""
+    tail = _TRAILING_PI_RE.sub("", output_text[-2000:])
+    tail = _TRAILING_PI_RE.sub("", _PAGE_TOP_BLANK_RE.sub("", tail))
+    return bool(_HEADING_CONTEXT_RE.search(tail))
+
+
+def _pi_line(pi: str) -> bool:
+    return pi.startswith("<?")
+
+
+def create_blocked_detector(indent: int, cells_per_line: int = _DEFAULT_CELLS_PER_LINE) -> Detector:
+    """Lines blocked at cell 5 (indent 4) or cell 7 (indent 6).
+
+    After a blank line (or a heading) they are one heading, h2 at cell 5 and h3 at cell 7, joined
+    however many lines it takes; "Dear ...:" at cell 5 is a letter's salutation. A single line
+    that wraps onto a run-over two cells to the left is the first line of a paragraph instead.
+
+    Elsewhere, at cell 5: lines that wrap from one to the next are a blocked quotation, and short
+    lines, such as a letter's closing, are separate paragraphs."""
+    line_re = re.compile(f"\u2800{{{indent}}}([\u2801-\u28ff][\u2800-\u28ff]*)\n")
+    tag = "h2" if indent == 4 else "h3"
+
+    def detect_blocked(text: str, cursor: int, state: DetectionState, output_text: str) -> DetectionResult | None:
+        if cursor and text[cursor - 1] != "\n":
+            return None
+        lines: list[str] = []
+        pending_pis: list[str] = []
+        pos = end = cursor
+        while True:
+            if pi := _BRAILLE_PAGE_PI_RE.match(text, pos):
+                pending_pis.append(pi.group().rstrip("\n"))
+                pos = pi.end()
+                continue
+            m = line_re.match(text, pos)
+            if not m:
+                break
+            lines.extend(pending_pis)
+            pending_pis = []
+            lines.append(m.group(1).rstrip("\u2800"))
+            end = pos = m.end()
+        text_lines = [line for line in lines if not _pi_line(line)]
+        if not text_lines or text_lines[0].startswith(_CAPTION_START) or _PHOTO_CAPTION_RE.match(text_lines[0]):
+            return None
+        next_line = _ANY_LINE_RE.match(text, end)
+        starts_paragraph = (len(text_lines) == 1 and next_line is not None
+                            and len(next_line.group(1)) == indent - 2
+                            and wraps(indent + len(text_lines[0]), next_line.group(2), cells_per_line))
+        pairs = list(zip(text_lines, text_lines[1:]))
+        # Most lines wrapped: a blocked quotation; else short lines such as a letter's closing.
+        wrapped = sum(wraps(indent + len(a), b, cells_per_line) for a, b in pairs)
+        is_quote = 2 * wrapped > len(pairs)
+        if _follows_break(output_text):
+            if starts_paragraph:
+                return None
+            # A long article title after a separator is centered, which can put it in cell 5 or 7.
+            if state.get("article_start", False) and _is_centered(indent, text_lines[0], cells_per_line):
+                return None
+            brl = join_lines(lines, "\u2800")
+            new_state = dict(state, in_dialogue=False, open_caption=False)
+            if indent == 4 and brl.startswith(_DEAR) and brl.endswith(_COLON):
+                return DetectionResult(end, new_state, 0.96, f'{output_text}<p class="salutation">{brl}</p>\n')
+            return DetectionResult(end, new_state, 0.96, f"{output_text}<{tag}>{brl}</{tag}>\n")
+        if indent != 4:
+            return None
+        if is_quote:
+            return DetectionResult(end, state, 0.96, f'{output_text}<p class="quote-block">{join_lines(lines)}</p>\n')
+        html = "".join(f"{line}\n" if _pi_line(line) else f'<p class="closing">{line}</p>\n' for line in lines)
+        return DetectionResult(end, state, 0.92, output_text + html)
+
+    return detect_blocked
+
+
+class _ListItem:
+    def __init__(self, line: str):
+        self.lines = [line]
+        self.notes: list[list[str]] = []
+        self.sub_items: list[_ListItem] = []
+
+    def html(self) -> str:
+        html = f"<li>{join_lines(self.lines)}"
+        html += "".join(f'\n<p class="note">{join_lines(note)}</p>' for note in self.notes)
+        if self.sub_items:
+            html += "\n<ul>\n" + "\n".join(item.html() for item in self.sub_items) + "\n</ul>\n"
+        return html + "</li>"
+
+
+def create_margin_block_detector(cells_per_line: int = _DEFAULT_CELLS_PER_LINE) -> Detector:
+    """Blocks starting at the margin, up to a blank line.
+
+    - 1-3 lists: items at the margin, run-overs in cell 3.
+    - 1-5 lists: items at the margin, run-overs in cell 5, sub-items in 3-5 and notes in 7-5.
+    - Lines all at the margin are one 1-1 paragraph (p.left-justified), such as an editor's note,
+      a letter's date or its address. Lines that wrap are joined; a line that would have had room
+      for the next line's first word ends with a line break, as in an address.
+    A run of single lines starting with bullets or numbers is a list.
+
+    Transcript speaker paragraphs are also 1-3, so a block starting with a speaker label is left to
+    the speaker detector, unless it is a list of short items ended by a blank line outside a transcript
+    (eg. "First Place: ..., Second Place: ...")."""
+
+    def detect_margin_block(text: str, cursor: int, state: DetectionState,
+                            output_text: str) -> DetectionResult | None:
+        if cursor and text[cursor - 1] != "\n":
+            return None
+        first = _ANY_LINE_RE.match(text, cursor)
+        if not first or first.group(1):
+            return None
+        # (indent, text, cells the text could fill) for lines; (-1, pi, 0) for braille page PIs.
+        # The first line of a numbered page has less room, as the page number is on it.
+        lines: list[tuple[int, str, int]] = []
+        pending_pis: list[tuple[int, str, int]] = []
+        run_over: int | None = None
+        line_cells = cells_per_line
+        pos = end = cursor
+        while True:
+            if pi := _BRAILLE_PAGE_PI_RE.match(text, pos):
+                pending_pis.append((-1, pi.group().rstrip("\n"), 0))
+                line_cells = cells_per_line - len(pi.group(1)) - 3 if pi.group(1) else cells_per_line
+                pos = pi.end()
+                continue
+            m = _ANY_LINE_RE.match(text, pos)
+            if not m:
+                break
+            indent = len(m.group(1))
+            if run_over is None and indent:
+                if indent not in (2, 4):
+                    break
+                run_over = indent
+            allowed = (0,) if run_over is None else (0, 2) if run_over == 2 else (0, 2, 4, 6)
+            if indent not in allowed:
+                break
+            lines.extend(pending_pis)
+            pending_pis = []
+            lines.append((indent, m.group(2).rstrip("\u2800"), line_cells))
+            line_cells = cells_per_line
+            end = pos = m.end()
+        text_lines = [line for line in lines if line[0] >= 0]
+        if not text_lines:
+            return None
+        if _is_speaker_line(text_lines[0][1]) and not _is_short_list_after_all(text, end, text_lines, run_over, state):
+            return None
+        has_markers = any(_LIST_MARKER_RE.match(line[1]) for line in text_lines)
+        # Run-overs of a 3-1 paragraph are at the margin and could pass for 1-3 items.
+        if run_over == 2 and not has_markers and _looks_like_prose(text_lines):
+            return None
+        if run_over is None and not has_markers:
+            html = f'<p class="left-justified">{_join_margin_lines(lines)}</p>\n'
+        elif run_over == 2 and not has_markers and _AFTER_DATE_LINE_RE.search(output_text[-1000:]):
+            # An address with a long line run over in 1-3: a line break before each margin line.
+            html = f'<p class="left-justified">{_join_address_lines(lines)}</p>\n'
+        else:
+            html = _list_html(lines)
+        return DetectionResult(end, dict(state, open_caption=False), 0.96, output_text + html)
+
+    return detect_margin_block
+
+
+def _is_short_list_after_all(text: str, end: int, text_lines: list[tuple[int, str, int]],
+                             run_over: int | None, state: DetectionState) -> bool:
+    """A 1-3 block starting with a "Label:" is a list, not dialogue, when it is two or more items
+    of at most two lines each, outside a transcript and followed by a blank line."""
+    if state.get("in_dialogue", False) or run_over not in (None, 2):
+        return False
+    item_sizes: list[int] = []
+    for indent, _, _ in text_lines:
+        if indent == 0:
+            item_sizes.append(1)
+        else:
+            item_sizes[-1] += 1
+    return len(item_sizes) >= 2 and max(item_sizes) <= 2 and text.startswith("<?blank-line?>", end)
+
+
+def _looks_like_prose(text_lines: list[tuple[int, str, int]]) -> bool:
+    """Most margin lines after the first carry on a full line before them, as run-overs of a
+    3-1 paragraph do, rather than starting new list items."""
+    starts = [(previous, line) for previous, line in zip(text_lines, text_lines[1:]) if line[0] == 0]
+    carried_on = sum(wraps(previous[0] + len(previous[1]), line[1], previous[2]) for previous, line in starts)
+    return 2 * carried_on > len(starts)
+
+
+def _join_margin_lines(lines: list[tuple[int, str, int]]) -> str:
+    """Join 1-1 lines: as one paragraph when most lines were wrapped (eg. an editor's note), else
+    with a line break after every line (eg. an address, where a long line can still be followed
+    by a word that would not have fitted)."""
+    text_lines = [line for line in lines if line[0] >= 0]
+    pairs = list(zip(text_lines, text_lines[1:]))
+    wrapped = sum(wraps(len(a[1]), b[1], a[2], _WRAP_SLACK) for a, b in pairs)
+    if 2 * wrapped > len(pairs):
+        return join_lines([line[1] for line in lines])
+    groups: list[list[str]] = [[]]
+    for line in lines:
+        groups[-1].append(line[1])
+        if line[0] >= 0:
+            groups.append([])
+    groups[-2].extend(groups.pop())
+    return "<br/>".join(join_lines(group) for group in groups)
+
+
+def _join_address_lines(lines: list[tuple[int, str, int]]) -> str:
+    groups: list[list[str]] = []
+    pending_pis: list[str] = []
+    for indent, line, _ in lines:
+        if indent < 0:
+            pending_pis.append(line)
+            continue
+        if indent == 0 or not groups:
+            groups.append([])
+        groups[-1].extend(pending_pis + [line])
+        pending_pis = []
+    groups[-1].extend(pending_pis)
+    return "<br/>".join(join_lines(group) for group in groups)
+
+
+def _list_html(lines: list[tuple[int, str, int]]) -> str:
+    """Items at the margin; in a 1-5 list, sub-items at cell 3 and notes at cell 7 of the latest item."""
+    nested = next((indent for indent, _, _ in lines if indent > 0), None) == 4
+    items: list[_ListItem] = []
+    owner: _ListItem | None = None
+    target: list[str] = []
+    pending_pis: list[str] = []
+    for indent, line, _ in lines:
+        if indent < 0:
+            pending_pis.append(line)
+            continue
+        if indent == 0 or owner is None:
+            owner = _ListItem(line)
+            items.append(owner)
+            target = owner.lines
+        elif indent == 2 and nested:
+            owner = _ListItem(line)
+            items[-1].sub_items.append(owner)
+            target = owner.lines
+        elif indent == 6:
+            owner.notes.append([line])
+            target = owner.notes[-1]
+        else:
+            target.append(line)
+        if pending_pis:
+            # A page break goes just before the line after it.
+            target.insert(len(target) - 1, "".join(pending_pis))
+            pending_pis = []
+    target.extend(pending_pis)
+    return "<ul>\n" + "\n".join(item.html() for item in items) + "\n</ul>\n"
+
+
 def create_nfb_block_detectors(page_layout: PageLayout, parser_context: ParserContext,
                                print_issue: PrintIssue | None = None) -> list[Detector]:
     """The NFB specific detectors for the "Detect blocks" pass, ahead of the shared ones."""
+    cells = page_layout.cells_per_line
     return [
         detect_separator,
         track_braille_pages,
-        create_centered_detector(page_layout.cells_per_line, parser_context, print_issue),
+        create_centered_detector(cells, parser_context, print_issue),
+        # Bracketed directions in 7-7, eg. "(Applause and music, excerpt of ...)" over several lines.
+        create_shape_paragraph_detector(6, 6, _caption_matcher, 0.97, stop_before=_after_closing_bracket,
+                                        min_lines=2),
         # Photo captions in 7-5, starting with ".<".
         create_shape_paragraph_detector(6, 4, _caption_matcher, 0.96, stop_before=_after_closing_bracket),
         # The same one cell late (cell 8), a common transcriber slip.
         create_shape_paragraph_detector(7, 4, _caption_matcher, 0.94, stop_before=_after_closing_bracket),
+        # Other 7-5 paragraphs, eg. a plaque read out in a transcript.
+        create_shape_paragraph_detector(6, 4, _indented_quote_matcher, 0.94, min_lines=2, first_line_must_wrap=True,
+                                        cells_per_line=cells),
         # Transcripts: speaker paragraphs in 1-3, continuation paragraphs in 5-3.
         create_shape_paragraph_detector(0, 2, _speaker_matcher, 0.95),
         create_shape_paragraph_detector(4, 2, _dialogue_continuation_matcher, 0.95),
+        # 5-3 paragraphs outside transcripts, eg. a quoted news item.
+        create_shape_paragraph_detector(4, 2, _quote_matcher, 0.94, first_line_must_wrap=True, cells_per_line=cells),
+        # Headings, salutations, closings and blocked quotations at cell 5 or 7.
+        create_blocked_detector(4, cells),
+        create_blocked_detector(6, cells),
+        # Lists and 1-1 paragraphs starting at the margin.
+        create_margin_block_detector(cells),
         # Body paragraphs in 3-1. A speaker line at the margin starts a transcript, not a run-over.
         create_shape_paragraph_detector(2, 0, _paragraph_matcher, 0.93, stop_before=_starts_transcript),
         detect_toc,

@@ -22,11 +22,13 @@ _CONTINUATION = "\u2810\n"
 # http:// or https://. Kept literally because the colon would back-translate as "cc".
 _SCHEME_RE = re.compile("\u2813\u281e\u281e\u280f(\u280e?)\u2812\u2838\u280c\u2838\u280c")
 # An address runs to the next space or line break, unless the line ends with the continuation indicator.
+# An address starts after a space, a line break or an opening parenthesis.
+_ADDRESS_START = "(?:(?<![^\u2800\n])|(?<=\u2810\u2823))"
 _ADDRESS_BODY = "(?:\u2810\n|[\u2801-\u28ff])+"
-_URL_RE = re.compile("(?<![^\u2800\n])(?:\u2813\u281e\u281e\u280f\u280e?\u2812\u2838\u280c\u2838\u280c"
+_URL_RE = re.compile(f"{_ADDRESS_START}(?:\u2813\u281e\u281e\u280f\u280e?\u2812\u2838\u280c\u2838\u280c"
                      f"|\u283a\u283a\u283a\u2832){_ADDRESS_BODY}")
 # An email address: a word containing @ (dots 4 then a).
-_EMAIL_RE = re.compile(f"(?<![^\u2800\n])[\u2801-\u28ff]+\u2808\u2801{_ADDRESS_BODY}")
+_EMAIL_RE = re.compile(f"{_ADDRESS_START}[\u2801-\u28ff]+\u2808\u2801{_ADDRESS_BODY}")
 _AT = "\u2808\u2801"
 _DOT = "\u2832"
 # Punctuation after an address that ends the sentence or clause rather than being part of it.

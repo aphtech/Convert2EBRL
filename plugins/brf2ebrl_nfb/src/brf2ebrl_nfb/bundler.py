@@ -12,6 +12,8 @@ import logging
 import re
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
+from importlib import resources
+from pathlib import Path
 from typing import AnyStr
 
 import lxml.html
@@ -24,6 +26,8 @@ _TAG_RE = re.compile("<[^>]+>")
 # "by" between the title and the author in a TOC entry, after the U+2800 to space conversion.
 _BY_SEPARATOR_RE = re.compile(" \u2803\u283d ")
 _FUZZY_TITLE_RATIO = 0.85
+# The stylesheet every volume links to (see brf2ebrl.common.detectors.xhtml_fixup_detector).
+_DEFAULT_CSS = "ebraille/css/default.css"
 # The volumes have no charset declaration, so tell lxml they are UTF-8.
 _UTF8_HTML_PARSER = lxml.html.HTMLParser(encoding="utf-8")
 
@@ -99,6 +103,12 @@ class NfbZippedBundler(EBrlZippedBundler):
     def __init__(self, name: str, *args, **kwargs):
         super().__init__(name, *args, **kwargs)
         self._volumes: list[tuple[str, str]] = []
+
+    def write_file(self, name: str, path, add_to_spine: bool, *args, **kwargs):
+        # The newsletter has its own default stylesheet in place of the library's.
+        if Path(name).as_posix() == _DEFAULT_CSS:
+            path = resources.files("brf2ebrl_nfb").joinpath("css", "default.css")
+        super().write_file(name, path, add_to_spine, *args, **kwargs)
 
     def write_volume(self, name: str, data: AnyStr):
         self._volumes.append((name, data.decode("utf-8") if isinstance(data, bytes) else data))
