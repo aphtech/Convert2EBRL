@@ -65,6 +65,11 @@ param(
 $ErrorActionPreference = "Stop"
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
+# Running Compare straight after Baseline, with no code change, showed that the PDF graphic matcher
+# can put a tactile graphic <object> at a different place from run to run (A-B2513, A-B2533).
+# The BANA check therefore compares HTML with these blocks set aside, and their count must match.
+$GraphicObjectPattern = '(?s)\s*<object data="images/[^"]*" type="application/pdf"[^>]*>.*?</object>'
+
 $IssueDir = $PSScriptRoot
 $RepoRoot = Split-Path $IssueDir -Parent
 $OutRoot = Join-Path $IssueDir "out"
@@ -286,6 +291,7 @@ function Invoke-BanaCheck([string]$Mode) {
     }
 
     $differences = 0
+    $graphicOnly = 0
     foreach ($book in $books) {
         $base = Join-Path $baselineRoot "$($book.Name)\ebrl"
         $current = Join-Path $runRoot "$($book.Name)\ebrl"
@@ -301,8 +307,22 @@ function Invoke-BanaCheck([string]$Mode) {
                 $differences++
             }
             elseif ((Get-FileHash $a).Hash -ne (Get-FileHash $b).Hash) {
-                Write-Host "  DIFF $($book.Name)$rel" -ForegroundColor Red
-                $differences++
+                # The PDF graphic matcher can place a tactile graphic <object> at a different spot
+                # from run to run even with no code change. Accept that, but nothing else.
+                $textA = Get-Content -Raw -Encoding utf8 $a
+                $textB = Get-Content -Raw -Encoding utf8 $b
+                $objectsA = [regex]::Matches($textA, $GraphicObjectPattern).Count
+                $objectsB = [regex]::Matches($textB, $GraphicObjectPattern).Count
+                $restA = [regex]::Replace($textA, $GraphicObjectPattern, "")
+                $restB = [regex]::Replace($textB, $GraphicObjectPattern, "")
+                if ($objectsA -eq $objectsB -and $restA -eq $restB) {
+                    Write-Host "  GRAPHIC PLACEMENT ONLY (ignored) $($book.Name)$rel" -ForegroundColor Yellow
+                    $graphicOnly++
+                }
+                else {
+                    Write-Host "  DIFF $($book.Name)$rel" -ForegroundColor Red
+                    $differences++
+                }
             }
         }
     }
@@ -312,7 +332,7 @@ function Invoke-BanaCheck([string]$Mode) {
         Write-Host "Compare folders: $baselineRoot  vs  $runRoot"
         exit 1
     }
-    Write-Host "BANA output unchanged for $($books.Count) books." -ForegroundColor Green
+    Write-Host "BANA output unchanged for $($books.Count) books ($graphicOnly files differ only in tactile graphic placement)." -ForegroundColor Green
 }
 
 # ---- main ----
