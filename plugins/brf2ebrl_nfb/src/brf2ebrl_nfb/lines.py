@@ -28,13 +28,18 @@ def join_lines(lines: Sequence[str], separator: str = "\n") -> str:
             result += pending_pis + line
         elif result.endswith(_HYPHEN):
             result += pending_pis + line
-        elif result.endswith(_CONTINUATION) and not result.endswith(_CONTINUATION * 2):
+        elif ends_with_continuation(result):
             result = result[:-1] + pending_pis + line
         else:
             result += separator + pending_pis + line
         pending_pis = ""
         has_text = True
     return result + pending_pis
+
+
+def ends_with_continuation(line: str) -> bool:
+    """The line ends in the continuation indicator (dot 5), not in guide dots."""
+    return line.endswith(_CONTINUATION) and not line.endswith(_CONTINUATION * 2)
 
 
 def first_word(line: str) -> str:

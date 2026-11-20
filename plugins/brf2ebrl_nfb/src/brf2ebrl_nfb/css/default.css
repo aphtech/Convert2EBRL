@@ -36,6 +36,17 @@
    p.quote-block        5-5 (a blocked quotation)
    p.quote-indent       7-5 (eg. a plaque read out in a transcript)
    li > p.note          7-5 inside a 1-5 list item
+   ul.steps             numbered steps, 1-5, with 3-5 substeps and 7-5 notes
+
+   Sets of blocks the BRF sets off with blank lines are wrapped in an element
+   saying what the set is; the rules at the end of this file space them:
+   div.fm-group         a group of title page or masthead lines
+   blockquote           quoted material (a quoted letter, story, article,
+                        press release or sample conversation)
+   div.letter           a letter, from its date to its closing or cc lines
+   div.event-details    organization, place and date under an article title
+   div.roster           names and roles set off inside an article
+   div.transcript       speaker turns and their continuation paragraphs
    ========================================================================== */
 
 * {
@@ -70,7 +81,8 @@ h1 {
 
 /* The first heading after the title page has a blank line before and
    after it */
-p.titlepage + h1 {
+p.titlepage + h1,
+div.fm-group + h1 {
   margin: 1rem 0;
 }
 
@@ -294,4 +306,52 @@ p.quote-indent {
 li > p.note {
   margin: 0 0 0 2ch;
   text-indent: 2ch;
+}
+
+/* Numbered steps: step 1-5, substep 3-5, note inside a step 7-5 */
+ul.steps > li {
+  padding-left: 4ch;
+  text-indent: -4ch;
+}
+
+ul.steps > li > ul > li {
+  padding-left: 0;
+  text-indent: -2ch;
+}
+
+ul.steps > li > p.note {
+  margin-left: 0;
+  text-indent: 2ch;
+}
+
+/* A separator line never has a blank line before it, even after a list */
+ul:has(+ p.separator),
+ol:has(+ p.separator) {
+  margin-bottom: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Sets of blocks set off by blank lines
+   -------------------------------------------------------------------------- */
+
+/* Front matter: one blank line between groups */
+.fm-group + .fm-group {
+  margin-top: 1rem;
+}
+
+/* Set-off material: blank line before and after. Margins collapse, so two
+   adjacent sets get one blank line between them. */
+blockquote,
+.letter,
+.event-details,
+.roster {
+  margin: 1rem 0;
+  padding: 0;
+}
+
+/* A paragraph straight after a transcript is set off by a blank line, but a
+   separator line after a transcript is not, so this is not a margin on
+   .transcript itself. */
+.transcript + p {
+  margin-top: 1rem;
 }

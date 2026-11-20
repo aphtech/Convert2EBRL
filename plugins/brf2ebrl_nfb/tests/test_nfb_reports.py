@@ -106,7 +106,8 @@ def test_numbered_steps_with_sub_steps_and_note_are_one_nested_list():
         "",
     ]
     html, _ = convert([TITLE_PAGE, body])
-    assert html.count("<ul>") == 2 and "<h2" not in html and "<h3" not in html
+    assert html.count("<ul class=\"steps\">") == 1 and html.count("<ul>") == 1
+    assert "<h2" not in html and "<h3" not in html
     assert elements(html, "p", "note") == [brl(",TO BR+ BACK ! TRADI;NAL M5U B> 9 ,ADOBE ,ACROBAT ,R1D]1 PRESS ,ALT4")]
     items = re.findall(r"<li>(.*?)(?=<p|<ul|</li>)", html, re.S)
     assert [re.sub(r"\s+", " ", item).strip() for item in items] == [

@@ -44,9 +44,15 @@ Results on the three samples (ours / target, for July, Aug/Sept and October):
 - **BANA check:** the PDF graphic matcher can place a tactile graphic `<object>` differently between two runs with no code change (A-B2513, A-B2533). The check treats that alone as unchanged.
 
 **Known gaps (left for later):**
-- letter salutations and signatures at cell 5 become `h2`;
-- numbered steps become lists;
+- ~~letter salutations and signatures at cell 5 become `h2`~~ (fixed: `p.salutation`, `p.closing`);
+- ~~numbered steps become lists~~ (fixed: `ul.steps`);
 - bold editor's notes at the margin become `p.left-justified`.
+
+**Round 2 review (`Round 2/*.txt`):**
+- **Fixed by pattern:** 5-3 paragraphs starting at the top of a page; headings after a blank first line on an unnumbered page; cell 7 letter closings; quoted article and press release titles (`h1.article-title`); a dateline that happens to fall in centered position; a cell 5 heading followed by a 3-1 paragraph; consecutive photo captions; the special symbols as `<ul>`; a title-page web address over two lines.
+- **Sets of blocks** are wrapped by `brf2ebrl_nfb/groups.py` (`div.fm-group`, `blockquote`, `div.letter`, `div.event-details`, `div.roster`, `div.transcript`), and spaced by the plugin's `css/default.css`.
+- **June 2026** has no BRF in the repository, so its items are fixed by pattern only and are not checked against the June issue.
+- The optional `div.fm-group.issn` (two blank lines before the ISSN) is not done.
 
 **Risk found:** `find_plugins()` imports every installed plugin, so a plugin that fails to import stops the CLI and GUI for BANA too. Making it skip a broken plugin with a warning would be a small change to `brf2ebrl/plugin.py`.
 

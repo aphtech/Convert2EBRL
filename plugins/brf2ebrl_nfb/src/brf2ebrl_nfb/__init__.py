@@ -36,6 +36,7 @@ from brf2ebrl_bana.tn_detectors import tn_indicators_block_matcher, tag_inline_t
 from brf2ebrl_nfb.bundler import NfbZippedBundler
 from brf2ebrl_nfb.links import create_link_pass
 from brf2ebrl_nfb.detectors import create_nfb_block_detectors, mark_article_separators
+from brf2ebrl_nfb.groups import group_blocks
 from brf2ebrl_nfb.pages import create_nfb_braille_page_detector
 from brf2ebrl_nfb.print_source import find_print_html, load_print_issue
 
@@ -171,6 +172,10 @@ def create_brf2ebrl_parser(
                     detect_and_pass_processing_instructions,
                 ],
                 most_confident_detector,
+            ),
+            Parser(
+                "Group NFB sets of blocks",
+                group_blocks
             ),
             Parser(
                 "Remove  box lines processing instructions",

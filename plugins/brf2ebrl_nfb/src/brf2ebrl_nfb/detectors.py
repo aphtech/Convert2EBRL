@@ -28,7 +28,7 @@ from brf2ebrl.common import PageLayout
 from brf2ebrl.common.block_detectors import _notify_low_confidence_match
 from brf2ebrl.parser import Detector, DetectionResult, DetectionState, ParserContext
 from brf2ebrl.utils.back_translation import back_translate_contracted
-from brf2ebrl_nfb.lines import join_lines, wraps
+from brf2ebrl_nfb.lines import ends_with_continuation, join_lines, wraps
 from brf2ebrl_nfb.print_source import PrintIssue, match_heading, normalise
 from brf2ebrl_nfb.toc import detect_toc
 
@@ -66,23 +66,32 @@ _ANY_LINE_RE = re.compile("(\u2800*)([\u2801-\u28ff][\u2800-\u28ff]*)\n")
 # The title page goes on over the next page when that page starts straight after a title page line,
 # with no blank line (otherwise the next page starts the body, eg. with ",WELCOME TO ! ,MOVE;T").
 _AFTER_TITLE_PAGE_RE = re.compile('<p class="titlepage">[^<]*</p>\n+<\\?braille-page \\?>\n?$')
+# A numbered braille page break just before a line.
+_PAGE_PI_BEFORE_RE = re.compile("<\\?braille-page ([\u2800-\u28ff]+)\\?>\n$")
+# Any braille page break just before a line.
+_AT_PAGE_TOP_RE = re.compile("<\\?braille-page [\u2800-\u28ff]*\\?>\n$")
 # Trailing processing instructions and white space, skipped to find the previous block.
 _TRAILING_PI_RE = re.compile("(?:<\\?braille-page [\u2800-\u28ff]*\\?>|\\s)+$")
-# Blank lines straight after a braille page break.
-_PAGE_TOP_BLANK_RE = re.compile("(<\\?braille-page [\u2800-\u28ff]*\\?>)(?:\\s*<\\?blank-line\\?>)+$")
+# Blank lines straight after a numbered braille page break: the first one only held the page number.
+_PAGE_TOP_BLANK_RE = re.compile("(<\\?braille-page [\u2800-\u28ff]+\\?>)(?:\\s*<\\?blank-line\\?>)+$")
 # Blocks after which a blocked line starts a heading, as after a blank line.
 _HEADING_CONTEXT_RE = re.compile('(?:<\\?blank-line\\?>|</h[1-6]>|<p class="(?:byline|separator)">[^<]*</p>|</nav>)$')
 # "Dear ...:" opening a letter.
 _DEAR = "\u2820\u2819\u2811\u281c\u2800"
 _COLON = "\u2812"
 # A list item marker: a bullet (_4) or a number and period (#A4).
-_LIST_MARKER_RE = re.compile("\u2838\u2832|\u283c[\u2801-\u281a]+\u2832")
+_LIST_MARKER_RE = re.compile("\u2838\u2832|\u283c[\u2801\u2803\u2809\u2819\u2811\u280b\u281b\u2813\u280a\u281a]+\u2832")
+# A numbered list item: a number and period (#A4).
+_NUMBER_MARKER_RE = re.compile("\u283c[\u2801\u2803\u2809\u2819\u2811\u280b\u281b\u2813\u280a\u281a]+\u2832")
 # Indent pairs (first line, next line) where an off centre line is a paragraph's first line.
 _PARAGRAPH_STARTS = {(4, 2), (2, 0), (6, 4)}
 # A CC line of a letter looks like a speaker label.
 _CC = "\u2820\u2820\u2809\u2809\u2812"
 # So does a letter's "Re:" line, which may be in capitals (,RE3 / ,,,RE3).
 _RE_LINE_RE = re.compile("\u2820+\u2817\u2811\u2812\u2800")
+# The "Special Symbols Used in This Volume" heading, which the list of symbols follows.
+_AFTER_SPECIAL_SYMBOLS_RE = re.compile(
+    f"<h2[^>]*>{_SPECIAL_SYMBOLS}[^<]*</h2>\\s*(?:<\\?blank-line\\?>\\s*)*$")
 # A letter's address follows its date, a one line 1-1 paragraph.
 _AFTER_DATE_LINE_RE = re.compile('<p class="left-justified">[^<\n]*</p>\\s*(?:<\\?blank-line\\?>\\s*)+$')
 
@@ -148,6 +157,17 @@ def _unique_id(base: str, used: frozenset[str]) -> str:
     return heading_id
 
 
+def _join_continued(lines: list[str]) -> list[str]:
+    """Join a line ending in the continuation indicator, such as a long web address, to the next."""
+    joined: list[str] = []
+    for line in lines:
+        if joined and ends_with_continuation(joined[-1]):
+            joined[-1] = join_lines([joined[-1], line])
+        else:
+            joined.append(line)
+    return joined
+
+
 def create_centered_detector(cells_per_line: int, parser_context: ParserContext = ParserContext(),
                              print_issue: PrintIssue | None = None) -> Detector:
     """Centered lines: title page lines, article title plus byline, or a section heading.
@@ -187,7 +207,10 @@ def create_centered_detector(cells_per_line: int, parser_context: ParserContext 
             indents = [indent] if indent_mod == 0 else [indent, indent + indent_mod]
             actual_indent = len(m.group(1))
             if actual_indent in indents:
-                pass
+                # A 5-3 or 7-5 paragraph whose short first line, such as a bold dateline, happens to be
+                # centered. Two run-over lines are required, as a title can be followed by a 3-1 paragraph.
+                if _starts_indented_paragraph(text, m.end(), actual_indent, brl, cells_per_line, run_overs=2):
+                    break
             elif actual_indent - 1 in indents or actual_indent + 1 in indents:
                 # A 5-3 or 7-5 paragraph's first line can be a cell off centre; it wraps onto the next line.
                 next_line = _ANY_LINE_RE.match(text, m.end())
@@ -211,7 +234,7 @@ def create_centered_detector(cells_per_line: int, parser_context: ParserContext 
         new_state = dict(state, in_dialogue=False, open_caption=False)
         # The title page can go on at the top of the second page, which has no page number either.
         if state.get("nfb_title_page", False) or _AFTER_TITLE_PAGE_RE.search(output_text[-1000:]):
-            html = "".join(f'<p class="titlepage">{line}</p>\n' for line in lines)
+            html = "".join(f'<p class="titlepage">{line}</p>\n' for line in _join_continued(lines))
         else:
             by_index = next((i for i, line in enumerate(lines)
                              if _is_byline_start(line, lines[i + 1] if i + 1 < len(lines) else "")), len(lines))
@@ -235,6 +258,11 @@ def create_centered_detector(cells_per_line: int, parser_context: ParserContext 
                         # A title with its byline is an article heading even when one line is a
                         # cell off centre, so prefer it to the cell 5 heading detector.
                         confidence = max(confidence, 0.93)
+                elif other_lines or _starts_indented_paragraph(text, new_cursor):
+                    # A centered title inside an article followed by a source and date, or by a 5-3
+                    # paragraph, is the title of quoted material such as a news article or press release.
+                    html += f'<h1 class="article-title">{heading}</h1>\n'
+                    new_state["article_start"] = False
                 else:
                     # Braille cannot show the print level of a section heading; the print can.
                     tag = "h2"
@@ -249,6 +277,35 @@ def create_centered_detector(cells_per_line: int, parser_context: ParserContext 
                                on_selected=notify_pending if pending_notifications else None)
 
     return detect_centered
+
+
+def _starts_indented_paragraph(text: str, pos: int, indent: int = 4, first_line: str = "",
+                               cells_per_line: int = _DEFAULT_CELLS_PER_LINE, run_overs: int = 1) -> bool:
+    """A 5-3 (or 7-5) paragraph starts at pos, or, given its first_line, goes on at pos.
+
+    Without first_line the paragraph's first line at indent must be at pos, followed by run_overs
+    lines two cells to the left. With it, the run_overs lines must be at pos and first_line must
+    have been wrapped onto them."""
+    if not first_line:
+        if not (m := _ANY_LINE_RE.match(text, pos)) or len(m.group(1)) != indent:
+            return False
+        first_line, pos = m.group(2).rstrip("\u2800"), m.end()
+    next_line = None
+    for _ in range(run_overs):
+        m = _ANY_LINE_RE.match(text, pos)
+        if not m or len(m.group(1)) != indent - 2:
+            return False
+        next_line = next_line or m
+        pos = m.end()
+    return (indent, indent - 2) in _PARAGRAPH_STARTS and wraps(indent + len(first_line), next_line.group(2),
+                                                                cells_per_line)
+
+
+def _runs_over_to(text: str, pos: int, width: int, indent: int, cells_per_line: int) -> bool:
+    """The line at pos is at indent and carries on a line of width cells before it, ie. its first
+    word would not have fitted on that line."""
+    m = _ANY_LINE_RE.match(text, pos)
+    return bool(m) and len(m.group(1)) == indent and wraps(width, m.group(2), cells_per_line)
 
 
 def create_shape_paragraph_detector(
@@ -299,11 +356,17 @@ def create_shape_paragraph_detector(
         if len(text_lines) < min_lines:
             return None
         if first_line_must_wrap:
-            if len(text_lines) < 2 or not wraps(first_line_indent + len(text_lines[0]), text_lines[1], cells_per_line):
+            first_cells = _line_cells(text, cursor, cells_per_line)
+            if len(text_lines) < 2 or not wraps(first_line_indent + len(text_lines[0]), text_lines[1], first_cells):
                 return None
             # Centered lines, such as a title, can fall in the same cells.
             indents = [first_line_indent] + [run_over] * (len(text_lines) - 1)
             if all(_is_centered(indent, line, cells_per_line) for indent, line in zip(indents, text_lines)):
+                return None
+            # A heading followed by a 3-1 paragraph has the same first two lines; there the second
+            # line runs over to the margin.
+            if len(text_lines) == 2 and run_over >= 2 \
+                    and _runs_over_to(text, new_cursor, run_over + len(text_lines[1]), run_over - 2, cells_per_line):
                 return None
         html, new_state = matcher(join_lines(lines), state)
         if html is None:
@@ -314,8 +377,9 @@ def create_shape_paragraph_detector(
 
 
 def _after_closing_bracket(previous_line: str, line: str) -> bool:
-    """A bracketed caption ends with ".>"; the next line starts something else."""
-    return previous_line.endswith(_CLOSING_BRACKET)
+    """A bracketed caption ends with ".>"; the next line starts something else. A line starting
+    "Photo caption:" starts the next caption, even when the one before has no brackets."""
+    return previous_line.endswith(_CLOSING_BRACKET) or bool(_PHOTO_CAPTION_RE.match(line))
 
 
 def _caption_matcher(brl: str, state: DetectionState) -> tuple[str | None, DetectionState]:
@@ -380,6 +444,8 @@ def _indented_quote_matcher(brl: str, state: DetectionState) -> tuple[str | None
     return f'<p class="quote-indent">{brl}</p>', dict(state, open_caption=False)
 
 
+# The most lines a cell 5 or cell 7 heading runs to.
+_MAX_HEADING_LINES = 3
 # Slack for deciding whether consecutive lines of a block were wrapped or broken on purpose.
 _WRAP_SLACK = 3
 
@@ -387,11 +453,20 @@ _WRAP_SLACK = 3
 def _follows_break(output_text: str) -> bool:
     """The block before ended with a blank line, or was a heading, byline, separator or the TOC.
 
-    A blank first line of a page is not counted: a heading at the top of a page has no blank line
-    before it, so the blank line there says nothing about what follows."""
+    A blank first line of a numbered page is not counted: it only holds the page number, and a
+    heading at the top of a page has no blank line before it. On a page without a number, a blank
+    first line is a real blank line."""
     tail = _TRAILING_PI_RE.sub("", output_text[-2000:])
     tail = _TRAILING_PI_RE.sub("", _PAGE_TOP_BLANK_RE.sub("", tail))
     return bool(_HEADING_CONTEXT_RE.search(tail))
+
+
+def _line_cells(text: str, cursor: int, cells_per_line: int) -> int:
+    """The cells the line at cursor could fill: fewer on the first line of a numbered page, which
+    also holds the page number and the three blank cells before it."""
+    if m := _PAGE_PI_BEFORE_RE.search(text, max(0, cursor - 40), cursor):
+        return cells_per_line - len(m.group(1)) - 3
+    return cells_per_line
 
 
 def _pi_line(pi: str) -> bool:
@@ -411,7 +486,9 @@ def create_blocked_detector(indent: int, cells_per_line: int = _DEFAULT_CELLS_PE
     tag = "h2" if indent == 4 else "h3"
 
     def detect_blocked(text: str, cursor: int, state: DetectionState, output_text: str) -> DetectionResult | None:
-        if cursor and text[cursor - 1] != "\n":
+        # A page break before the first line is left to track_braille_pages, so that at the top of a
+        # page the paragraph detectors, which start at a line, are tried on the same footing.
+        if (cursor and text[cursor - 1] != "\n") or _BRAILLE_PAGE_PI_RE.match(text, cursor):
             return None
         lines: list[str] = []
         pending_pis: list[str] = []
@@ -434,16 +511,31 @@ def create_blocked_detector(indent: int, cells_per_line: int = _DEFAULT_CELLS_PE
         next_line = _ANY_LINE_RE.match(text, end)
         starts_paragraph = (len(text_lines) == 1 and next_line is not None
                             and len(next_line.group(1)) == indent - 2
-                            and wraps(indent + len(text_lines[0]), next_line.group(2), cells_per_line))
+                            and wraps(indent + len(text_lines[0]), next_line.group(2),
+                                      _line_cells(text, cursor, cells_per_line))
+                            # Unless the next line runs over two cells further left still: then this
+                            # line is a heading and the next starts a paragraph, eg. a 3-1 one.
+                            and not _runs_over_to(text, next_line.end(), len(next_line.group().rstrip("\n\u2800")),
+                                                  indent - 4, cells_per_line))
         pairs = list(zip(text_lines, text_lines[1:]))
         # Most lines wrapped: a blocked quotation; else short lines such as a letter's closing.
         wrapped = sum(wraps(indent + len(a), b, cells_per_line) for a, b in pairs)
         is_quote = 2 * wrapped > len(pairs)
-        if _follows_break(output_text):
+        # A heading is a few lines at most; more lines that wrap and end a sentence are a blocked
+        # quotation, such as the text of a plaque, even after a blank line. (A long resolution title
+        # does not end in a period.)
+        is_long_quote = is_quote and len(text_lines) > _MAX_HEADING_LINES \
+            and bool(_SENTENCE_END_RE.search(text_lines[-1]))
+        if _follows_break(output_text) and not is_long_quote:
             if starts_paragraph:
                 return None
             # A long article title after a separator is centered, which can put it in cell 5 or 7.
             if state.get("article_start", False) and _is_centered(indent, text_lines[0], cells_per_line):
+                return None
+            # So can the title of quoted material: then the lines after it are centered too.
+            if all(_is_centered(indent, line, cells_per_line) for line in text_lines) and next_line \
+                    and len(next_line.group(1)) > indent \
+                    and _is_centered(len(next_line.group(1)), next_line.group(2).rstrip("\u2800"), cells_per_line):
                 return None
             brl = join_lines(lines, "\u2800")
             new_state = dict(state, in_dialogue=False, open_caption=False)
@@ -451,7 +543,13 @@ def create_blocked_detector(indent: int, cells_per_line: int = _DEFAULT_CELLS_PE
                 return DetectionResult(end, new_state, 0.96, f'{output_text}<p class="salutation">{brl}</p>\n')
             return DetectionResult(end, new_state, 0.96, f"{output_text}<{tag}>{brl}</{tag}>\n")
         if indent != 4:
-            return None
+            # Short lines in cell 7 inside the text, such as the closing of a quoted 5-3 letter. A
+            # heading at the top of a page has no blank line before it, so it is left to the shared
+            # cell heading detector.
+            if is_quote or _AT_PAGE_TOP_RE.search(text, max(0, cursor - 40), cursor):
+                return None
+            html = "".join(f"{line}\n" if _pi_line(line) else f'<p class="closing">{line}</p>\n' for line in lines)
+            return DetectionResult(end, state, 0.92, output_text + html)
         if is_quote:
             return DetectionResult(end, state, 0.96, f'{output_text}<p class="quote-block">{join_lines(lines)}</p>\n')
         html = "".join(f"{line}\n" if _pi_line(line) else f'<p class="closing">{line}</p>\n' for line in lines)
@@ -527,6 +625,9 @@ def create_margin_block_detector(cells_per_line: int = _DEFAULT_CELLS_PER_LINE) 
         text_lines = [line for line in lines if line[0] >= 0]
         if not text_lines:
             return None
+        if _AFTER_SPECIAL_SYMBOLS_RE.search(output_text[-1000:]):
+            # Each line at the margin, with any run-over, defines one symbol.
+            return DetectionResult(end, dict(state, open_caption=False), 0.96, output_text + _list_html(lines))
         if _is_speaker_line(text_lines[0][1]) and not _is_short_list_after_all(text, end, text_lines, run_over, state):
             return None
         has_markers = any(_LIST_MARKER_RE.match(line[1]) for line in text_lines)
@@ -630,7 +731,9 @@ def _list_html(lines: list[tuple[int, str, int]]) -> str:
             target.insert(len(target) - 1, "".join(pending_pis))
             pending_pis = []
     target.extend(pending_pis)
-    return "<ul>\n" + "\n".join(item.html() for item in items) + "\n</ul>\n"
+    # Numbered items running over in cell 5 (1-5) are steps, formatted unlike an ordinary 1-3 list.
+    steps = nested and bool(_NUMBER_MARKER_RE.match(next(line for indent, line, _ in lines if indent >= 0)))
+    return ('<ul class="steps">\n' if steps else "<ul>\n") + "\n".join(item.html() for item in items) + "\n</ul>\n"
 
 
 def create_nfb_block_detectors(page_layout: PageLayout, parser_context: ParserContext,

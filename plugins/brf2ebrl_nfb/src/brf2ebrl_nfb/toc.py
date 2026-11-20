@@ -22,7 +22,7 @@ TOC_PLACEHOLDER_PREFIX = "nfb-toc-"
 # Centered ",3T5TS" (Contents), possibly followed by a part, eg. "Contents--Part 2".
 _CONTENTS_RE = re.compile("\u2800{3,}(\u2820\u2812\u281e\u2822\u281e\u280e[\u2800-\u28ff]*?)\u2800*\n")
 # Centered ","P #A" (Part 1).
-_PART_RE = re.compile("\u2800{3,}(\u2820\u2810\u280f\u2800\u283c[\u2801-\u281a]+)\u2800*\n")
+_PART_RE = re.compile("\u2800{3,}(\u2820\u2810\u280f\u2800\u283c[\u2801\u2803\u2809\u2819\u2811\u280b\u281b\u2813\u280a\u281a]+)\u2800*\n")
 _ENTRY_FIRST_LINE_RE = re.compile("([\u2801-\u28ff][\u2800-\u28ff]*)\n")
 _ENTRY_RUN_OVER_RE = re.compile("\u2800\u2800([\u2801-\u28ff][\u2800-\u28ff]*)\n")
 _SKIPPABLE_PI_RE = re.compile("<\\?(?:blank-line|braille-page [\u2800-\u28ff]*)\\?>\n")
