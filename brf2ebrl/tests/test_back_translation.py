@@ -7,7 +7,7 @@
 import lxml.html
 import pytest
 
-from brf2ebrl.utils.back_translation import back_translate_page_number
+from brf2ebrl.utils.back_translation import back_translate_page_number, back_translate_contracted
 from brf2ebrl.utils.ebrl import create_navigation_html, PageRef
 
 
@@ -38,3 +38,19 @@ def test_navigation_page_list_has_print_page_title():
         ("ebraille/vol0.html#page_1", "i", "⠊"),
         ("ebraille/vol0.html#page_2", "1", "⠼⠁"),
     ]
+
+
+@pytest.mark.parametrize("braille,expected", [
+    ("⠉⠙⠁⠝⠊⠑⠇⠎⠢⠈⠁⠝⠋⠃⠲⠕⠗⠛", "cdanielsen@nfb.org"),
+    ("⠉⠕⠍⠍⠥⠝⠊⠉⠁⠰⠝⠎", "communications"),
+    ("⠺⠺⠺⠲⠝⠋⠃⠲⠕⠗⠛", "www.nfb.org"),
+    ("⠝⠋⠃⠲⠕⠗⠛⠸⠌⠏⠥⠃⠇⠊⠉⠁⠰⠝⠎", "nfb.org/publications"),
+])
+def test_back_translate_contracted(braille: str, expected: str):
+    assert back_translate_contracted(braille) == expected
+
+
+def test_back_translate_contracted_returns_none_when_untranslatable():
+    assert back_translate_contracted("⠀") is None
+    # A lone dots 4 has no meaning, so liblouis marks it as untranslated.
+    assert back_translate_contracted("⠈⠈⠈") is None

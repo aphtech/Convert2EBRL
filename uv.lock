@@ -6,6 +6,7 @@ requires-python = "==3.13.*"
 members = [
     "brf2ebrl",
     "brf2ebrl-bana",
+    "brf2ebrl-nfb",
     "convert2ebrl",
     "convert2ebrl-workspace",
     "liblouis",
@@ -52,6 +53,21 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [{ name = "brf2ebrl", editable = "brf2ebrl" }]
+
+[[package]]
+name = "brf2ebrl-nfb"
+version = "0.1.0"
+source = { editable = "plugins/brf2ebrl_nfb" }
+dependencies = [
+    { name = "brf2ebrl" },
+    { name = "brf2ebrl-bana" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "brf2ebrl", editable = "brf2ebrl" },
+    { name = "brf2ebrl-bana", editable = "plugins/brf2ebrl_bana" },
+]
 
 [[package]]
 name = "cffi"
@@ -116,6 +132,7 @@ source = { editable = "gui" }
 dependencies = [
     { name = "brf2ebrl" },
     { name = "brf2ebrl-bana" },
+    { name = "brf2ebrl-nfb" },
     { name = "packaging" },
     { name = "pyside6" },
 ]
@@ -129,6 +146,7 @@ dev = [
 requires-dist = [
     { name = "brf2ebrl", editable = "brf2ebrl" },
     { name = "brf2ebrl-bana", editable = "plugins/brf2ebrl_bana" },
+    { name = "brf2ebrl-nfb", editable = "plugins/brf2ebrl_nfb" },
     { name = "packaging", specifier = ">=25.0" },
     { name = "pyside6", specifier = ">=6.11.1" },
 ]

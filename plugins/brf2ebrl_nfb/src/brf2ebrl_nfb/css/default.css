@@ -1,0 +1,357 @@
+/* ==========================================================================
+   eBraille stylesheet for BRF-to-eBRL Converter output
+   Matched to the formatting of the source BRF files (Braille Monitor,
+   October 2026, volumes 1 and 2), using the Converter's class names.
+
+   Units:
+   - ch  = one braille cell (horizontal)
+   - rem = one braille line (vertical)
+   Vertical space is always a whole line (1rem) or nothing (0).
+
+   Formats below are written first-line/runover, counting cells from 1:
+   "3-1" means the first line starts in cell 3 and runover lines in cell 1.
+
+   Converter class      BRF format
+   -------------------  ------------------------------------------------
+   p                    3-1, no blank lines
+   p.left-justified     1-1, blank line after
+   p.dialogue           1-3
+   p.dialogue-cont      5-3
+   p.direction          7-7
+   p.caption            7-5
+   p.titlepage          centered
+   p.byline             centered
+   p.separator          centered
+   h1                   centered, at least 3 blank cells each side
+   h2                   blocked at cell 5, blank line before
+   h3                   blocked at cell 7, blank line before
+   ul > li              1-3, blank line before and after the list
+   nav.toc              centered titles, 1-3 entries, guide dots
+
+   Added for the NFB plugin's other blocks (see the end of this file):
+   p.centered           centered (a source line or date under a heading)
+   p.salutation         5-5 ("Dear ...:")
+   p.closing            5-5 (a letter's closing lines)
+   p.quote              5-3 (a quoted item outside a transcript)
+   p.quote-block        5-5 (a blocked quotation)
+   p.quote-indent       7-5 (eg. a plaque read out in a transcript)
+   li > p.note          7-5 inside a 1-5 list item
+   ul.steps             numbered steps, 1-5, with 3-5 substeps and 7-5 notes
+
+   Sets of blocks the BRF sets off with blank lines are wrapped in an element
+   saying what the set is; the rules at the end of this file space them:
+   div.fm-group         a group of title page or masthead lines
+   blockquote           quoted material (a quoted letter, story, article,
+                        press release or sample conversation)
+   div.letter           a letter, from its date to its closing or cc lines
+   div.event-details    organization, place and date under an article title
+   div.roster           names and roles set off inside an article
+   div.transcript       speaker turns and their continuation paragraphs
+   ========================================================================== */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Headings
+   -------------------------------------------------------------------------- */
+h1, h2, h3 {
+  break-after: avoid;
+  break-inside: avoid;
+}
+
+/* Article titles: centered, no blank lines around them. Each line keeps at
+   least 3 blank cells on either side, and long titles are balanced across
+   lines. */
+h1 {
+  text-align: center;
+  text-indent: 0;
+  text-wrap: balance;
+  padding-inline: 3ch;
+  margin: 0;
+}
+
+/* The first heading after the title page has a blank line before and
+   after it */
+p.titlepage + h1,
+div.fm-group + h1 {
+  margin: 1rem 0;
+}
+
+/* Cell-5 heading: blocked at cell 5, blank line before */
+h2 {
+  text-indent: 0;
+  margin: 1rem 0 0 4ch;
+}
+
+/* Cell-7 heading: blocked at cell 7, blank line before */
+h3 {
+  text-indent: 0;
+  margin: 1rem 0 0 6ch;
+}
+
+/* No blank line between headings that follow each other */
+h2 + h2,
+h2 + h3,
+h3 + h3 {
+  margin-top: 0;
+}
+
+/* "Special symbols used in this volume" (the heading just before the
+   symbols list and the contents): centered, blank line after */
+h2:has(+ ul + nav.toc) {
+  text-align: center;
+  text-wrap: balance;
+  padding-inline: 3ch;
+  margin: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Paragraphs
+   -------------------------------------------------------------------------- */
+
+/* Body paragraph, 3-1 */
+p {
+  margin: 0;
+  text-indent: 2ch;
+}
+
+/* Editor's notes and blocked quotations, 1-1, blank line after */
+p.left-justified {
+  text-indent: 0;
+  margin: 0 0 1rem 0;
+}
+
+/* Title-page lines, bylines and section separators: centered */
+p.titlepage,
+p.byline,
+p.separator {
+  text-align: center;
+  text-indent: 0;
+  margin: 0;
+}
+
+/* Photo captions, 7-5 */
+p.caption {
+  margin: 0 0 0 4ch;
+  text-indent: 2ch;
+}
+
+/* --------------------------------------------------------------------------
+   Speech transcripts
+   -------------------------------------------------------------------------- */
+
+/* Speaker's turn, 1-3 */
+p.dialogue {
+  margin: 0 0 0 2ch;
+  text-indent: -2ch;
+}
+
+/* Continuation paragraph within a turn, 5-3 */
+p.dialogue-cont {
+  margin: 0 0 0 2ch;
+  text-indent: 2ch;
+}
+
+/* Bracketed directions such as (Applause and music...), 7-7 */
+p.direction {
+  margin: 0 0 0 6ch;
+  text-indent: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Lists, 1-3, blank line before and after
+   -------------------------------------------------------------------------- */
+ul, ol {
+  list-style: none;
+  padding-left: 0;
+  margin: 1rem 0;
+}
+
+ul li, ol li {
+  padding-left: 2ch;
+  text-indent: -2ch;
+}
+
+/* A list nested inside a list item gets no extra blank lines */
+li ul, li ol {
+  margin: 0;
+}
+
+/* No blank line between a cell-5 or cell-7 heading and a list after it */
+h2 + ul, h2 + ol,
+h3 + ul, h3 + ol {
+  margin-top: 0;
+}
+
+/* ...except after the centered "Special symbols" heading */
+h2:has(+ ul + nav.toc) + ul {
+  margin-top: 1rem;
+}
+
+/* --------------------------------------------------------------------------
+   Contents (nav.toc)
+   Each entry is <li><a>title</a> <span class="toc-page">page</span></li>.
+   The title runs over in cell 3; the page number sits at the right margin
+   on the entry's last line, with guide dots between them.
+   -------------------------------------------------------------------------- */
+nav.toc {
+  margin: 0 0 1rem 0;
+}
+
+/* "Contents": centered, blank line after */
+nav.toc h1.toc-title {
+  margin: 0 0 1rem 0;
+}
+
+/* "Part 1" / "Part 2": centered, blank line before */
+nav.toc h2.toc-part {
+  text-align: center;
+  text-indent: 0;
+  margin: 1rem 0 0 0;
+}
+
+nav.toc h1.toc-title + h2.toc-part {
+  margin-top: 0;
+}
+
+/* Entries follow their heading with no blank line */
+nav.toc ul.toc {
+  margin: 0;
+}
+
+nav.toc ul.toc > li {
+  display: flex;
+  align-items: flex-end;
+  padding-left: 2ch;
+  text-indent: 0;
+}
+
+/* Title, 1-3. Every line of the title except the last ends at least
+   6 cells from the right margin, leaving room for the page number. */
+nav.toc ul.toc > li > a {
+  order: 1;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: calc(100% - 6ch);
+  text-indent: -2ch;
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Guide dots (dot 5) fill the space between the title and the page
+   number, with a blank cell before them */
+nav.toc ul.toc > li::before {
+  order: 2;
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  content: "\A0⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐⠐";
+}
+
+/* Page number at the right margin, with a blank cell before it */
+nav.toc ul.toc > li > span.toc-page {
+  order: 3;
+  flex: 0 0 auto;
+  margin-left: 1ch;
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------------------
+   Added for the NFB plugin: blocks the Converter marks that the
+   stylesheet above has no rule for.
+   -------------------------------------------------------------------------- */
+
+/* Centered lines under a heading, such as a source and date */
+p.centered {
+  text-align: center;
+  text-indent: 0;
+  margin: 0;
+}
+
+/* Letter salutation and closing lines, 5-5 */
+p.salutation,
+p.closing {
+  margin: 0 0 0 4ch;
+  text-indent: 0;
+}
+
+/* Quoted text: 5-3, 5-5 and 7-5 */
+p.quote {
+  margin: 0 0 0 2ch;
+  text-indent: 2ch;
+}
+
+p.quote-block {
+  margin: 0 0 0 4ch;
+  text-indent: 0;
+}
+
+p.quote-indent {
+  margin: 0 0 0 4ch;
+  text-indent: 2ch;
+}
+
+/* A note inside a list item, 7-5. The item's text starts in cell 1 and
+   its run-over (where the note's own run-over lines go) in cell 5. */
+li > p.note {
+  margin: 0 0 0 2ch;
+  text-indent: 2ch;
+}
+
+/* Numbered steps: step 1-5, substep 3-5, note inside a step 7-5 */
+ul.steps > li {
+  padding-left: 4ch;
+  text-indent: -4ch;
+}
+
+ul.steps > li > ul > li {
+  padding-left: 0;
+  text-indent: -2ch;
+}
+
+ul.steps > li > p.note {
+  margin-left: 0;
+  text-indent: 2ch;
+}
+
+/* A separator line never has a blank line before it, even after a list */
+ul:has(+ p.separator),
+ol:has(+ p.separator) {
+  margin-bottom: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Sets of blocks set off by blank lines
+   -------------------------------------------------------------------------- */
+
+/* Front matter: one blank line between groups */
+.fm-group + .fm-group {
+  margin-top: 1rem;
+}
+
+/* Set-off material: blank line before and after. Margins collapse, so two
+   adjacent sets get one blank line between them. */
+blockquote,
+.letter,
+.event-details,
+.roster {
+  margin: 1rem 0;
+  padding: 0;
+}
+
+/* A paragraph straight after a transcript is set off by a blank line, but a
+   separator line after a transcript is not, so this is not a margin on
+   .transcript itself. */
+.transcript + p {
+  margin-top: 1rem;
+}

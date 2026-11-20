@@ -48,7 +48,8 @@ def main():
         level=logging.INFO, format="%(levelname)s:%(asctime)s:%(module)s:%(message)s"
     )
     parser_modules = [plugin for plugin in DISCOVERED_PARSER_PLUGINS.values()]
-    default_plugin_id: str = parser_modules[0].id
+    # Entry point order is not guaranteed, so keep BANA as the default when it is installed.
+    default_plugin_id: str = "BANA" if any(p.id == "BANA" for p in parser_modules) else parser_modules[0].id
     arg_parser = argparse.ArgumentParser(description="Converts a BRF to eBraille")
     arg_parser.add_argument("--logging", default="INFO", help="Set the logging level, should be one of the standard Python logging levels.")
     parser_list =[plugin.id     for plugin in parser_modules ]
